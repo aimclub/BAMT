@@ -1,4 +1,4 @@
-from pomegranate import*
+from pomegranate import BayesianNetwork
 import json
 
 """
@@ -17,9 +17,10 @@ BayesianNetwork object
 
 
 
-def read_model(name):
+def read_model(name: str) -> BayesianNetwork:
+    
     string_data = ""
-    with open('models/'+name+'.json') as f:
+    with open('models/'+ name +'.json') as f:
         string_data = json.load(f)
     bn = BayesianNetwork.from_json(string_data)
     return(bn)
