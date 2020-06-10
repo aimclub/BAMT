@@ -5,14 +5,18 @@ Link to the repository with the library:https://github.com/ncullen93/pyBN
 
 Our Bayesian block hierarchical learning code is in the folder "block_learning".  
 
-Functionality of the developed code:  
-save_bn.py - Function for structural and parametric training of a separate Bayesian network with subsequent saving to a json. file  
+Functionality of the developed code:   
+
+save_bn.py - Function for saving a trained model to a json. file  
 
 read_bn.py - Function for reading a trained model from a json. file  
 
-connect_BNs.py - Function for connecting a trained Bayesian network model to a new network (trained on new data) through a hidden variable.  
+train_bn.py - Function for trainig the structure and parameters of BN from data.  
 
-sampling.py - Function for sampling data from a Bayesian network at any level of the block structure.
+partial_bn_train.py - Function for adding new BN and trainig new connected BN with hidden vars.  
+
+sampling.py - Function for generating synthetic data from BN model.  
+
 
 
 
