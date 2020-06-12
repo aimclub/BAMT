@@ -14,8 +14,9 @@ Pre-trained BN to join
 -data
 New source dataset with discretized variables
 
--restrict
-list of all nodes except init nodes
+-init_nodes
+list of initial nodes which
+can't have parents
 
 -cluster
 Number of clusters for KMeans to fill
@@ -28,11 +29,11 @@ BN with partial training
 
 
 
-def partial_model_train(bn1: BayesianNetwork, data: np.ndarray, restrict: list = None, clusters: int = 5) -> BayesianNetwork:
+def partial_model_train(bn1: BayesianNetwork, data: np.ndarray, init_nodes: list = None, clusters: int = 5) -> BayesianNetwork:
     
     hidden_input_var = np.array(bn1.marginal()[-1].sample(data.shape[0]))
     new_data = np.column_stack((hidden_input_var, data))
-    bn = train_model(new_data, clusters=clusters, restrict=restrict)
+    bn = train_model(new_data, clusters = clusters, init_nodes = init_nodes)
     return(bn)
     
 

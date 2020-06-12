@@ -40,7 +40,7 @@ from pyBN.utils.independence_tests import mutual_information
 from pyBN.utils.graph import would_cause_cycle
 
 
-def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, restriction=None):
+def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, init_nodes=None):
     """
     Arguments
     ---------
@@ -69,10 +69,10 @@ def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, restr
         For MMHC algorithm, the list of allowable edge additions.
         ***
         Was modified
-        Now restriction is a list of all nodes except init nodes
+        Now restriction is a list of init_nodes, which can't have parents
 
     Modification
-    *latent*: list of latent var index
+    *latent*: the index of the latent var
 
 
     Returns
@@ -112,7 +112,7 @@ def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, restr
             for v in bn.nodes():
                 if v not in c_dict[u] and u!=v and not would_cause_cycle(c_dict, u, v):
                     # FOR MMHC ALGORITHM -> Edge Restrictions
-                    if (restriction is None or  v in restriction) and (u != latent): #modify restriction check, now restriction is a list of init nodes
+                    if (init_nodes is None or  not(v in init_nodes)) and (u != latent): #modify restriction check, now restriction is a list of init nodes
                         # SCORE FOR 'V' -> gaining a parent
                         old_cols = (v,) + tuple(p_dict[v]) # without 'u' as parent
                         mi_old = mutual_information(data[:,old_cols])
@@ -150,7 +150,7 @@ def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, restr
         ### TEST ARC REVERSALS ###
         for u in bn.nodes():
             for v in bn.nodes():
-                if v in c_dict[u] and not would_cause_cycle(c_dict,v,u, reverse=True) and (restriction is None or u in restriction) and (v != latent): #modify restriction check
+                if v in c_dict[u] and not would_cause_cycle(c_dict,v,u, reverse=True) and (init_nodes is None or not (u in init_nodes)) and (v != latent): #modify restriction check
                     # SCORE FOR 'U' -> gaining 'v' as parent
                     old_cols = (u,) + tuple(p_dict[v]) # without 'v' as parent
                     mi_old = mutual_information(data[:,old_cols])
@@ -211,10 +211,10 @@ def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, restr
                     operation = np.random.choice([0,1,2])
                     if operation == 0:
                         i = 0
-                        while i < 100:
+                        while i < 1000:
                             u,v = np.random.choice(list(bn.nodes()), size=2, replace=False)
                             # IF EDGE DOESN'T EXIST, ADD IT
-                            if u not in p_dict[v] and u!=v and not would_cause_cycle(c_dict,u,v) and (restriction is None or v in restriction) and (u != latent):#modify restriction check
+                            if u not in p_dict[v] and u!=v and not would_cause_cycle(c_dict,u,v) and (init_nodes is None or not (v in init_nodes)) and (u != latent):#modify restriction check
                                 if debug:
                                     print('RESTART - ADDING: ', (u,v))
                                 c_dict[u].append(v)
@@ -234,10 +234,10 @@ def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, restr
                                 break
                     elif operation == 2:
                         i = 0
-                        while i < 100:
+                        while i < 1000:
                             u,v = np.random.choice(list(bn.nodes()), size=2, replace=False)
                             # IF EDGE EXISTS, REVERSE IT
-                            if u in p_dict[v] and not would_cause_cycle(c_dict,v,u, reverse=True) and (restriction is None or u in restriction) and (v != latent):
+                            if u in p_dict[v] and not would_cause_cycle(c_dict,v,u, reverse=True) and (init_nodes is None or not (u in init_nodes)) and (v != latent):
                                 if debug:
                                     print('RESTART - REVERSING: ', (u,v))
                                 c_dict[u].remove(v)

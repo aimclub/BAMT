@@ -17,8 +17,9 @@ Source dataset with discretized variables
 Number of clusters for KMeans to fill
 the hidden var
 
--restrict
-list of all nodes except init nodes
+-init_nodes
+list of initial nodes which
+can't have parents
 
 
 Output:
@@ -27,7 +28,7 @@ BayesianNetwork object
 
 """
 
-def train_model(data: np.ndarray, clusters: int = 5, restrict: list = None) -> BayesianNetwork:
+def train_model(data: np.ndarray, clusters: int = 5, init_nodes: list = None) -> BayesianNetwork:
     
     bn = BayesNet()
     #Сluster the initial data in order to fill in a hidden variable based on the distribution of clusters
@@ -38,7 +39,7 @@ def train_model(data: np.ndarray, clusters: int = 5, restrict: list = None) -> B
     new_data = np.column_stack((data, hidden_var))
 
     #Train the network structure on data taking into account a hidden variable
-    bn = hc_rr(new_data, latent = [new_data.shape[1]-1], restriction = restrict)
+    bn = hc_rr(new_data, latent = [new_data.shape[1]-1], init_nodes = init_nodes)
     structure = []
     nodes = sorted(list(bn.nodes()))
     for rv in nodes:
