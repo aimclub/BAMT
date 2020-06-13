@@ -37,9 +37,10 @@ def train_model(data: np.ndarray, clusters: int = 5, init_nodes: list = None) ->
     hidden_dist = DiscreteDistribution.from_samples(labels)
     hidden_var = np.array(hidden_dist.sample(data.shape[0]))
     new_data = np.column_stack((data, hidden_var))
+    latent = (new_data.shape[1])-1
 
     #Train the network structure on data taking into account a hidden variable
-    bn = hc_rr(new_data, latent = [new_data.shape[1]-1], init_nodes = init_nodes)
+    bn = hc_rr(new_data, latent = latent, init_nodes = init_nodes)
     structure = []
     nodes = sorted(list(bn.nodes()))
     for rv in nodes:
