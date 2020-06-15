@@ -39,6 +39,7 @@ def generate_synthetics(bn: BayesianNetwork, n: int = 100) -> dict:
     for i in states:
         if i not in init_idx:
             data[i] = DiscreteDistribution(proba[i].parameters[0]).sample(n)
+            
     return data
 
 

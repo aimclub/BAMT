@@ -40,7 +40,7 @@ from pyBN.utils.independence_tests import mutual_information
 from pyBN.utils.graph import would_cause_cycle
 
 
-def hc_rr(data, latent, M=5, R=3, metric='AIC', max_iter=100, debug=False, init_nodes=None):
+def hc_rr(data, latent, M=5, R=8, metric='AIC', max_iter=100, debug=False, init_nodes=None):
     """
     Arguments
     ---------
