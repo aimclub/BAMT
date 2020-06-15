@@ -17,6 +17,8 @@ partial_bn_train.py - Function for adding new BN and trainig new connected BN wi
 
 sampling.py - Function for generating synthetic data from BN model.  
 
+quality_metrics.py - Function for quantifying the joint distribution of synthetic data
+
 
 
 
