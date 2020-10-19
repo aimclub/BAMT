@@ -19,7 +19,8 @@ sampling.py - Function for generating synthetic data from BN model.
 
 quality_metrics.py - Function for quantifying the joint distribution of synthetic data
 
-
+As a result of the generator operation, a similar hierarchical structure is obtained:
+![title](img/BN_gif.gif)
 
 
 
