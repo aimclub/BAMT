@@ -72,7 +72,7 @@ def discretize(data, cols=None, bins=None):
 
 	data = copy(data)
 
-	minmax = zip(np.amin(data,axis=0),np.amax(data,axis=0))
+	minmax = list(zip(np.amin(data,axis=0),np.amax(data,axis=0)))
 	for c in cols:
 		# get min and max of each column
 		_min, _max = minmax[c]

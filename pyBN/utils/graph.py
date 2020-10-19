@@ -10,6 +10,49 @@ eventually be corrected.
 import networkx as nx
 import numpy as np
 from copy import copy
+import random
+from itertools import chain
+def random_dag(nodes, edges):
+    """Generate a random Directed Acyclic Graph (DAG) with a given number of nodes and edges."""
+    G = nx.DiGraph()
+    for i in range(nodes):
+        G.add_node(i)
+    while edges > 0:
+        a = random.randint(0,nodes-1)
+        b=a
+        while b==a:
+            b = random.randint(0,nodes-1)
+        G.add_edge(a,b)
+        if nx.is_directed_acyclic_graph(G):
+            edges -= 1
+        else:
+            # we closed a loop!
+            G.remove_edge(a,b)
+    return G
+
+def generate_dag_population(ncol, size):
+	max_nedges = ((ncol-1)*ncol)/2
+	dag_population = []
+	while size != 0:
+		n_edges = random.randint((ncol-1), max_nedges)
+		G = random_dag(ncol,n_edges)
+		flag = True
+		for i in range(ncol):
+			if i not in list(chain(*G.edges())):
+				flag = False
+		if flag == True:
+			size -= 1
+			dag_population.append(G)
+		else:
+			continue
+
+		
+	return dag_population
+
+
+
+
+
 
 def would_cause_cycle(e, u, v, reverse=False):
 	"""
