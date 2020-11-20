@@ -25,7 +25,10 @@ Strategies to improve Greedy Hill-Climbing:
 	and say that the search cannt reverse (undo) any
 	of these steps.
 """
-
+# import os,sys,inspect
+# currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+# parentdir = os.path.dirname(currentdir)
+# sys.path.insert(0,parentdir) 
 #from scipy.optimize import *
 import numpy as np
 #from heapq import *
@@ -136,7 +139,7 @@ def hc(data, metric='AIC', max_iter=100, debug=False, restriction=None):
 			for v in bn.nodes():
 				if v not in c_dict[u] and u!=v and not would_cause_cycle(c_dict, u, v):
 					# FOR MMHC ALGORITHM -> Edge Restrictions
-					if restriction is None or (u,v) in restriction:
+					if restriction is None or (u,v) not in restriction:
 						# SCORE FOR 'V' -> gaining a parent
 						old_cols = (v,) + tuple(p_dict[v]) # without 'u' as parent
 						mi_old = mutual_information(data[:,old_cols])
@@ -174,7 +177,7 @@ def hc(data, metric='AIC', max_iter=100, debug=False, restriction=None):
 		### TEST ARC REVERSALS ###
 		for u in bn.nodes():
 			for v in bn.nodes():
-				if v in c_dict[u] and not would_cause_cycle(c_dict,v,u, reverse=True):
+				if v in c_dict[u] and not would_cause_cycle(c_dict,v,u, reverse=True) and (restriction is None or (v,u) not in restriction):
 					# SCORE FOR 'U' -> gaining 'v' as parent
 					old_cols = (u,) + tuple(p_dict[v]) # without 'v' as parent
 					mi_old = mutual_information(data[:,old_cols])
