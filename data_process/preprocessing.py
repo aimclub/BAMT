@@ -52,7 +52,7 @@ def code_categories(data: pd.DataFrame, columns: list) -> pd.DataFrame:
     for column in columns:
         le = preprocessing.LabelEncoder()
         d_data[column] = le.fit_transform(d_data[column].values)
-    return data
+    return d_data
 
 
 def get_nodes_type (data: pd.DataFrame) -> dict:
