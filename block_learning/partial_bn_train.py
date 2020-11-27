@@ -13,74 +13,49 @@ import json
 from libpgm.nodedata import NodeData
 from libpgm.graphskeleton import GraphSkeleton
 from sklearn.cluster import KMeans
-"""
-Function for adding new BN and 
-trainig new connected BN with 
-hidden vars
-
-Input:
--bn1
-Pre-trained BN to join
-
--data
-New source dataset with discretized variables
-
--init_nodes
-list of initial nodes which
-can't have parents
-
--cluster
-Number of clusters for KMeans to fill
-the hidden var
-
-Output:
-BN with partial training
-
-"""
+from block_learning.save_bn import save_structure, save_params
+from block_learning.read_bn import read_structure, read_params
+from kmodes.kmodes import KModes
 
 
-def connect_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.DataFrame, names: list) -> HyBayesianNetwork:
-    skeleton = dict()
-    # data1 = param_data[bn1.V]
-    # kmeans = KMeans(n_clusters=3, random_state=0).fit(data1)
-    latent_sample = np.random.normal(0, 1, data.shape[0])
-    latent_sample = pd.DataFrame([int(x) for x in latent_sample], columns=[names[1]])
-    new_data = pd.concat([data,latent_sample], join_axes=[data.index], axis=1)
-    skeleton['V'] = new_data.columns.to_list()
-    dag = [x for x in bn1.E] + [x for x in bn2.E] + [[names[0], names[1]]] + [[names[1], names[2]]]
-    #s_dag = DAG([(x, name) for x in bn1.V] + [(name, x) for x in bn2.V])
-    # nodes_type = get_nodes_type(param_data)
-    # white_list = []
-    # black_list = []
-    # for node in bn1.V:
-    #     white_list.append((node,name))
-    #     white_list.append((name,node))
-    #     if(nodes_type[node] == 'cont'):
-    #         black_list.append((node,name))
-    # for node in bn2.V:
-    #     white_list.append((name,node))
-    #     white_list.append((node,name))
-    #     if(nodes_type[node] == 'cont'):
-    #         black_list.append((node,name))
-    
-    # hc_K2Score = HillClimbSearch(new_data, scoring_method=K2Score(new_data))
-    # best_model_K2Score = hc_K2Score.estimate(white_list=white_list, fixed_edges=dag, black_list=black_list)
-    # structure = [list(x) for x in list(best_model_K2Score.edges())]
-    skeleton['E'] = dag
-    # param_new = pd.concat([param_data,latent_sample], axis=1)
-    # print(param_new)
-    nodes_type = get_nodes_type(new_data)
-    param_dict = parameter_learning(new_data, nodes_type, skeleton)
-    json.dump(skeleton, open("skeleton.txt",'w'))
-    skel = GraphSkeleton()
-    skel.load("skeleton.txt")
-    skel.toporder()
-    json.dump(param_dict, open("node.txt",'w'))
-    nd = NodeData()
-    nd.load("node.txt")
-    nd.entriestoinstances()
-    hybn = HyBayesianNetwork(skel, nd)
+
+def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.DataFrame, name: str, n_clusters: int = 3) -> HyBayesianNetwork:
+    type1 = get_nodes_type(data[bn1.V])
+    type2 = get_nodes_type(data[bn2.V])
+    hybn = HyBayesianNetwork()
+    if ('disc' not in type1.values()) & (('disc' not in type2.values())):
+        latent_sample = np.random.normal(0, 1, data.shape[0])
+        latent_sample = [x for x in latent_sample]
+        data[name] = latent_sample
+        skeleton = dict()
+        skeleton['V'] = data.columns.to_list()
+        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V] + [[name, x] for x in bn2.V]
+        skeleton['E'] = dag
+        nodes_type = get_nodes_type(data)
+        param_dict = parameter_learning(data, nodes_type, skeleton)
+        save_structure(skeleton, 'Structure_with_'+name)
+        skel = read_structure('Structure_with_'+name)
+        save_params(param_dict, 'Params_with_' + name)
+        params = read_params('Params_with_' + name)
+        hybn = HyBayesianNetwork(skel, params)
+    else:
+        km = KModes(n_clusters=n_clusters, init='Huang', n_init=5)
+        clusters = km.fit_predict(data)
+        latent_sample = [int(x) for x in clusters]
+        data[name] = latent_sample
+        skeleton = dict()
+        skeleton['V'] = data.columns.to_list()
+        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V if type1[x] != 'cont'] + [[name, x] for x in bn2.V if len(bn2.getparents(x))==0]
+        skeleton['E'] = dag
+        nodes_type = get_nodes_type(data)
+        param_dict = parameter_learning(data, nodes_type, skeleton)
+        save_structure(skeleton, 'Structure_with_'+name)
+        skel = read_structure('Structure_with_'+name)
+        save_params(param_dict, 'Params_with_' + name)
+        params = read_params('Params_with_' + name)
+        hybn = HyBayesianNetwork(skel, params)
     return hybn
+
 
 
 
