@@ -6,6 +6,7 @@ import pandas as pd
 from libpgm.hybayesiannetwork import HyBayesianNetwork
 from pgmpy.estimators import HillClimbSearch
 from pgmpy.estimators import K2Score, BicScore
+from pgmpy.estimators import MmhcEstimator
 from pgmpy.base import DAG
 import networkx as nx
 from data_process.preprocessing import get_nodes_type
@@ -45,7 +46,7 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
         data[name] = latent_sample
         skeleton = dict()
         skeleton['V'] = data.columns.to_list()
-        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V if type1[x] != 'cont'] + [[name, x] for x in bn2.V if len(bn2.getparents(x))==0]
+        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V if (type1[x] != 'cont') & (len(bn1.getchildren(x))==0)] + [[name, x] for x in bn2.V if len(bn2.getparents(x))==0]
         skeleton['E'] = dag
         nodes_type = get_nodes_type(data)
         param_dict = parameter_learning(data, nodes_type, skeleton)
@@ -55,6 +56,31 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
         params = read_params('Params_with_' + name)
         hybn = HyBayesianNetwork(skel, params)
     return hybn
+
+
+def hierarchical_structure_train (bns: list, data: pd.DataFrame, n_clusters: int = 5) -> list:
+    km = KModes(n_clusters=n_clusters, init='Huang', n_init=5)
+    clusters = km.fit_predict(data)
+    latent_sample = [int(x) for x in clusters]
+    len_latent = len(bns) - 1
+    dist_latent = DiscreteDistribution.from_samples(latent_sample)
+    for i in range (len_latent):
+        data['LV_'+str(i)] = dist_latent.sample(data.shape[0])
+    whitelist = []
+    fixed_edges = []
+    for bn in bns:
+        l_fix = [tuple(edge) for edge in bn.E]
+        fixed_edges = fixed_edges + l_fix
+        for i in range (len_latent):
+            latent = 'LV_'+str(i)
+            l1 = [(x, latent) for x in bn.V]
+            l2 = [(latent, x) for x in bn.V]
+            whitelist = whitelist + l1 + l2
+    hc_K2Score = HillClimbSearch(data, scoring_method=K2Score(data))
+    best_model_K2Score = hc_K2Score.estimate(white_list=whitelist, fixed_edges=fixed_edges)
+    structure = [list(x) for x in list(best_model_K2Score.edges())]
+    return structure
+
 
 
 
