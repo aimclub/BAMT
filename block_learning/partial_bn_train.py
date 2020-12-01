@@ -30,7 +30,7 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
         data[name] = latent_sample
         skeleton = dict()
         skeleton['V'] = data.columns.to_list()
-        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V] + [[name, x] for x in bn2.V]
+        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V if (len(bn1.getchildren(x))==0)] + [[name, x] for x in bn2.V if len(bn2.getparents(x))==0]
         skeleton['E'] = dag
         nodes_type = get_nodes_type(data)
         param_dict = parameter_learning(data, nodes_type, skeleton)
@@ -58,47 +58,43 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
     return hybn
 
 
-def hierarchical_structure_train (bns: list, data: pd.DataFrame, n_clusters: int = 5) -> list:
-    km = KModes(n_clusters=n_clusters, init='Huang', n_init=5)
-    clusters = km.fit_predict(data)
-    latent_sample = [int(x) for x in clusters]
-    len_latent = len(bns) - 1
-    dist_latent = DiscreteDistribution.from_samples(latent_sample)
-    for i in range (len_latent):
-        data['LV_'+str(i)] = dist_latent.sample(data.shape[0])
-    whitelist = []
-    fixed_edges = []
-    for bn in bns:
-        l_fix = [tuple(edge) for edge in bn.E]
-        fixed_edges = fixed_edges + l_fix
-        for i in range (len_latent):
-            latent = 'LV_'+str(i)
-            l1 = [(x, latent) for x in bn.V]
-            l2 = [(latent, x) for x in bn.V]
-            whitelist = whitelist + l1 + l2
+def hierarchical_train (hybn1: HyBayesianNetwork, hybn2: HyBayesianNetwork, data: pd.DataFrame) -> HyBayesianNetwork:
+    edge1 = set(tuple(i) for i in hybn1.E)
+    edge2 = set(tuple(i) for i in hybn2.E)
+    edge_union = list(edge1.union(edge2))
+    edge_union = [list(x) for x in edge_union]
+    skeleton = dict()
+    skeleton['V'] = data.columns.to_list()
+    skeleton['E'] = edge_union
+    nodes_type = get_nodes_type(data)
+    param_dict = parameter_learning(data, nodes_type, skeleton)
+    save_structure(skeleton, 'Hierarchial_structure')
+    skel = read_structure('Hierarchial_structure')
+    save_params(param_dict, 'Hierarchial_params')
+    params = read_params('Hierarchial_params')
+    hybn = HyBayesianNetwork(skel, params)
+
+    return hybn
+
+
+def direct_connect (hybns: list, data: pd.DataFrame) -> list:
+    white_list = []
+    fixed_list = []
+    for bn in hybns:
+        fixed_list = fixed_list + [tuple(E) for E in bn.E]
+    for bn1 in hybns:
+        for bn2 in hybns:
+            if bn1 != bn2:
+                for x in bn1.V:
+                    for y in bn2.V:
+                        white_list = white_list + [(x, y), (y, x)]
     hc_K2Score = HillClimbSearch(data, scoring_method=K2Score(data))
-    best_model_K2Score = hc_K2Score.estimate(white_list=whitelist, fixed_edges=fixed_edges)
+    best_model_K2Score = hc_K2Score.estimate(white_list=white_list, fixed_edges=fixed_list)
     structure = [list(x) for x in list(best_model_K2Score.edges())]
     return structure
 
 
 
-
-
-
-    
-
-
-
-# def partial_model_train(bn1: BayesianNetwork, data: pd.DataFrame, algorithm: str, init_nodes: list = None, clusters: int = 5) -> BayesianNetwork:
-    
-#     hidden_input_var = np.array(bn1.marginal()[-1].sample(data.shape[0]))
-#     new_data = pd.DataFrame()
-#     new_data['hidden_input'] = hidden_input_var
-#     new_data = pd.concat([new_data, data], axis=1)
-#     #new_data = np.column_stack((hidden_input_var, data))
-#     bn = train_model(new_data, algorithm = algorithm, clusters = clusters, init_nodes = init_nodes)
-#     return(bn)
     
 
     

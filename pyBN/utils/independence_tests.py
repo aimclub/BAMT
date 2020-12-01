@@ -56,7 +56,7 @@ def mutual_information(data, conditional=False):
 			ncols = len(bins)
 			for i in range(len(data)):
 				data[i,2] = ''.join(data[i,2:ncols])
-			data = data.astype('int')[:,0:3]
+			data = data.astype('int64')[:,0:3]
 
 		bins = np.amax(data,axis=0)
 		hist,_ = np.histogramdd(data, bins=bins) # frequency counts
@@ -86,7 +86,7 @@ def mutual_information(data, conditional=False):
 		ncols = len(bins)
 		for i in range(len(data)):
 			data[i,1] = ''.join(data[i,1:ncols])
-		data = data.astype('int')[:,0:2]
+		data = data.astype('int64')[:,0:2]
 
 		hist,_ = np.histogramdd(data, bins=bins[0:2]) # frequency counts
 
@@ -192,7 +192,7 @@ def mi_test(data, test=True):
 			ncols = len(bins)
 			for i in range(len(data)):
 				data[i,2] = ''.join(data[i,2:ncols])
-			data = data.astype('int')[:,0:3]
+			data = data.astype('int64')[:,0:3]
 
 		#bins = np.amax(data,axis=0)
 		bins = unique_bins(data)
@@ -290,7 +290,7 @@ def entropy(data):
 			ncols = len(bins)
 			for i in range(len(data)):
 				data[i,2] = ''.join(data[i,2:ncols])
-			data = data.astype('int')[:,0:3]
+			data = data.astype('int64')[:,0:3]
 
 		bins = np.amax(data,axis=0)
 		hist,_ = np.histogramdd(data, bins=bins) # frequency counts
@@ -338,7 +338,7 @@ def mi_from_en(data):
 		ncols = data.shape[1]
 		for i in range(len(data)):
 			data[i,2] = ''.join(data[i,2:ncols])
-		data = data.astype('int')[:,0:3]
+		data = data.astype('int64')[:,0:3]
 
 		MI = entropy(data[:,(0,2)]) - entropy(data)
 
