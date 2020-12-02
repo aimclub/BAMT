@@ -4,6 +4,9 @@ from matplotlib.colors import CSS4_COLORS, TABLEAU_COLORS
 from matplotlib.patches import Rectangle
 from typing import Dict, List
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from block_learning.sampling import get_probability
 
 def visualizer(bn1,node_type):
     """Function for visualizing bayesian networks
@@ -100,3 +103,75 @@ def visualizer(bn1,node_type):
     plt.close()
     
     return network.show(f'visualization_result/bayesian_network.html')
+
+
+
+
+
+def grouped_barplot(df: pd.DataFrame, cat: str, subcat: str, val: str, err: str):
+    """Helper function for drawing hists with error bar
+
+        Args:
+            df (pd.DataFrame): source dataset
+            cat (str): name of parameter
+            subcat (str): name of column with data
+            val (str): name of column with probability
+            err (str): name of columns with error
+        """        
+    u = df[cat].unique()
+    x = np.arange(len(u))
+    subx = df[subcat].unique()
+    offsets = (np.arange(len(subx))-np.arange(len(subx)).mean())/(len(subx)+1.)
+    width= np.diff(offsets).mean()
+    for i, gr in enumerate(subx):
+        dfg = df[df[subcat] == gr]
+        plt.bar(x+offsets[i], dfg[val].values, width=width, 
+                label="{}".format(gr), yerr=dfg[err].values)
+    plt.xlabel(cat)
+    plt.ylabel(val)
+    if isinstance(u[0], float):
+        u = [round(_, 1) for _ in u]
+            
+    plt.xticks(x, u, rotation=90)
+    plt.legend()
+    plt.show()
+        
+
+
+
+def draw_comparative_hist(parameter: str, original_data: pd.DataFrame, sample: pd.DataFrame):
+    """Function for drawing comparative hist for discrete synthetic and real data
+
+    Args:
+        parameter (str): name of parameter
+        original_data (pd.DataFrame): real dataset
+        sample (pd.DataFrame): synthetic dataset
+    """    
+    df1 = pd.DataFrame()
+    probs = get_probability(original_data, original_data, parameter)
+            
+    df1[parameter] = probs.keys()
+        
+    
+        
+    df1['Probability'] = [p[1] for p in probs.values()]
+    df1['Error'] = [p[2]-p[1] for p in probs.values()]
+    df1['Data'] = 'Исходные данные'
+
+        
+    df2 = pd.DataFrame()
+    probs = get_probability(sample, original_data, parameter)
+    df2[parameter] =probs.keys()
+    df2['Probability']  = [p[1] for p in probs.values()]
+    df2['Error'] = [p[2]-p[1] for p in probs.values()]
+    df2['Data'] = 'Синтетические данные'
+
+
+        
+    final_df = pd.concat([df1, df2])
+    
+        
+    
+    grouped_barplot(final_df, parameter, 'Data', 'Probability', 'Error')
+    plt.show()
+        

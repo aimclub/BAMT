@@ -35,12 +35,13 @@ def get_probability(sample: pd.DataFrame, initial_data: pd.DataFrame, parameter:
         key - is a label
         value - is a list [lower bound of the interval, probability, higher bound of the interval]
     """
-    dict_prob = dict([(n, []) for n in initial_data[parameter].unique()])
+    dict_prob = dict([(str(n), []) for n in initial_data[parameter].unique()])
 
     for i in dict_prob:
         grouped = sample.groupby(parameter)[parameter].count()
+        grouped = {str(key): value for key, value in grouped.items()}
         if i in grouped:
-            p = (sample.groupby(parameter)[parameter].count()[i]) / sample.shape[0]
+            p = (grouped[i]) / sample.shape[0]
             std = 1.96 * math.sqrt(((1 - p) * p) / sample.shape[0])
             start = p - std
             end = p + std
