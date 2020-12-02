@@ -5,46 +5,28 @@ from matplotlib.patches import Rectangle
 from typing import Dict, List
 import matplotlib.pyplot as plt
 
-"""
->>visualizer
-Function for visualizing bayesian network
-
-Input:
-
-Skelet - vertices and edges
-bn1={'V': ['age',
-  'sex',
-  'has_high_education',
-  'relation_status',
-  'number_of_relatives'],
- 'E': [['number_of_relatives', 'sex'],
-  ['age', 'has_high_education'],
-  ['sex', 'has_high_education'],
-  ['age', 'relation_status'],
-  ['sex', 'relation_status']]}
-
-Node_type - types of vertices
-node_type2={'age': 'cont',
- 'sex': 'disc',
- 'has_high_education': 'disc',
- 'relation_status': 'disc',
- 'number_of_relatives': 'disc'}
- 
-
-Output:
--graph
-
-"""
-
-
 def visualizer(bn1,node_type):
+    """Function for visualizing bayesian networks
     
+    Agrs:
+        skelet (dict): structure with list of vertices and edges of graph 
+        node_type (dict): dictionary with node types (descrete or continuous)
+    
+    Returns:
+        html page with graph
+    
+    Example:
+        skelet={'V': ['age', 'sex', 'has_high_education', 'relation_status', 'number_of_relatives'], 'E': [['number_of_relatives', 'sex'],
+        'age', 'has_high_education'], ['sex', 'has_high_education'], ['age', 'relation_status'], ['sex', 'relation_status']]}
+        node_type={'age': 'cont', 'sex': 'disc', 'has_high_education': 'disc', 'relation_status': 'disc', 'number_of_relatives': 'disc'}
+    """
+  
     G = nx.DiGraph()
     G.add_nodes_from(bn1['V'])
     G.add_edges_from(bn1['E'])
     nodes = list(G.nodes)
     
-    network = Network(height="400px", width="90%", notebook=True, directed=nx.is_directed(G), layout='hierarchical')
+    network = Network(height="300px", width="90%", notebook=True, directed=nx.is_directed(G), layout='hierarchical')
 
     added_nodes_levels  = dict()
 
@@ -80,18 +62,13 @@ def visualizer(bn1,node_type):
     color_types = ['По типу']
     color_type='По типу'
     
-    classes1=G.nodes
-    
-    classes_for_legend = classes1
-    classes_for_legend_short = classes1
-        
     if color_types.index(color_type)==0:
         classes_for_legend = []
-        for class_item in classes1:
+        for class_item in G.nodes:
             classes_for_legend.append(node_type[class_item])
-        classes_for_legend_short =  ['1 - непрерывные', '2 - дискретные']
         
     classes2color = {node_class: color2hex[f'C{i}'] for i, node_class in enumerate(classes_for_legend)}
+    classes_for_legend_short = {node_class for i, node_class in enumerate(classes_for_legend)}
 
     for node in nodes:
         node_class = node
@@ -105,19 +82,16 @@ def visualizer(bn1,node_type):
     
     for edge in G.edges:
         network.add_edge(edge[0], edge[1])
-    
-
-    
+       
     network.hrepulsion(node_distance=300, central_gravity = 0.5)
     
     handles = []
     labels = []
-   
-
-    for geotag, color in zip(classes_for_legend_short, classes2color.values()):
+    
+    for geotag, color in classes2color.items():
         handles.append(Rectangle([0, 0], 1, 0.5, color=color))
         labels.append(geotag)
-                  
+                
     plt.figure(figsize=(13.5, 1.5), dpi=150)
     plt.legend(handles, labels, loc='center', ncol=5)
     plt.axis('off')
@@ -125,4 +99,4 @@ def visualizer(bn1,node_type):
     plt.show()
     plt.close()
     
-    return network.show(f'bayesian_network.html')
+    return network.show(f'visualization_result/bayesian_network.html')
