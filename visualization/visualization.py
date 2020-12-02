@@ -8,20 +8,15 @@ import numpy as np
 import pandas as pd
 from block_learning.sampling import get_probability
 
-def visualizer(bn1,node_type):
-    """Function for visualizing bayesian networks
-    
-    Agrs:
-        skelet (dict): structure with list of vertices and edges of graph 
+
+def visualizer(bn1: dict, node_type: dict, name: str):
+   
+    """Function for drawing the graph of BN
+
+    Args:
+        bn1 (dict): input BN structure as dict
         node_type (dict): dictionary with node types (descrete or continuous)
-    
-    Returns:
-        html page with graph
-    
-    Example:
-        skelet={'V': ['age', 'sex', 'has_high_education', 'relation_status', 'number_of_relatives'], 'E': [['number_of_relatives', 'sex'],
-        'age', 'has_high_education'], ['sex', 'has_high_education'], ['age', 'relation_status'], ['sex', 'relation_status']]}
-        node_type={'age': 'cont', 'sex': 'disc', 'has_high_education': 'disc', 'relation_status': 'disc', 'number_of_relatives': 'disc'}
+        name (str): name of output html page
     """
   
     G = nx.DiGraph()
@@ -102,7 +97,7 @@ def visualizer(bn1,node_type):
     plt.show()
     plt.close()
     
-    return network.show(f'visualization_result/bayesian_network.html')
+    return network.show(f'visualization_result/'+ name + '.html')
 
 
 
