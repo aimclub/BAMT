@@ -1,21 +1,17 @@
 
-from pomegranate import BayesianNetwork, DiscreteDistribution, ConditionalProbabilityTable
-from pyBN.classes.bayesnet import BayesNet
-from sklearn.cluster import KMeans
+from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 import numpy as np
 from copy import copy
 import pandas as pd
 from pgmpy.estimators import HillClimbSearch
-from pgmpy.estimators import K2Score, BicScore
-from pgmpy.models import BayesianModel
-from pgmpy.estimators import MmhcEstimator
+from pgmpy.estimators import K2Score, BicScore, BDeuScore
 from sklearn import linear_model
 from scipy.stats import norm
 import itertools
 from pyBN.learning.structure.score.hill_climbing import hc as hc_method
 
 
-def structure_learning(data: pd.DataFrame, algorithm: str, node_type: dict, init_nodes: list = None) -> dict:
+def structure_learning(data: pd.DataFrame, algorithm: str, node_type: dict, init_nodes: list = None, alpha: float = None) -> dict:
     """Function for bayesian network structure learning from data
 
     Args:
@@ -23,6 +19,7 @@ def structure_learning(data: pd.DataFrame, algorithm: str, node_type: dict, init
         algorithm (str): algorithm of structure learning
         node_type (dict): dictionary with node types (discrete or continuous)
         init_nodes (list, optional): List of nodes without parents. Defaults to None.
+        alpha (float): parameter of equal_sample_size (only for BDeu score)
 
     Returns:
         dict: structure with list of nodes and list of edges
@@ -63,12 +60,10 @@ def structure_learning(data: pd.DataFrame, algorithm: str, node_type: dict, init
         best_model_Bic_Score =  hc_Bic_Score.estimate(black_list=blacklist)
         structure = [list(x) for x in list(best_model_Bic_Score.edges())]
         skeleton['E'] = structure
-    if algorithm == "MMHC":
-        mmhc = MmhcEstimator(data)
-        skel = mmhc.mmpc()
-        hc = HillClimbSearch(data, scoring_method=K2Score(data))
-        model = hc.estimate(tabu_length=10, white_list=skel.to_directed().edges(), black_list=blacklist)
-        structure = [list(x) for x in list(model.edges())]
+    if algorithm == "BDeu":
+        hc_BDeu_Score = HillClimbSearch(data, scoring_method=BDeuScore(data, equivalent_sample_size=alpha))
+        best_model_BDeu_Score = hc_BDeu_Score.estimate(black_list=blacklist)
+        structure = [list(x) for x in list(best_model_BDeu_Score.edges())]
         skeleton['E'] = structure
 
     return skeleton
@@ -207,67 +202,3 @@ def parameter_learning (data: pd.DataFrame, node_type: dict, skeleton: dict) -> 
                     
     return node_data
 
-
-
-            
-    
-
-
-
-
-# def train_model(data: pd.DataFrame, algorithm: str, clusters: int = 5, init_nodes: list = None) -> BayesianNetwork:
-    
-#     bn = BayesianNetwork()
-#     #Сluster the initial data in order to fill in a hidden variable based on the distribution of clusters
-#     kmeans = KMeans(n_clusters = clusters, random_state = 0).fit(data.values)
-#     labels = kmeans.labels_
-#     hidden_dist = DiscreteDistribution.from_samples(labels)
-#     hidden_var = np.array(hidden_dist.sample(data.shape[0]))
-
-#     #new_data = np.column_stack((data, hidden_var))
-#     new_data = copy(data)
-#     new_data['hidden_output'] = hidden_var
-#     latent = (new_data.shape[1])-1
-
-#     #Train the network structure on data taking into account a hidden variable
-#     if algorithm == 'MI':
-#         bn = hc_rr(new_data.values, latent = latent, init_nodes = init_nodes)
-#         structure = []
-#         nodes = sorted(list(bn.nodes()))
-#         for rv in nodes:
-#             structure.append(tuple(bn.F[rv]['parents']))
-#         structure = tuple(structure)
-#         bn = BayesianNetwork.from_structure(new_data, structure)
-#         bn.bake()
-#     if algorithm == 'K2':
-#         datacol = new_data.columns.to_list()
-#         if init_nodes: 
-#             init_nodes_named = [new_data.columns.to_list()[i] for i in init_nodes]
-#             blacklist = [(x, y) for x in datacol for y in init_nodes_named if x != y]
-#         latent_list = [(datacol[latent], x) for x in datacol if x != datacol[latent]]
-#         blacklist_total = list(set(blacklist + latent_list))
-        
-#         hc_K2Score = HillClimbSearch(new_data, scoring_method=BicScore(new_data))
-#         best_model_K2Score = hc_K2Score.estimate(black_list=blacklist_total)
-#         structure = dict([(n, []) for n in new_data.columns])
-#         for edge in best_model_K2Score.edges():
-#             structure[edge[1]].append(edge[0])
-#         column_dict = dict([(n, i) for i, n in enumerate(new_data.columns)])
-#         structure2 = []
-#         for n in new_data.columns:
-#             l = structure[n]
-#             l1 = []
-#             for elem in l:
-#                 l1.append(column_dict[elem])
-#             structure2.append(tuple(l1))
-#         structure2 = tuple(structure2)
-#         bn = BayesianNetwork.from_structure(new_data.values, structure2)
-#         bn.bake()
-#     #Learn a hidden variable
- 
-#     hidden_var = np.array([np.nan] * (data.shape[0]))
-#     new_data = np.column_stack((data.values, hidden_var))
-#     new_data = bn.predict(new_data)
-#     bn.fit(new_data)
-#     bn.bake()
-#     return (bn)
