@@ -16,6 +16,7 @@ from libpgm.graphskeleton import GraphSkeleton
 from sklearn.cluster import KMeans
 from block_learning.save_bn import save_structure, save_params
 from block_learning.read_bn import read_structure, read_params
+from block_learning.sampling import generate_synthetics
 from kmodes.kmodes import KModes
 
 
@@ -58,10 +59,11 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
     return hybn
 
 
-def hierarchical_train (hybn1: HyBayesianNetwork, hybn2: HyBayesianNetwork, data: pd.DataFrame) -> HyBayesianNetwork:
-    edge1 = set(tuple(i) for i in hybn1.E)
-    edge2 = set(tuple(i) for i in hybn2.E)
-    edge_union = list(edge1.union(edge2))
+def hierarchical_train (hybns: list, data: pd.DataFrame) -> HyBayesianNetwork:
+    edge_union = set()
+    for bn in hybns:
+        edge_union = edge_union.union(set(tuple(i) for i in bn.E))
+    edge_union = list(edge_union)
     edge_union = [list(x) for x in edge_union]
     skeleton = dict()
     skeleton['V'] = data.columns.to_list()
@@ -77,21 +79,75 @@ def hierarchical_train (hybn1: HyBayesianNetwork, hybn2: HyBayesianNetwork, data
     return hybn
 
 
-def direct_connect (hybns: list, data: pd.DataFrame) -> list:
+def direct_connect (hybns: list, data: pd.DataFrame, node_type: dict):
     white_list = []
     fixed_list = []
+    nets_connection = dict()
+    G = nx.DiGraph()
+    for i in range(len(hybns)):
+        G.add_node(i)
     for bn in hybns:
         fixed_list = fixed_list + [tuple(E) for E in bn.E]
     for bn1 in hybns:
         for bn2 in hybns:
             if bn1 != bn2:
+                nets_connection[str(hybns.index(bn1))+" "+str(hybns.index(bn2))] = 0
                 for x in bn1.V:
                     for y in bn2.V:
-                        white_list = white_list + [(x, y), (y, x)]
+                        white_list = white_list + [(x, y), (y, x)]                 
     hc_K2Score = HillClimbSearch(data, scoring_method=K2Score(data))
     best_model_K2Score = hc_K2Score.estimate(white_list=white_list, fixed_edges=fixed_list)
-    structure = [list(x) for x in list(best_model_K2Score.edges())]
-    return structure
+    structure = [list(x) for x in list(best_model_K2Score.edges())] 
+    for edge in structure:
+        if (node_type[edge[0]] == 'cont') & (node_type[edge[1]] == 'disc'):
+            structure.remove(edge)
+    for edge in structure:
+        i1 = 0
+        i2 = 0
+        for bn in hybns:
+            if edge[0] in bn.V:
+                i1 = hybns.index(bn)
+            if edge[1] in bn.V:
+                i2 = hybns.index(bn)
+        if i1 != i2:
+            nets_connection[str(i1)+" "+str(i2)] += 1
+    list_of_connect = []
+    for key in nets_connection.keys():
+        if nets_connection[key] != 0:
+            if nets_connection[key] >= nets_connection[key.split(' ')[1]+" "+key.split(' ')[0]]:
+                G.add_edge(int(key.split(' ')[0]), int(key.split(' ')[1]))
+                if nx.is_directed_acyclic_graph(G):
+                    list_of_connect.append(key)
+                else:
+                    G.remove_edge(int(key.split(' ')[0]), int(key.split(' ')[1]))
+            elif nets_connection[key] < nets_connection[key.split(' ')[1]+" "+key.split(' ')[0]]:
+                G.add_edge(int(key.split(' ')[1]), int(key.split(' ')[0]))
+                if nx.is_directed_acyclic_graph(G):
+                    list_of_connect.append(key.split(' ')[1]+" "+key.split(' ')[0])
+                else:
+                    G.remove_edge(int(key.split(' ')[1]), int(key.split(' ')[0]))
+            
+                
+    list_of_connect = list(dict.fromkeys(list_of_connect))
+
+    return list_of_connect
+
+
+def direct_train (hybns: list, data: pd.DataFrame, direct_connect_list: list) -> HyBayesianNetwork:
+    list_of_pairs = []
+    for pair in direct_connect_list:
+        bn1 = hybns[int(pair.split()[0])]
+        bn2 = hybns[int(pair.split()[1])]
+        name = "L " + pair.split()[0] +"_"+pair.split()[1]
+        pair_bn = connect_partial_bn(bn1, bn2, data[bn1.V + bn2.V], name)
+        sample = generate_synthetics(pair_bn, data.shape[0])
+        sample[name] = sample[name].astype('int')
+        data[name] = sample[name]
+        list_of_pairs.append(pair_bn)
+    bn = hierarchical_train(list_of_pairs, data)
+    return bn
+    
+
 
 
 
