@@ -22,6 +22,18 @@ from kmodes.kmodes import KModes
 
 
 def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.DataFrame, name: str, n_clusters: int = 3) -> HyBayesianNetwork:
+    """Functtion for connection two BNs via latent variable with discrete dist
+
+    Args:
+        bn1 (HyBayesianNetwork): input BN
+        bn2 (HyBayesianNetwork): output BN
+        data (pd.DataFrame): data for parameter learning for conncted BN
+        name (str): name of latent var
+        n_clusters (int, optional): number of clusters for latent var distribution. Defaults to 3.
+
+    Returns:
+        HyBayesianNetwork: connected BN
+    """    
     type1 = get_nodes_type(data[bn1.V])
     type2 = get_nodes_type(data[bn2.V])
     hybn = HyBayesianNetwork()
@@ -60,6 +72,7 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
 
 
 def hierarchical_train (hybns: list, data: pd.DataFrame) -> HyBayesianNetwork:
+    
     edge_union = set()
     for bn in hybns:
         edge_union = edge_union.union(set(tuple(i) for i in bn.E))
