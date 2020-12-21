@@ -50,10 +50,15 @@ def visualizer(bn1: dict, node_type: dict, name: str):
                 
     color2hex = list(TABLEAU_COLORS.values())
     color2hex = {f'C{i}': value for i, value in enumerate(color2hex)}
+    
+    
 
     for i, color in enumerate(['blue', 'gold', 'lime', 'red', 'magenta', 'peru',
                            'dodgerblue', 'orangered', 'mediumspringgreen',
-                           'indianred', 'mediumslateblue', 'coral'], start=10):
+                           'indianred', 'mediumslateblue', 'coral','darkseagreen',
+                           'mediumseagreen', 'darkslategrey', 'pink', 'darkgoldenrod',
+                           'lightgoldenrodyellow', 'magenta', 'indigo','lightcoral', 
+                           'lightslategrey', 'honeydew', 'maroon',], start=10):
 
         color2hex[f'C{i}'] = CSS4_COLORS[color]
     
