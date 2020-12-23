@@ -24,7 +24,7 @@ def visualizer(bn1: dict, node_type: dict, name: str):
     G.add_edges_from(bn1['E'])
     nodes = list(G.nodes)
     
-    network = Network(height="300px", width="90%", notebook=True, directed=nx.is_directed(G), layout='hierarchical')
+    network = Network(height="800px", width="100%", notebook=True, directed=nx.is_directed(G), layout='hierarchical')
 
     added_nodes_levels  = dict()
 

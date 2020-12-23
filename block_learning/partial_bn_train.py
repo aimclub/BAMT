@@ -21,7 +21,7 @@ from kmodes.kmodes import KModes
 
 
 
-def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.DataFrame, name: str, n_clusters: int = 3) -> HyBayesianNetwork:
+def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.DataFrame, name: str, n_clusters: int = 3) -> (HyBayesianNetwork, dict):
     """Functtion for connection two BNs via latent variable with discrete dist
 
     Args:
@@ -33,17 +33,61 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
 
     Returns:
         HyBayesianNetwork: connected BN
+        dict: latent node type
     """    
-    type1 = get_nodes_type(data[bn1.V])
-    type2 = get_nodes_type(data[bn2.V])
+    
     hybn = HyBayesianNetwork()
-    if ('disc' not in type1.values()) & (('disc' not in type2.values())):
+    input_nodes = []
+    output_nodes = []
+    for v in bn1.V:
+        if len(bn1.getchildren(v)) == 0:
+            input_nodes.append(v)
+    for v in bn2.V:
+        if len(bn2.getparents(v)) == 0:
+            output_nodes.append(v)
+    type1 = get_nodes_type(data[input_nodes])
+    type2 = get_nodes_type(data[output_nodes])
+    latent_type = dict()
+
+    if (('disc' not in type1.values()) & ('disc' not in type2.values())) | (('disc' not in type1.values()) & (('disc' in type2.values()) & ('cont' in type2.values()))):
         latent_sample = np.random.normal(0, 1, data.shape[0])
         latent_sample = [x for x in latent_sample]
         data[name] = latent_sample
+        latent_type[name] = 'cont'
         skeleton = dict()
         skeleton['V'] = data.columns.to_list()
-        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V if (len(bn1.getchildren(x))==0)] + [[name, x] for x in bn2.V if len(bn2.getparents(x))==0]
+        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in input_nodes] + [[name, x] for x in output_nodes if type2[x] == 'cont']
+        skeleton['E'] = dag
+        nodes_type = get_nodes_type(data)
+        param_dict = parameter_learning(data, nodes_type, skeleton)
+        save_structure(skeleton, 'Structure_with_'+name)
+        skel = read_structure('Structure_with_'+name)
+        save_params(param_dict, 'Params_with_' + name)
+        params = read_params('Params_with_' + name)
+        hybn = HyBayesianNetwork(skel, params)
+    elif ('disc' not in type1.values()) & ('cont' not in type2.values()):
+        flag_disc = False
+        while not flag_disc:
+            parent_of_children = []
+            for node in input_nodes:
+                parent_of_children = parent_of_children + bn1.getparents(node)
+            parent_of_children = list(set(parent_of_children))
+            parents_type = get_nodes_type(data[parent_of_children])
+            if 'disc' in parents_type:
+                flag_disc=True
+                input_nodes = parent_of_children
+                type1 = parents_type
+            else:
+                input_nodes = parent_of_children
+
+        km = KModes(n_clusters=n_clusters, init='Huang', n_init=5)
+        clusters = km.fit_predict(data[input_nodes+output_nodes])
+        latent_sample = [int(x) for x in clusters]
+        data[name] = latent_sample
+        latent_type[name] = 'disc'
+        skeleton = dict()
+        skeleton['V'] = data.columns.to_list()
+        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in input_nodes if type1[x] != 'cont'] + [[name, x] for x in output_nodes]
         skeleton['E'] = dag
         nodes_type = get_nodes_type(data)
         param_dict = parameter_learning(data, nodes_type, skeleton)
@@ -54,12 +98,13 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
         hybn = HyBayesianNetwork(skel, params)
     else:
         km = KModes(n_clusters=n_clusters, init='Huang', n_init=5)
-        clusters = km.fit_predict(data)
+        clusters = km.fit_predict(data[input_nodes+output_nodes])
         latent_sample = [int(x) for x in clusters]
         data[name] = latent_sample
+        latent_type[name] = 'disc'
         skeleton = dict()
         skeleton['V'] = data.columns.to_list()
-        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in bn1.V if (type1[x] != 'cont') & (len(bn1.getchildren(x))==0)] + [[name, x] for x in bn2.V if len(bn2.getparents(x))==0]
+        dag = [x for x in bn1.E] + [x for x in bn2.E] + [[x, name] for x in input_nodes if type1[x] != 'cont'] + [[name, x] for x in output_nodes]
         skeleton['E'] = dag
         nodes_type = get_nodes_type(data)
         param_dict = parameter_learning(data, nodes_type, skeleton)
@@ -68,10 +113,11 @@ def connect_partial_bn(bn1: HyBayesianNetwork, bn2: HyBayesianNetwork, data: pd.
         save_params(param_dict, 'Params_with_' + name)
         params = read_params('Params_with_' + name)
         hybn = HyBayesianNetwork(skel, params)
-    return hybn
+
+    return hybn, latent_type
 
 
-def hierarchical_train (hybns: list, data: pd.DataFrame) -> HyBayesianNetwork:
+def hierarchical_train (hybns: list, data: pd.DataFrame, latent_node_type: dict) -> HyBayesianNetwork:
     
     edge_union = set()
     for bn in hybns:
@@ -82,7 +128,8 @@ def hierarchical_train (hybns: list, data: pd.DataFrame) -> HyBayesianNetwork:
     skeleton['V'] = data.columns.to_list()
     skeleton['E'] = edge_union
     nodes_type = get_nodes_type(data)
-    param_dict = parameter_learning(data, nodes_type, skeleton)
+    new_nodes_type = {**nodes_type, **latent_node_type}
+    param_dict = parameter_learning(data, new_nodes_type, skeleton)
     save_structure(skeleton, 'Hierarchial_structure')
     skel = read_structure('Hierarchial_structure')
     save_params(param_dict, 'Hierarchial_params')
@@ -111,9 +158,9 @@ def direct_connect (hybns: list, data: pd.DataFrame, node_type: dict):
     hc_K2Score = HillClimbSearch(data, scoring_method=K2Score(data))
     best_model_K2Score = hc_K2Score.estimate(white_list=white_list, fixed_edges=fixed_list)
     structure = [list(x) for x in list(best_model_K2Score.edges())] 
-    for edge in structure:
-        if (node_type[edge[0]] == 'cont') & (node_type[edge[1]] == 'disc'):
-            structure.remove(edge)
+    # for edge in structure:
+    #     if (node_type[edge[0]] == 'cont') & (node_type[edge[1]] == 'disc'):
+    #         structure.remove(edge)
     for edge in structure:
         i1 = 0
         i2 = 0
@@ -124,6 +171,7 @@ def direct_connect (hybns: list, data: pd.DataFrame, node_type: dict):
                 i2 = hybns.index(bn)
         if i1 != i2:
             nets_connection[str(i1)+" "+str(i2)] += 1
+    print(nets_connection)
     list_of_connect = []
     for key in nets_connection.keys():
         if nets_connection[key] != 0:
@@ -148,16 +196,18 @@ def direct_connect (hybns: list, data: pd.DataFrame, node_type: dict):
 
 def direct_train (hybns: list, data: pd.DataFrame, direct_connect_list: list) -> HyBayesianNetwork:
     list_of_pairs = []
+    latent_node_type = dict()
     for pair in direct_connect_list:
         bn1 = hybns[int(pair.split()[0])]
         bn2 = hybns[int(pair.split()[1])]
         name = "L " + pair.split()[0] +"_"+pair.split()[1]
-        pair_bn = connect_partial_bn(bn1, bn2, data[bn1.V + bn2.V], name)
+        pair_bn, l = connect_partial_bn(bn1, bn2, data[bn1.V + bn2.V], name)
+        latent_node_type[name] = l[name]
         sample = generate_synthetics(pair_bn, data.shape[0])
-        sample[name] = sample[name].astype('int')
+        sample[name] = sample[name].astype('float')
         data[name] = sample[name]
         list_of_pairs.append(pair_bn)
-    bn = hierarchical_train(list_of_pairs, data)
+    bn = hierarchical_train(list_of_pairs, data, latent_node_type)
     return bn
     
 
