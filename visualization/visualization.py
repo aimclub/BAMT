@@ -18,13 +18,15 @@ def visualizer(bn1: dict, node_type: dict, name: str):
         node_type (dict): dictionary with node types (descrete or continuous)
         name (str): name of output html page
     """
-  
+    %%javascript
+    IPython.OutputArea.auto_scroll_threshold = 9999;
+    
     G = nx.DiGraph()
     G.add_nodes_from(bn1['V'])
     G.add_edges_from(bn1['E'])
     nodes = list(G.nodes)
     
-    network = Network(height="300px", width="90%", notebook=True, directed=nx.is_directed(G), layout='hierarchical')
+    network = Network(height="800px", width="100%", notebook=True, directed=nx.is_directed(G), layout='hierarchical')
 
     added_nodes_levels  = dict()
 
@@ -102,6 +104,7 @@ def visualizer(bn1: dict, node_type: dict, name: str):
     plt.show()
     plt.close()
     
+    network.show_buttons(filter_=['physics'])
     return network.show(f'visualization_result/'+ name + '.html')
 
 
