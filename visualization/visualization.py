@@ -9,7 +9,7 @@ import pandas as pd
 from block_learning.sampling import get_probability
 
 
-def visualizer(bn1: dict, node_type: dict, name: str):
+def draw_BN(bn1: dict, node_type: dict, name: str):
    
     """Function for drawing the graph of BN
 
@@ -18,8 +18,6 @@ def visualizer(bn1: dict, node_type: dict, name: str):
         node_type (dict): dictionary with node types (descrete or continuous)
         name (str): name of output html page
     """
-    %%javascript
-    IPython.OutputArea.auto_scroll_threshold = 9999;
     
     G = nx.DiGraph()
     G.add_nodes_from(bn1['V'])
