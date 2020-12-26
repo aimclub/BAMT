@@ -9,7 +9,7 @@ import pandas as pd
 from block_learning.sampling import get_probability
 
 
-def visualizer(bn1: dict, node_type: dict, name: str):
+def draw_BN(bn1: dict, node_type: dict, name: str):
    
     """Function for drawing the graph of BN
 
@@ -18,7 +18,7 @@ def visualizer(bn1: dict, node_type: dict, name: str):
         node_type (dict): dictionary with node types (descrete or continuous)
         name (str): name of output html page
     """
-  
+    
     G = nx.DiGraph()
     G.add_nodes_from(bn1['V'])
     G.add_edges_from(bn1['E'])
@@ -102,6 +102,7 @@ def visualizer(bn1: dict, node_type: dict, name: str):
     plt.show()
     plt.close()
     
+    network.show_buttons(filter_=['physics'])
     return network.show(f'visualization_result/'+ name + '.html')
 
 
