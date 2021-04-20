@@ -70,14 +70,14 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
         for class_item in G.nodes:
             classes_for_legend.append(node_type[class_item])
         
-    classes2color = {node_class: color2hex[f'C{i}'] for i, node_class in enumerate(classes_for_legend)}
-    classes_for_legend_short = {node_class for i, node_class in enumerate(classes_for_legend)}
+    #classes2color = {node_class: color2hex[f'C{i}'] for i, node_class in enumerate(classes_for_legend)}
+    #classes_for_legend_short = {node_class for i, node_class in enumerate(classes_for_legend)}
 
     for node in nodes:
         node_class = node
         level = added_nodes_levels[node]
         network.add_node(node, label=node, 
-                         color=str(classes2color[node_type[node]]), 
+                         color='blue', 
                          size=45, level = level,
                          font={'size': 36},
                          title=f'Узел байесовской сети {node}')
@@ -91,12 +91,12 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
     handles = []
     labels = []
     
-    for geotag, color in classes2color.items():
-        handles.append(Rectangle([0, 0], 1, 0.5, color=color))
-        labels.append(geotag)
+    # for geotag, color in classes2color.items():
+    #     handles.append(Rectangle([0, 0], 1, 0.5, color=color))
+    #     labels.append(geotag)
                 
     plt.figure(figsize=(13.5, 1.5), dpi=150)
-    plt.legend(handles, labels, loc='center', ncol=5)
+    #plt.legend(handles, labels, loc='center', ncol=5)
     plt.axis('off')
     plt.tight_layout()
     plt.show()

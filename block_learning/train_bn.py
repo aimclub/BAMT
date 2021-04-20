@@ -68,7 +68,7 @@ def structure_learning(data: pd.DataFrame, algorithm: str, node_type: dict, init
 
     return skeleton
 
-def parameter_learning (data: pd.DataFrame, node_type: dict, skeleton: dict) -> dict:
+def parameter_learning(data: pd.DataFrame, node_type: dict, skeleton: dict) -> dict:
     """Function for parameter learning for hybrid BN
 
     Args:
@@ -78,7 +78,7 @@ def parameter_learning (data: pd.DataFrame, node_type: dict, skeleton: dict) -> 
 
     Returns:
         dict: dictionary with parameters of distributions in nodes
-    """    
+    """
     datacol = data.columns.to_list()
     node_data = dict()
     node_data['Vdata'] = dict()
@@ -90,40 +90,48 @@ def parameter_learning (data: pd.DataFrame, node_type: dict, skeleton: dict) -> 
                 if edge.index(node) == 0:
                     children.append(edge[1])
                 if edge.index(node) == 1:
-                    parents.append(edge[0])          
+                    parents.append(edge[0])
         if (node_type[node] == "disc") & (len(parents) == 0):
             numoutcomes = int(len(data[node].unique()))
             dist = DiscreteDistribution.from_samples(data[node].values)
-            vals = [str(x) for x in list(dist.parameters[0].keys())]
-            cprob =  list(dist.parameters[0].values())
+            vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
+            cprob = list(dict(sorted(dist.items())).values())
             if (len(children) != 0):
-                node_data['Vdata'][node] = {"numoutcomes":numoutcomes, "cprob": cprob, "parents": None, "vals":vals, "type": "discrete",  "children": children}
+                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": None, "vals": vals,
+                                            "type": "discrete", "children": children}
             else:
-                node_data['Vdata'][node] = {"numoutcomes":numoutcomes, "cprob": cprob, "parents": None, "vals":vals, "type": "discrete",  "children": None}
+                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": None, "vals": vals,
+                                            "type": "discrete", "children": None}
         if (node_type[node] == "disc") & (len(parents) != 0):
             numoutcomes = int(len(data[node].unique()))
             dist = DiscreteDistribution.from_samples(data[node].values)
-            vals = [str(x) for x in list(dist.parameters[0].keys())]
-            dist = ConditionalProbabilityTable.from_samples(data[parents+[node]].values)
+            vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
+            dist = ConditionalProbabilityTable.from_samples(data[parents + [node]].values)
             params = dist.parameters[0]
             cprob = dict()
             for i in range(0, len(params), len(vals)):
                 probs = []
-                for j in range (i, (i + len(vals))):
+                for j in range(i, (i + len(vals))):
                     probs.append(params[j][-1])
                 combination = [str(x) for x in params[i][0:len(parents)]]
                 cprob[str(combination)] = probs
             if (len(children) != 0):
-                node_data['Vdata'][node] = {"numoutcomes":numoutcomes, "cprob": cprob, "parents": parents, "vals":vals, "type": "discrete",  "children": children}
+                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
+                                            "vals": vals, "type": "discrete", "children": children}
             else:
-                node_data['Vdata'][node] = {"numoutcomes":numoutcomes, "cprob": cprob, "parents": parents, "vals":vals, "type": "discrete",  "children": None}
+                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
+                                            "vals": vals, "type": "discrete", "children": None}
         if (node_type[node] == "cont") & (len(parents) == 0):
-            mean_base, std = norm.fit(data[node].values)
-            variance = std**2
+            # mean_base, std = norm.fit(data[node].values)
+            # variance = std ** 2
+            mean_base = np.mean(data[node].values)
+            variance = np.var(data[node].values)
             if (len(children) != 0):
-                node_data['Vdata'][node] = {"mean_base":mean_base, "mean_scal": [], "parents": None, "variance":variance, "type": "lg",  "children": children}
+                node_data['Vdata'][node] = {"mean_base": mean_base, "mean_scal": [], "parents": None,
+                                            "variance": variance, "type": "lg", "children": children}
             else:
-                node_data['Vdata'][node] = {"mean_base":mean_base, "mean_scal": [], "parents": None, "variance":variance, "type": "lg",  "children": None}
+                node_data['Vdata'][node] = {"mean_base": mean_base, "mean_scal": [], "parents": None,
+                                            "variance": variance, "type": "lg", "children": None}
         if (node_type[node] == "cont") & (len(parents) != 0):
             disc_parents = []
             cont_parents = []
@@ -133,19 +141,30 @@ def parameter_learning (data: pd.DataFrame, node_type: dict, skeleton: dict) -> 
                 else:
                     cont_parents.append(parent)
 
-            if(len(disc_parents) == 0):
-                mean_base, std = norm.fit(data[node].values)
-                variance = std**2
-                model = linear_model.BayesianRidge()
+            if (len(disc_parents) == 0):
+                # mean_base, std = norm.fit(data[node].values)
+                # variance = std ** 2
+                # mean_base = np.mean(data[node].values)
+                # variance = np.var(data[node].values)
+                #model = linear_model.BayesianRidge()
+                model = linear_model.LinearRegression()
+                predict = []
                 if len(parents) == 1:
                     model.fit(np.transpose([data[parents[0]].values]), data[node].values)
+                    predict = model.predict(np.transpose([data[parents[0]].values]))
                 else:
                     model.fit(data[parents].values, data[node].values)
+                    predict = model.predict(data[parents].values)
+                variance = (RSE(data[node].values, predict)) ** 2
                 if (len(children) != 0):
-                    node_data['Vdata'][node] = {"mean_base":mean_base, "mean_scal": list(model.coef_), "parents": parents, "variance":variance, "type": "lg",  "children": children}
+                    node_data['Vdata'][node] = {"mean_base": model.intercept_, "mean_scal": list(model.coef_),
+                                                "parents": parents, "variance": variance, "type": "lg",
+                                                "children": children}
                 else:
-                    node_data['Vdata'][node] = {"mean_base":mean_base, "mean_scal": list(model.coef_), "parents": parents, "variance":variance, "type": "lg",  "children": None}
-            if(len(disc_parents) != 0) &  (len(cont_parents) != 0):
+                    node_data['Vdata'][node] = {"mean_base": model.intercept_, "mean_scal": list(model.coef_),
+                                                "parents": parents, "variance": variance, "type": "lg",
+                                                "children": None}
+            if (len(disc_parents) != 0) & (len(cont_parents) != 0):
                 hycprob = dict()
                 values = []
                 combinations = []
@@ -156,29 +175,41 @@ def parameter_learning (data: pd.DataFrame, node_type: dict, skeleton: dict) -> 
                 for comb in combinations:
                     mask = np.full(len(data), True)
                     for col, val in zip(disc_parents, comb):
-                         mask = (mask) & (data[col] == val)
+                        mask = (mask) & (data[col] == val)
                     new_data = data[mask]
-                    mean_base, std = norm.fit(new_data[node].values)
-                    variance = std**2
+                    mean_base = np.nan
+                    variance = np.nan
+                    predict = []
+                    # if new_data.shape[0] != 0:
+                    #     #mean_base, std = norm.fit(new_data[node].values)
+                    #     #variance = std ** 2
+                    #     mean_base = np.mean(new_data[node].values)
+                    #     variance = np.var(new_data[node].values)
                     if new_data.shape[0] != 0:
-                        model = linear_model.BayesianRidge()
+                        #model = linear_model.BayesianRidge()
+                        model = linear_model.LinearRegression()
                         if len(cont_parents) == 1:
-                           model.fit(np.transpose([new_data[cont_parents[0]].values]), new_data[node].values)
+                            model.fit(np.transpose([new_data[cont_parents[0]].values]), new_data[node].values)
+                            predict = model.predict(np.transpose([new_data[cont_parents[0]].values]))
                         else:
-                           model.fit(new_data[cont_parents].values, new_data[node].values)
+                            model.fit(new_data[cont_parents].values, new_data[node].values)
+                            predict = model.predict(new_data[cont_parents].values)
                         key_comb = [str(x) for x in comb]
-                        hycprob[str(key_comb)] = {'variance':variance, 'mean_base':mean_base, 'mean_scal': list(model.coef_)}
+                        mean_base = model.intercept_
+                        variance = (RSE(new_data[node].values, predict)) ** 2
+                        hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base,
+                                                  'mean_scal': list(model.coef_)}
                     else:
-                        scal = list(np.full(len(cont_parents), 0.0))
+                        scal = list(np.full(len(cont_parents), np.nan))
                         key_comb = [str(x) for x in comb]
-                        hycprob[str(key_comb)] = {'variance':variance, 'mean_base':mean_base, 'mean_scal': scal}
-                      
-                    
+                        hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': scal}
                 if (len(children) != 0):
-                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd",  "children": children, "hybcprob":hycprob}
+                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,
+                                                "hybcprob": hycprob}
                 else:
-                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd",  "children": None, "hybcprob":hycprob}        
-            if(len(disc_parents) != 0) &  (len(cont_parents) == 0):
+                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
+                                                "hybcprob": hycprob}
+            if (len(disc_parents) != 0) & (len(cont_parents) == 0):
                 hycprob = dict()
                 values = []
                 combinations = []
@@ -189,16 +220,36 @@ def parameter_learning (data: pd.DataFrame, node_type: dict, skeleton: dict) -> 
                 for comb in combinations:
                     mask = np.full(len(data), True)
                     for col, val in zip(disc_parents, comb):
-                         mask = (mask) & (data[col] == val)
+                        mask = (mask) & (data[col] == val)
                     new_data = data[mask]
-                    mean_base, std = norm.fit(new_data[node].values)
-                    variance = std**2
-                    key_comb = [str(x) for x in comb]
-                    hycprob[str(key_comb)] = {'variance':variance, 'mean_base':mean_base, 'mean_scal': []}
+                    if new_data.shape[0] != 0:
+                        #mean_base, std = norm.fit(new_data[node].values)
+                        #variance = std ** 2
+                        mean_base = np.mean(new_data[node].values)
+                        variance = np.var(new_data[node].values)
+                        key_comb = [str(x) for x in comb]
+                        hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
+                    else:
+                        mean_base = np.nan
+                        variance = np.nan
+                        key_comb = [str(x) for x in comb]
+                        hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
                 if (len(children) != 0):
-                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd",  "children": children, "hybcprob":hycprob}
+                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,
+                                                "hybcprob": hycprob}
                 else:
-                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd",  "children": None, "hybcprob":hycprob}    
-                    
+                    node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
+                                                "hybcprob": hycprob}
+
     return node_data
 
+
+
+def RSE(y_true, y_predicted):
+   
+    y_true = np.array(y_true)
+    y_predicted = np.array(y_predicted)
+    RSS = np.sum(np.square(y_true - y_predicted))
+
+    rse = math.sqrt(RSS / (len(y_true)))
+    return rse

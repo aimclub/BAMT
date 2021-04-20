@@ -3,19 +3,38 @@ import numpy as np
 import pandas as pd
 import math
 
-def generate_synthetics(bn: HyBayesianNetwork, n: int = 100) -> pd.DataFrame:
-    """Function for sampling from bayesian network
+def generate_synthetics(bn: HyBayesianNetwork, n: int = 1000, evidence: dict = None) -> pd.DataFrame:
+    """Function for sampling from BN
 
     Args:
-        bn (HyBayesianNetwork): input trained bayesian network
-        n (int, optional): Number of samples. Defaults to 100.
+        bn (HyBayesianNetwork): learnt BN
+        n (int, optional): number of samples (rows). Defaults to 1000.
+        evidence (dict): dictionary with values of params that initialize nodes
 
     Returns:
-        pd.DataFrame: output dataframe with samples.
-    """    
-    sample = bn.randomsample(n)
-    sample_df = pd.DataFrame(sample)
-    return sample_df
+        pd.DataFrame: final sample
+    """
+    sample = pd.DataFrame()
+
+    if evidence:
+        sample = pd.DataFrame(bn.randomsample(5 * n, evidence=evidence))
+        # cont_nodes = []
+        # for key in bn.nodes.keys():
+        #     if (str(type(bn.nodes[key])).split('.')[1] == 'lg') | (str(type(bn.nodes[key])).split('.')[1] == 'lgandd'):
+        #         cont_nodes.append(key)
+        sample.dropna(inplace=True)
+        #sample = sample.loc[(sample.loc[:, cont_nodes].values >= 0).all(axis=1)]
+        sample.reset_index(inplace=True, drop=True)
+    else:
+        sample = pd.DataFrame(bn.randomsample(5 * n))
+        # cont_nodes = []
+        # for key in bn.nodes.keys():
+        #     if (str(type(bn.nodes[key])).split('.')[1] == 'lg') | (str(type(bn.nodes[key])).split('.')[1] == 'lgandd'):
+        #         cont_nodes.append(key)
+        sample.dropna(inplace=True)
+        #sample = sample.loc[(sample.loc[:, cont_nodes].values >= 0).all(axis=1)]
+        sample.reset_index(inplace=True, drop=True)
+    return sample
 
 
 def get_probability(sample: pd.DataFrame, initial_data: pd.DataFrame, parameter: str) -> dict:

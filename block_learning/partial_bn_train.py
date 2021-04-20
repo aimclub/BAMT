@@ -17,8 +17,10 @@ from sklearn.cluster import KMeans
 from block_learning.save_bn import save_structure, save_params
 from block_learning.read_bn import read_structure, read_params
 from block_learning.sampling import generate_synthetics
+from kmodes.kprototypes import KPrototypes
 from kmodes.kmodes import KModes
-
+from pgmpy.models import BayesianModel
+import collections
 
 
 def getchildren(structure: dict, node: str):
@@ -63,13 +65,27 @@ def connect_partial_bn(bn1: dict, bn2: dict, data: pd.DataFrame, name: str, n_cl
             output_nodes.append(v)
     type1 = get_nodes_type(data[input_nodes])
     type2 = get_nodes_type(data[output_nodes])
-    
+    cat_nodes = []
     latent_sample = []
+    for i in type1.keys():
+        if type1[i] == 'disc':
+            cat_nodes.append(i)
+    for i in type2.keys():
+        if type2[i] == 'disc':
+            cat_nodes.append(i)
+    all_connection_nodes = input_nodes+output_nodes
+    index_of_cat = []
+    for node in cat_nodes:
+        index_of_cat.append(all_connection_nodes.index(node))
+    
+
+
+
 
     if (('disc' not in type1.values()) & ('disc' not in type2.values())) | (('disc' not in type1.values()) & (('disc' in type2.values()) & ('cont' in type2.values()))):
         latent_sample = np.random.normal(0, 1, data.shape[0])
         latent_sample = [x for x in latent_sample]
-        skeleton['V'] = data.columns.to_list() +[name]
+        skeleton['V'] = data[bn1['V'] + bn2['V']].columns.to_list() +[name]
         dag = [x for x in bn1['E']] + [x for x in bn2['E']] + [[x, name] for x in input_nodes] + [[name, x] for x in output_nodes if type2[x] == 'cont']
         skeleton['E'] = dag
         # nodes_type = get_nodes_type(data)
@@ -93,11 +109,12 @@ def connect_partial_bn(bn1: dict, bn2: dict, data: pd.DataFrame, name: str, n_cl
                 type1 = parents_type
             else:
                 input_nodes = parent_of_children
-
         km = KModes(n_clusters=n_clusters, init='Huang', n_init=5)
-        clusters = km.fit_predict(data[input_nodes+output_nodes])
+        if (len(cat_nodes) != len(all_connection_nodes)):
+            km = KPrototypes(n_clusters=n_clusters, init='Huang', n_init=5)
+        clusters = km.fit_predict(data[input_nodes+output_nodes], categorical=index_of_cat)
         latent_sample = [int(x) for x in clusters]
-        skeleton['V'] = data.columns.to_list() + [name]
+        skeleton['V'] = data[bn1['V'] + bn2['V']].columns.to_list() + [name]
         dag = [x for x in bn1['E']] + [x for x in bn2['E']] + [[x, name] for x in input_nodes if type1[x] != 'cont'] + [[name, x] for x in output_nodes]
         skeleton['E'] = dag
         # nodes_type = get_nodes_type(data)
@@ -108,10 +125,13 @@ def connect_partial_bn(bn1: dict, bn2: dict, data: pd.DataFrame, name: str, n_cl
         # params = read_params('Params_with_' + name)
         # hybn = HyBayesianNetwork(skel, params)
     else:
+     
         km = KModes(n_clusters=n_clusters, init='Huang', n_init=5)
-        clusters = km.fit_predict(data[input_nodes+output_nodes])
+        if (len(cat_nodes) != len(all_connection_nodes)):
+            km = KPrototypes(n_clusters=n_clusters, init='Huang', n_init=5)
+        clusters = km.fit_predict(data[input_nodes+output_nodes], categorical=index_of_cat)
         latent_sample = [int(x) for x in clusters]
-        skeleton['V'] = data.columns.to_list() + [name]
+        skeleton['V'] = data[bn1['V'] + bn2['V']].columns.to_list() + [name]
         dag = [x for x in bn1['E']] + [x for x in bn2['E']] + [[x, name] for x in input_nodes if type1[x] != 'cont'] + [[name, x] for x in output_nodes]
         skeleton['E'] = dag
         # nodes_type = get_nodes_type(data)
@@ -215,6 +235,31 @@ def direct_train (hybns: list, data: pd.DataFrame, direct_connect_list: list) ->
     bn = hierarchical_train(list_of_pairs, data)
     return bn
     
+
+def range_pairs (bns: list, discrete_data: pd.DataFrame) -> dict:
+    pairs_score = dict()
+    new_data = copy(discrete_data)
+    for bn1 in bns:
+        for bn2 in bns:
+            if bn1 != bn2:
+                name = 'V'+str(bns.index(bn1))+'_'+str(bns.index(bn2))
+                cols = bn1['V'] + bn2['V']
+                pair = bn1['E'] + bn2['E'] 
+                leaf = []
+                root = []
+                for x,y in zip(bn1['V'], bn2['V']):
+                    if len(getchildren(bn1, x)) == 0:
+                        leaf.append(x)
+                    if len(getparents(bn2, y)) == 0:
+                        root.append(y)
+                pair += [[x,y] for x in leaf for y in root]    
+
+                score = K2Score(new_data[cols]).score(BayesianModel(pair))
+                pairs_score[name] = score
+    sorted_dict = {k: v for k, v in sorted(pairs_score.items(), key=lambda item: item[1], reverse=True)}
+    return sorted_dict
+
+
 
 
 
