@@ -1,22 +1,20 @@
 from pomegranate import DiscreteDistribution
-from block_learning.train_bn import parameter_learning
+from bayesian.train_bn import parameter_learning
 import numpy as np
 from copy import copy
 import pandas as pd
-from libpgm.hybayesiannetwork import HyBayesianNetwork
+from external.libpgm.hybayesiannetwork import HyBayesianNetwork
 from pgmpy.estimators import HillClimbSearch
 from pgmpy.estimators import K2Score, BicScore
 from pgmpy.estimators import MmhcEstimator
 from pgmpy.base import DAG
 import networkx as nx
-from data_process.preprocessing import get_nodes_type
+from preprocess.discretization import get_nodes_type
 import json
-from libpgm.nodedata import NodeData
-from libpgm.graphskeleton import GraphSkeleton
+from external.libpgm.nodedata import NodeData
+from external.libpgm.graphskeleton import GraphSkeleton
 from sklearn.cluster import KMeans
-from block_learning.save_bn import save_structure, save_params
-from block_learning.read_bn import read_structure, read_params
-from block_learning.sampling import generate_synthetics
+from bayesian.save_bn import save_structure, save_params, read_structure, read_params
 from kmodes.kprototypes import KPrototypes
 from kmodes.kmodes import KModes
 from pgmpy.models import BayesianModel

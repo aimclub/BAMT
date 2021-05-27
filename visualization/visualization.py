@@ -1,12 +1,53 @@
+import matplotlib.pyplot as plt
 import networkx as nx
+import pandas as pd
+import seaborn as sns
+import numpy as np
 from pyvis.network import Network
 from matplotlib.colors import CSS4_COLORS, TABLEAU_COLORS
 from matplotlib.patches import Rectangle
-from typing import Dict, List
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from block_learning.sampling import get_probability
+
+
+
+def draw_comparative_hist(parameter: str, original_data: pd.DataFrame, synthetic_data: pd.DataFrame, node_type: dict):
+    """Function for drawing comparative distribution
+
+    Args:
+        parameter (str): name of parameter
+        original_data (pd.DataFrame): original dataset
+        data_without_restore (pd.DataFrame): sample of bn with node
+        data_with_restore (pd.DataFrame): sample of bn without node
+        node_type (dict): dictionary with types of nodes
+    """
+    if (node_type[parameter] == 'disc'):
+        df1 = pd.DataFrame()
+        df1[parameter] = original_data[parameter]
+        df1['Data'] = 'Исходные данные'
+        df1['Probability'] = df1[parameter].apply(
+            lambda x: (df1.groupby(parameter)[parameter].count()[x]) / original_data.shape[0])
+        df2 = pd.DataFrame()
+        df2[parameter] = synthetic_data[parameter]
+        df2['Data'] = 'Синтетические данные'
+        df2['Probability'] = df2[parameter].apply(
+            lambda x: (df2.groupby(parameter)[parameter].count()[x]) / synthetic_data.shape[0])
+        # df3 = pd.DataFrame()
+        # df3[parameter] = data_with_restore[parameter]
+        # df3['Data'] = 'Данные из сети без изучаемого узла'
+        # df3['Probability'] = df3[parameter].apply(
+        #     lambda x: (df3.groupby(parameter)[parameter].count()[x]) / data_with_restore.shape[0])
+        final_df = pd.concat([df1, df2])
+        ax = sns.barplot(x=parameter, y="Probability", hue="Data", data=final_df)
+        ax.xaxis.set_tick_params(rotation=45)
+    else:
+        ax = sns.distplot(original_data[parameter], hist=False, label='Исходные данные')
+        ax = sns.distplot(synthetic_data[parameter], hist=False, label='Синтетические данные')
+        #ax = sns.distplot(data_with_restore[parameter], hist=False, label='Данные из сети без изучаемого узла')
+        ax.xaxis.set_tick_params(rotation=45)
+        ax.legend()
+
+    # ax.set_xticks(range(0, original_data[parameter].nunique(), 5))
+
+    plt.show()
 
 
 def draw_BN(bn1: dict, node_type: dict, name: str):
@@ -70,11 +111,9 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
         for class_item in G.nodes:
             classes_for_legend.append(node_type[class_item])
         
-    #classes2color = {node_class: color2hex[f'C{i}'] for i, node_class in enumerate(classes_for_legend)}
-    #classes_for_legend_short = {node_class for i, node_class in enumerate(classes_for_legend)}
+    classes2color = {node_class: color2hex[f'C{i}'] for i, node_class in enumerate(classes_for_legend)}
 
     for node in nodes:
-        node_class = node
         level = added_nodes_levels[node]
         network.add_node(node, label=node, 
                          color='blue', 
@@ -91,88 +130,16 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
     handles = []
     labels = []
     
-    # for geotag, color in classes2color.items():
-    #     handles.append(Rectangle([0, 0], 1, 0.5, color=color))
-    #     labels.append(geotag)
+    for geotag, color in classes2color.items():
+        handles.append(Rectangle([0, 0], 1, 0.5, color=color))
+        labels.append(geotag)
                 
-    plt.figure(figsize=(13.5, 1.5), dpi=150)
-    #plt.legend(handles, labels, loc='center', ncol=5)
-    plt.axis('off')
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+    # plt.figure(figsize=(13.5, 1.5), dpi=150)
+    # plt.legend(handles, labels, loc='center', ncol=5)
+    # plt.axis('off')
+    # plt.tight_layout()
+    # plt.show()
+    #plt.close()
     
-    network.show_buttons(filter_=['physics'])
+    #network.show_buttons(filter_=['physics'])
     return network.show(f'visualization_result/'+ name + '.html')
-
-
-
-
-
-def grouped_barplot(df: pd.DataFrame, cat: str, subcat: str, val: str, err: str):
-    """Helper function for drawing hists with error bar
-
-        Args:
-            df (pd.DataFrame): source dataset
-            cat (str): name of parameter
-            subcat (str): name of column with data
-            val (str): name of column with probability
-            err (str): name of columns with error
-        """        
-    u = df[cat].unique()
-    x = np.arange(len(u))
-    subx = df[subcat].unique()
-    offsets = (np.arange(len(subx))-np.arange(len(subx)).mean())/(len(subx)+1.)
-    width= np.diff(offsets).mean()
-    for i, gr in enumerate(subx):
-        dfg = df[df[subcat] == gr]
-        plt.bar(x+offsets[i], dfg[val].values, width=width, 
-                label="{}".format(gr), yerr=dfg[err].values)
-    plt.xlabel(cat)
-    plt.ylabel(val)
-    if isinstance(u[0], float):
-        u = [round(_, 1) for _ in u]
-            
-    plt.xticks(x, u, rotation=90)
-    plt.legend()
-    plt.show()
-        
-
-
-
-def draw_comparative_hist(parameter: str, original_data: pd.DataFrame, sample: pd.DataFrame):
-    """Function for drawing comparative hist for discrete synthetic and real data
-
-    Args:
-        parameter (str): name of parameter
-        original_data (pd.DataFrame): real dataset
-        sample (pd.DataFrame): synthetic dataset
-    """    
-    df1 = pd.DataFrame()
-    probs = get_probability(original_data, original_data, parameter)
-            
-    df1[parameter] = probs.keys()
-        
-    
-        
-    df1['Probability'] = [p[1] for p in probs.values()]
-    df1['Error'] = [p[2]-p[1] for p in probs.values()]
-    df1['Data'] = 'Исходные данные'
-
-        
-    df2 = pd.DataFrame()
-    probs = get_probability(sample, original_data, parameter)
-    df2[parameter] =probs.keys()
-    df2['Probability']  = [p[1] for p in probs.values()]
-    df2['Error'] = [p[2]-p[1] for p in probs.values()]
-    df2['Data'] = 'Синтетические данные'
-
-
-        
-    final_df = pd.concat([df1, df2])
-    
-        
-    
-    grouped_barplot(final_df, parameter, 'Data', 'Probability', 'Error')
-    plt.show()
-        
