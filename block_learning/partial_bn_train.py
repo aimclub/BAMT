@@ -18,7 +18,7 @@ from bayesian.save_bn import save_structure, save_params, read_structure, read_p
 from kmodes.kprototypes import KPrototypes
 from kmodes.kmodes import KModes
 from pgmpy.models import BayesianModel
-import collections
+from typing import Tuple
 
 
 def getchildren(structure: dict, node: str):
@@ -37,7 +37,7 @@ def getparents(structure: dict, node: str):
 
 
 
-def connect_partial_bn(bn1: dict, bn2: dict, data: pd.DataFrame, name: str, n_clusters: int = 3) -> (dict, list):
+def connect_partial_bn(bn1: dict, bn2: dict, data: pd.DataFrame, name: str, n_clusters: int = 3) -> Tuple[dict, list]:
     """Functtion for connection two BNs via latent variable with discrete dist
 
     Args:
