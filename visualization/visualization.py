@@ -1,3 +1,4 @@
+import os.path
 import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
@@ -6,7 +7,6 @@ import numpy as np
 from pyvis.network import Network
 from matplotlib.colors import CSS4_COLORS, TABLEAU_COLORS
 from matplotlib.patches import Rectangle
-
 
 
 def draw_comparative_hist(parameter: str, original_data: pd.DataFrame, synthetic_data: pd.DataFrame, node_type: dict):
@@ -142,4 +142,7 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
     #plt.close()
     
     #network.show_buttons(filter_=['physics'])
-    return network.show(f'visualization_result/'+ name + '.html')
+    if not (os.path.exists('../visualization_result')):
+        os.mkdir("../visualization_result")
+        
+    return network.show(f'../visualization_result/'+ name + '.html')
