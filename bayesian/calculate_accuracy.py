@@ -6,9 +6,10 @@ from sklearn.metrics import accuracy_score, mean_squared_error
 from external.libpgm.sampleaggregator import SampleAggregator
 from preprocess.discretization import get_nodes_type
 from external.libpgm.hybayesiannetwork import HyBayesianNetwork
+from typing import Tuple
 
 
-def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> (dict, dict, list, list):
+def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> Tuple[dict, dict, list, list]:
     """Function for calculating of params restoration accuracy
 
     Args:
@@ -19,7 +20,8 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> (
     Returns:
         dict: accuracy score (discrete vars)
         dict: rmse score (continuous vars)
-        float: density of BN graph
+        list: real data of params
+        list: predicted data of params
     """
 
     accuracy_dict = dict()
