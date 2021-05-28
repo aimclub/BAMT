@@ -866,10 +866,23 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             
                         #     hycprob[str(key_comb)] = {'variance': variances, 'mean_base': mean_node, 'mean_scal': []}
                         # else:
-                        mean_base = np.mean(new_data[node].values)
-                        variance = np.var(new_data[node].values)
+                        #mean_base = np.mean(new_data[node].values)
+                        #variance = np.var(new_data[node].values)
+                        n_comp = n_component(new_data, [node])
+                        gmm = GaussianMixture(n_components=n_comp)
+                        gmm.fit(np.transpose([new_data[node].values]))
+                        means = gmm.means_
                             #key_comb = [str(x) for x in comb]
-                        hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
+                        means_list = []
+                        for el in means:
+                            means_list.append(el[0])
+                        var = gmm.covariances_
+                        var_list = []
+                        for v in var:
+                            var_list.append(v[0][0])
+                        cat = gmm.predict(np.transpose([new_data[node].values]))
+                        dis = str(DiscreteDistribution.from_samples(cat))
+                        hycprob[str(key_comb)] = {'variance': var_list, 'mean_base': means_list, 'mean_scal': dis}
                         
                     else:
                         mean_base = np.nan
@@ -899,12 +912,16 @@ def RSE(y_true, y_predicted):
 def n_component(data: pd.DataFrame, columns: list):
     bic = -1000000000000000
     n = 0
-    for i in range(1, 20, 1):
+    max_comp = 10
+    if data.shape[0] < max_comp:
+        max_comp = data.shape[0]
+    for i in range(1, 10, 1):
         gm = GaussianMixture(n_components=i, random_state=0)
         if len(columns) == 1:
             x = np.transpose([data[columns[0]].values])
         else:
             x = data[columns].values
+
         gm.fit(x)
         ll_current = np.sum(gm.score_samples(x))  
         bic_current = (BIC(ll_current, i, data.shape[0]))
@@ -913,6 +930,7 @@ def n_component(data: pd.DataFrame, columns: list):
             n = i
         else:
             break
+
     return(n)
 
 def BIC (LL, n_components, n):

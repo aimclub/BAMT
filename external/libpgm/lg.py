@@ -56,7 +56,7 @@ class Lg():
         self.Vdataentry = Vdataentry
         '''A dict containing CPD data for the node.'''
 
-    def choose(self, pvalues, outcome):
+    def choose_simple(self, pvalues, outcome):
         '''
         Randomly choose state of node from probability distribution conditioned on *pvalues*.
         This method has two parts: (1) determining the proper probability
@@ -85,7 +85,7 @@ class Lg():
         # variance, thus requiring a square root
         return random.gauss(mean, math.sqrt(variance))
 
-    def choose_gmm(self, pvalues, outcome):
+    def choose(self, pvalues, outcome):
         '''
         Randomly choose state of node from probability distribution conditioned on *pvalues*.
         This method has two parts: (1) determining the proper probability

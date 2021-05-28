@@ -30,221 +30,284 @@ import random
 import math
 from scipy.spatial import distance
 import numpy as np
+from pomegranate import DiscreteDistribution
 class Lgandd():
-    '''
-    This class represents a LG + D node, as described above. It contains the *Vdataentry* attribute and the *choose* method
+	'''
+	This class represents a LG + D node, as described above. It contains the *Vdataentry* attribute and the *choose* method
 
-    '''
-    def __init__(self, Vdataentry):
-        '''
-        This class is constructed with the argument *Vdataentry* which must be a dict containing a dictionary entry for this particualr node. The dict must contain an entry of the following form::
+	'''
+	def __init__(self, Vdataentry):
+		'''
+		This class is constructed with the argument *Vdataentry* which must be a dict containing a dictionary entry for this particualr node. The dict must contain an entry of the following form::
 
-            "cprob": {
-                "['<parent 1, value 1>',...,'<parent n, value 1>']": {
-                                "mean_base": <float used for mean starting point
-                                              (\mu_0)>,
-                                "mean_scal": <array of scalars by which to
-                                              multiply respectively ordered 
-                                              continuous parent outcomes>,
-                                "variance": <float for variance>
-                            }
-                ...
-                "['<parent 1, value j>',...,'<parent n, value k>']": {
-                                "mean_base": <float used for mean starting point
-                                              (\mu_0)>,
-                                "mean_scal": <array of scalars by which to
-                                              multiply respectively ordered 
-                                              continuous parent outcomes>,
-                                "variance": <float for variance>
-                            }
-            }
+			"cprob": {
+				"['<parent 1, value 1>',...,'<parent n, value 1>']": {
+								"mean_base": <float used for mean starting point
+											  (\mu_0)>,
+								"mean_scal": <array of scalars by which to
+											  multiply respectively ordered 
+											  continuous parent outcomes>,
+								"variance": <float for variance>
+							}
+				...
+				"['<parent 1, value j>',...,'<parent n, value k>']": {
+								"mean_base": <float used for mean starting point
+											  (\mu_0)>,
+								"mean_scal": <array of scalars by which to
+											  multiply respectively ordered 
+											  continuous parent outcomes>,
+								"variance": <float for variance>
+							}
+			}
 
-        This ``"cprob"`` entry contains a linear Gaussian distribution (conditioned on the Gaussian parents) for each combination of discrete parents.  The *Vdataentry* attribute is set equal to this *Vdataentry* input upon instantiation.
+		This ``"cprob"`` entry contains a linear Gaussian distribution (conditioned on the Gaussian parents) for each combination of discrete parents.  The *Vdataentry* attribute is set equal to this *Vdataentry* input upon instantiation.
 
-        '''
-        self.Vdataentry = Vdataentry
-        '''A dict containing CPD data for the node.'''
+		'''
+		self.Vdataentry = Vdataentry
+		'''A dict containing CPD data for the node.'''
 
-    def choose(self, pvalues, outcome):
-        '''
-        Randomly choose state of node from probability distribution conditioned on *pvalues*.
-        This method has two parts: (1) determining the proper probability
-        distribution, and (2) using that probability distribution to determine
-        an outcome.
-        Arguments:
-            1. *pvalues* -- An array containing the assigned states of the node's parents. This must be in the same order as the parents appear in ``self.Vdataentry['parents']``.
-        The function goes to the entry of ``"cprob"`` that matches the outcomes of its discrete parents. Then, it constructs a Gaussian distribution based on its Gaussian parents and the parameters found at that entry. Last, it samples from that distribution and returns its outcome.
-        '''
-        random.seed()
+	def choose_simple(self, pvalues, outcome):
+		'''
+		Randomly choose state of node from probability distribution conditioned on *pvalues*.
+		This method has two parts: (1) determining the proper probability
+		distribution, and (2) using that probability distribution to determine
+		an outcome.
+		Arguments:
+			1. *pvalues* -- An array containing the assigned states of the node's parents. This must be in the same order as the parents appear in ``self.Vdataentry['parents']``.
+		The function goes to the entry of ``"cprob"`` that matches the outcomes of its discrete parents. Then, it constructs a Gaussian distribution based on its Gaussian parents and the parameters found at that entry. Last, it samples from that distribution and returns its outcome.
+		'''
+		random.seed()
 
-        # split parents by type
-        dispvals = []
-        lgpvals = []
-        for pval in pvalues:
-            if (isinstance(pval, str)):
-                dispvals.append(pval)
-            else:
-                lgpvals.append(pval)
-      
+		# split parents by type
+		dispvals = []
+		lgpvals = []
+		for pval in pvalues:
+			if (isinstance(pval, str)):
+				dispvals.append(pval)
+			else:
+				lgpvals.append(pval)
+	  
 
-        # error check
-        try: 
-            a = dispvals[0]
-            a = lgpvals[0]
-        except IndexError:
-            #print ("Did not find LG and discrete type parents.")
-            s = "Did not find LG and discrete type parents."
+		# error check
+		try: 
+			a = dispvals[0]
+			a = lgpvals[0]
+		except IndexError:
+			#print ("Did not find LG and discrete type parents.")
+			s = "Did not find LG and discrete type parents."
 
-        # find correct Gaussian
-        lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
+		# find correct Gaussian
+		lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
 
-        # calculate Bayesian parameters (mean and variance)
-        mean = lgdistribution["mean_base"]
-        if (self.Vdataentry["parents"] != None):
-            for x in range(len(lgpvals)):
-                if (lgpvals[x] != "default"):
-                    mean += lgpvals[x] * lgdistribution["mean_scal"][x]
-                else:
+		# calculate Bayesian parameters (mean and variance)
+		mean = lgdistribution["mean_base"]
+		if (self.Vdataentry["parents"] != None):
+			for x in range(len(lgpvals)):
+				if (lgpvals[x] != "default"):
+					mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+				else:
 
-                    # temporary error check 
-                    print ("Attempted to sample node with unassigned parents.")
+					# temporary error check 
+					print ("Attempted to sample node with unassigned parents.")
 
-        variance = lgdistribution["variance"]
+		variance = lgdistribution["variance"]
 
-        # draw random outcome from Gaussian (I love python)
-        return random.gauss(mean, math.sqrt(variance))     
-
-    def choose_mix(self, pvalues, outcome):
-        '''
-        Randomly choose state of node from probability distribution conditioned on *pvalues*.
-
-        This method has two parts: (1) determining the proper probability
-        distribution, and (2) using that probability distribution to determine
-        an outcome.
-
-        Arguments:
-            1. *pvalues* -- An array containing the assigned states of the node's parents. This must be in the same order as the parents appear in ``self.Vdataentry['parents']``.
-
-        The function goes to the entry of ``"cprob"`` that matches the outcomes of its discrete parents. Then, it constructs a Gaussian distribution based on its Gaussian parents and the parameters found at that entry. Last, it samples from that distribution and returns its outcome.
-
-        '''
-        random.seed()
-
-        # split parents by type
-        dispvals = []
-        lgpvals = []
-        for pval in pvalues:
-            if (isinstance(pval, str)):
-                dispvals.append(pval)
-            else:
-                lgpvals.append(pval)
-      
-
-        # error check
-        try: 
-            a = dispvals[0]
-            a = lgpvals[0]
-        except IndexError:
-            #print ("Did not find LG and discrete type parents.")
-            s = "Did not find LG and discrete type parents."
-
-        # find correct Gaussian
-        lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
-        # mean_node = 0
-        # variance_node = 1
-
-        # calculate Bayesian parameters (mean and variance)
-        mean = lgdistribution["mean_base"]
-        variance = lgdistribution["variance"]
-        if isinstance(mean, list):
-            parents = []
-            parents_mean = []
-            if (len(lgpvals)) != 0:
-                if (self.Vdataentry["parents"] != None):
-                    for x in range(len(lgpvals)):
-                        if (lgpvals[x] != "default"):
-                            parents.append(lgpvals[x])
-                            parents_mean.append(lgdistribution["mean_scal"][x])
-                        else:
-                            print ("Attempted to sample node with unassigned parents.")
-                    if len(parents) == 1:
-                        if str(parents[0]) != 'nan':
-                            dists = []
-                            for vector in parents_mean:
-                                try:
-                                    dists.append(distance.euclidean(parents, vector))
-                                except:
-                                    dists.append(100000)
-                            label = dists.index(min(dists))
-                            mean_node = mean[label]
-                            variance_node = variance[label]
-                        else:
-                            mean_node = mean[random.randint(0,4)]
-                            variance_node = variance[random.randint(0,4)]
-                    else:
-                        if np.nan in parents:
-                            if parents.count(np.nan) < len(parents):
-                                nan_index = [i for i,d in enumerate(parents) if str(d)=='nan']
-                                dists = []
-                                for vector in parents_mean:
-                                    try:
-                                        dists.append(distance.euclidean([p for p in parents if parents.index(p) not in nan_index], [p for p in vector if vector.index(p) not in nan_index]))
-                                    except:
-                                        dists.append(100000000)
-                                    label = dists.index(min(dists))
-                                    mean_node = mean[label]
-                                    variance_node = variance[label]
-                            else:
-                                mean_node = mean[random.randint(0,4)]
-                                variance_node = variance[random.randint(0,4)]
-                        else:
-                            dists = []
-                            for vector in parents_mean:
-                                try:
-                                    dists.append(distance.euclidean(parents, vector))
-                                except:
-                                    dists.append(100000000)
-                            label = dists.index(min(dists))
-                            mean_node = mean[label]
-                            variance_node = variance[label]
-
-                    # dists = []
-                    # for vector in parents_mean:
-                        
-                    #     dists.append(distance.euclidean(parents, vector))
-                        
-                    # label = dists.index(min(dists))
-                    # mean_node = mean[label]
-                    # variance_node = variance[label]
-            else:
-                label = random.randint(0,4)
-                mean_node = mean[label]
-                variance_node = variance[label]
-        else:
-            if (self.Vdataentry["parents"] != None):
-                for x in range(len(lgpvals)):
-                    if (lgpvals[x] != "default"):
-                        mean += lgpvals[x] * lgdistribution["mean_scal"][x]
-                    else:
-
-                    # temporary error check 
-                        print ("Attempted to sample node with unassigned parents.")
-            mean_node = mean
-            variance_node = variance
-            
+		# draw random outcome from Gaussian (I love python)
+		return random.gauss(mean, math.sqrt(variance))     
 
 
-        
-        # if (self.Vdataentry["parents"] != None):
-        #     for x in range(len(lgpvals)):
-        #         if (lgpvals[x] != "default"):
-        #             mean += lgpvals[x] * lgdistribution["mean_scal"][x]
-        #         else:
+	def choose(self, pvalues, outcome):
+		'''
+		Randomly choose state of node from probability distribution conditioned on *pvalues*.
+		This method has two parts: (1) determining the proper probability
+		distribution, and (2) using that probability distribution to determine
+		an outcome.
+		Arguments:
+			1. *pvalues* -- An array containing the assigned states of the node's parents. This must be in the same order as the parents appear in ``self.Vdataentry['parents']``.
+		The function creates a Gaussian distribution in the manner described in :doc:`lgbayesiannetwork`, and samples from that distribution, returning its outcome.
+		
+		'''
+		random.seed()
 
-        #             # temporary error check 
-        #             print ("Attempted to sample node with unassigned parents.")
+		# split parents by type
+		dispvals = []
+		lgpvals = []
+		for pval in pvalues:
+			if (isinstance(pval, str)):
+				dispvals.append(pval)
+			else:
+				lgpvals.append(pval)
+	  
 
-        #variance = lgdistribution["variance"]
+		# error check
+		try: 
+			a = dispvals[0]
+			a = lgpvals[0]
+		except IndexError:
+			#print ("Did not find LG and discrete type parents.")
+			s = "Did not find LG and discrete type parents."
 
-        # draw random outcome from Gaussian (I love python)
-        return random.gauss(mean_node, math.sqrt(variance_node))          
+		# find correct Gaussian
+		lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
+
+		# calculate Bayesian parameters (mean and variance)
+		mean = lgdistribution["mean_base"]
+		if (self.Vdataentry["parents"] != None):
+			for x in range(len(lgpvals)):
+				if (lgpvals[x] != "default"):
+					mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+				else:
+
+					# temporary error check 
+					print ("Attempted to sample node with unassigned parents.")
+		   
+			variance = lgdistribution["variance"]
+			
+		else:
+			dist = DiscreteDistribution.from_json(str(self.Vdataentry["mean_scal"]))
+			index = dist.sample(1)[0]
+			mean = mean[index]
+			variance = self.Vdataentry["variance"][index]
+		
+
+		
+
+		# draw random outcome from Gaussian
+		# note that this built in function takes the standard deviation, not the
+		# variance, thus requiring a square root
+		return random.gauss(mean, math.sqrt(variance))
+
+	def choose_mix(self, pvalues, outcome):
+		'''
+		Randomly choose state of node from probability distribution conditioned on *pvalues*.
+
+		This method has two parts: (1) determining the proper probability
+		distribution, and (2) using that probability distribution to determine
+		an outcome.
+
+		Arguments:
+			1. *pvalues* -- An array containing the assigned states of the node's parents. This must be in the same order as the parents appear in ``self.Vdataentry['parents']``.
+
+		The function goes to the entry of ``"cprob"`` that matches the outcomes of its discrete parents. Then, it constructs a Gaussian distribution based on its Gaussian parents and the parameters found at that entry. Last, it samples from that distribution and returns its outcome.
+
+		'''
+		random.seed()
+
+		# split parents by type
+		dispvals = []
+		lgpvals = []
+		for pval in pvalues:
+			if (isinstance(pval, str)):
+				dispvals.append(pval)
+			else:
+				lgpvals.append(pval)
+	  
+
+		# error check
+		try: 
+			a = dispvals[0]
+			a = lgpvals[0]
+		except IndexError:
+			#print ("Did not find LG and discrete type parents.")
+			s = "Did not find LG and discrete type parents."
+
+		# find correct Gaussian
+		lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
+		# mean_node = 0
+		# variance_node = 1
+
+		# calculate Bayesian parameters (mean and variance)
+		mean = lgdistribution["mean_base"]
+		variance = lgdistribution["variance"]
+		if isinstance(mean, list):
+			parents = []
+			parents_mean = []
+			if (len(lgpvals)) != 0:
+				if (self.Vdataentry["parents"] != None):
+					for x in range(len(lgpvals)):
+						if (lgpvals[x] != "default"):
+							parents.append(lgpvals[x])
+							parents_mean.append(lgdistribution["mean_scal"][x])
+						else:
+							print ("Attempted to sample node with unassigned parents.")
+					if len(parents) == 1:
+						if str(parents[0]) != 'nan':
+							dists = []
+							for vector in parents_mean:
+								try:
+									dists.append(distance.euclidean(parents, vector))
+								except:
+									dists.append(100000)
+							label = dists.index(min(dists))
+							mean_node = mean[label]
+							variance_node = variance[label]
+						else:
+							mean_node = mean[random.randint(0,4)]
+							variance_node = variance[random.randint(0,4)]
+					else:
+						if np.nan in parents:
+							if parents.count(np.nan) < len(parents):
+								nan_index = [i for i,d in enumerate(parents) if str(d)=='nan']
+								dists = []
+								for vector in parents_mean:
+									try:
+										dists.append(distance.euclidean([p for p in parents if parents.index(p) not in nan_index], [p for p in vector if vector.index(p) not in nan_index]))
+									except:
+										dists.append(100000000)
+									label = dists.index(min(dists))
+									mean_node = mean[label]
+									variance_node = variance[label]
+							else:
+								mean_node = mean[random.randint(0,4)]
+								variance_node = variance[random.randint(0,4)]
+						else:
+							dists = []
+							for vector in parents_mean:
+								try:
+									dists.append(distance.euclidean(parents, vector))
+								except:
+									dists.append(100000000)
+							label = dists.index(min(dists))
+							mean_node = mean[label]
+							variance_node = variance[label]
+
+					# dists = []
+					# for vector in parents_mean:
+						
+					#     dists.append(distance.euclidean(parents, vector))
+						
+					# label = dists.index(min(dists))
+					# mean_node = mean[label]
+					# variance_node = variance[label]
+			else:
+				label = random.randint(0,4)
+				mean_node = mean[label]
+				variance_node = variance[label]
+		else:
+			if (self.Vdataentry["parents"] != None):
+				for x in range(len(lgpvals)):
+					if (lgpvals[x] != "default"):
+						mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+					else:
+
+					# temporary error check 
+						print ("Attempted to sample node with unassigned parents.")
+			mean_node = mean
+			variance_node = variance
+			
+
+
+		
+		# if (self.Vdataentry["parents"] != None):
+		#     for x in range(len(lgpvals)):
+		#         if (lgpvals[x] != "default"):
+		#             mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+		#         else:
+
+		#             # temporary error check 
+		#             print ("Attempted to sample node with unassigned parents.")
+
+		#variance = lgdistribution["variance"]
+
+		# draw random outcome from Gaussian (I love python)
+		return random.gauss(mean_node, math.sqrt(variance_node))          
