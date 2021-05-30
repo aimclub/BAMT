@@ -672,7 +672,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
             for v in var:
                 var_list.append(v[0][0])
             cat = gmm.predict(np.transpose([data[node].values]))
-            dis = str(DiscreteDistribution.from_samples(cat))
+            dis = list(cat)#str(DiscreteDistribution.from_samples(cat))
+            dis = [int(w) for w in dis]
             if (len(children) != 0):
                 node_data['Vdata'][node] = {"mean_base": means_list, "mean_scal": dis, "parents": None,
                                             "variance": var_list, "type": "lg", "children": children}
@@ -846,7 +847,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         mask = (mask) & (data[col] == val)
                     new_data = data[mask]
                     key_comb = [str(x) for x in comb]
-                    if new_data.shape[0] != 0:
+                    if new_data.shape[0] > 1:
                         #mean_base, std = norm.fit(new_data[node].values)
                         #variance = std ** 2
                         # mean_base = np.mean(new_data[node].values)
@@ -881,14 +882,20 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         for v in var:
                             var_list.append(v[0][0])
                         cat = gmm.predict(np.transpose([new_data[node].values]))
-                        dis = str(DiscreteDistribution.from_samples(cat))
+                        dis = list(cat)#str(DiscreteDistribution.from_samples(cat))
+                        dis = [int(w) for w in dis]
                         hycprob[str(key_comb)] = {'variance': var_list, 'mean_base': means_list, 'mean_scal': dis}
                         
                     else:
-                        mean_base = np.nan
-                        variance = np.nan
-                        #key_comb = [str(x) for x in comb]
-                        hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
+                        if new_data.shape[0] == 0:
+                            mean_base = np.nan
+                            variance = np.nan
+                            hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
+                        else:
+                            mean_base, std = norm.fit(new_data[node].values)
+                            variance = std ** 2
+                            hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
+
                 if (len(children) != 0):
                     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,
                                                 "hybcprob": hycprob}
@@ -915,7 +922,7 @@ def n_component(data: pd.DataFrame, columns: list):
     max_comp = 10
     if data.shape[0] < max_comp:
         max_comp = data.shape[0]
-    for i in range(1, 10, 1):
+    for i in range(1, max_comp, 1):
         gm = GaussianMixture(n_components=i, random_state=0)
         if len(columns) == 1:
             x = np.transpose([data[columns[0]].values])
