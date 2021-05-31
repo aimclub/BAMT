@@ -7,6 +7,7 @@ import numpy as np
 from pyvis.network import Network
 from matplotlib.colors import CSS4_COLORS, TABLEAU_COLORS
 from matplotlib.patches import Rectangle
+import random
 
 
 def draw_comparative_hist(parameter: str, original_data: pd.DataFrame, synthetic_data: pd.DataFrame, node_type: dict):
@@ -90,16 +91,17 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
                 is_ordered = False
                 
     color2hex = list(TABLEAU_COLORS.values())
-    color2hex = {f'C{i}': value for i, value in enumerate(color2hex)}
-    
-    
+    color2hex = {f'C{i+2}': value for i, value in enumerate(color2hex)}
+    color2hex['C0'] = '#eb3d3d'
+    color2hex['C1'] = '#3d46eb'
+       
 
-    for i, color in enumerate(['blue', 'gold', 'lime', 'red', 'magenta', 'peru',
+    for i, color in enumerate(['blue', 'red', 'lime', 'gold', 'magenta', 'peru',
                            'dodgerblue', 'orangered', 'mediumspringgreen',
                            'indianred', 'mediumslateblue', 'coral','darkseagreen',
                            'mediumseagreen', 'darkslategrey', 'pink', 'darkgoldenrod',
-                           'lightgoldenrodyellow', 'magenta', 'indigo','lightcoral', 
-                           'lightslategrey', 'honeydew', 'maroon',], start=10):
+                           'lightgoldenrodyellow', 'indigo','lightcoral', 
+                           'lightslategrey', 'honeydew', 'maroon',], start=12):
 
         color2hex[f'C{i}'] = CSS4_COLORS[color]
     
@@ -110,13 +112,21 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
         classes_for_legend = []
         for class_item in G.nodes:
             classes_for_legend.append(node_type[class_item])
-        
-    classes2color = {node_class: color2hex[f'C{i}'] for i, node_class in enumerate(classes_for_legend)}
+    
+    classes_for_legend_uniq = set(classes_for_legend)
+    number_of_classes=len(classes_for_legend_uniq)
+    
+    r = lambda: random.randint(0,255)
+    if (number_of_classes>35):
+        for i in range(35,35+(number_of_classes-34)):
+            color2hex[f'C{i}'] = '#%02X%02X%02X' % (r(),r(),r())
+          
+    classes2color = {node_class: color2hex[f'C{i}'] for i, node_class in enumerate(classes_for_legend_uniq)}
 
     for node in nodes:
         level = added_nodes_levels[node]
         network.add_node(node, label=node, 
-                         color='blue', 
+                         color=classes2color[node_type[node]],
                          size=45, level = level,
                          font={'size': 36},
                          title=f'Узел байесовской сети {node}')
@@ -127,22 +137,33 @@ def draw_BN(bn1: dict, node_type: dict, name: str):
        
     network.hrepulsion(node_distance=300, central_gravity = 0.5)
     
-    handles = []
-    labels = []
     
-    for geotag, color in classes2color.items():
-        handles.append(Rectangle([0, 0], 1, 0.5, color=color))
-        labels.append(geotag)
-                
-    # plt.figure(figsize=(13.5, 1.5), dpi=150)
-    # plt.legend(handles, labels, loc='center', ncol=5)
-    # plt.axis('off')
-    # plt.tight_layout()
-    # plt.show()
+    #handles = []
+    #labels = []
+    #for geotag, color in classes2color.items():
+    #    handles.append(Rectangle([0, 0], 1, 0.5, color=color))
+    #    labels.append(geotag)           
+    #plt.figure(figsize=(13.5, 1.5), dpi=150)
+    #plt.legend(handles, labels, loc='center', ncol=5)
+    #plt.axis('off')
+    #plt.tight_layout()
+    #plt.show()
     #plt.close()
     
     #network.show_buttons(filter_=['physics'])
     if not (os.path.exists('../visualization_result')):
         os.mkdir("../visualization_result")
-        
+    
+    #G_legend = nx.DiGraph()
+    #G_legend.add_nodes_from(classes_for_legend_uniq)
+    
+    #network_legend = Network(height="800px", width="100%", notebook=True)
+    #for node in classes_for_legend_uniq:
+    #    network_legend.add_node(node, label=node, 
+    #                     color=classes2color[node],
+    #                     size=45, level = level,
+    #                     font={'size': 36},
+    #                     title=f'{node}')
+    #network_legend.show(f'../visualization_result/'+ name + '_legend.html')
+    
     return network.show(f'../visualization_result/'+ name + '.html')
