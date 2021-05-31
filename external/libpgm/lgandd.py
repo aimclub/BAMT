@@ -31,7 +31,7 @@ import math
 from scipy.spatial import distance
 import numpy as np
 from pomegranate import DiscreteDistribution
-import ast
+import time
 class Lgandd():
 	'''
 	This class represents a LG + D node, as described above. It contains the *Vdataentry* attribute and the *choose* method
@@ -176,7 +176,6 @@ class Lgandd():
 			else:
 				mean_final = mean
 				var_final = lgdistribution["variance"]
-			
 		# draw random outcome from Gaussian
 		# note that this built in function takes the standard deviation, not the
 		# variance, thus requiring a square root

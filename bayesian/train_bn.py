@@ -847,7 +847,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         mask = (mask) & (data[col] == val)
                     new_data = data[mask]
                     key_comb = [str(x) for x in comb]
-                    if new_data.shape[0] > 1:
+                    if new_data.shape[0] > 5:
                         #mean_base, std = norm.fit(new_data[node].values)
                         #variance = std ** 2
                         # mean_base = np.mean(new_data[node].values)
@@ -892,8 +892,10 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             variance = np.nan
                             hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
                         else:
-                            mean_base, std = norm.fit(new_data[node].values)
-                            variance = std ** 2
+                            #mean_base, std = norm.fit(new_data[node].values)
+                            #variance = std ** 2
+                            mean_base = np.mean(new_data[node].values)
+                            variance = np.var(new_data[node].values)
                             hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
 
                 if (len(children) != 0):
@@ -919,7 +921,7 @@ def RSE(y_true, y_predicted):
 def n_component(data: pd.DataFrame, columns: list):
     bic = -1000000000000000
     n = 0
-    max_comp = 10
+    max_comp = 6
     if data.shape[0] < max_comp:
         max_comp = data.shape[0]
     for i in range(1, max_comp, 1):

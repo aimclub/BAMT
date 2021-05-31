@@ -53,7 +53,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> T
                         pred_param[n][i] = pred
                         real_param[n][i] = test[key]
             except Exception as ex:
-                print(i)
+                print(ex)
     for n, key in enumerate(columns):
         if node_type[key] == 'disc':
             accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]), 2)
