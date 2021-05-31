@@ -108,7 +108,7 @@ class Lg():
                     print ("Attempted to sample node with unassigned parents.")
             variance = self.Vdataentry["variance"]
         else:
-            dist = DiscreteDistribution.from_json(str(self.Vdataentry["mean_scal"]))
+            dist = DiscreteDistribution.from_samples(self.Vdataentry["mean_scal"])
             index = dist.sample(1)[0]
             mean = mean[index]
             variance = self.Vdataentry["variance"][index]
