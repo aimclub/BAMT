@@ -32,6 +32,7 @@ from scipy.spatial import distance
 import numpy as np
 from pomegranate import DiscreteDistribution
 import time
+from gmr import GMM
 class Lgandd():
 	'''
 	This class represents a LG + D node, as described above. It contains the *Vdataentry* attribute and the *choose* method
@@ -67,7 +68,7 @@ class Lgandd():
 		self.Vdataentry = Vdataentry
 		'''A dict containing CPD data for the node.'''
 
-	def choose(self, pvalues, outcome):
+	def choose_simple(self, pvalues, outcome):
 		'''
 		Randomly choose state of node from probability distribution conditioned on *pvalues*.
 		This method has two parts: (1) determining the proper probability
@@ -117,7 +118,7 @@ class Lgandd():
 		return random.gauss(mean, math.sqrt(variance))     
 
 
-	def choose_gmm(self, pvalues, outcome):
+	def choose(self, pvalues, outcome):
 		'''
 		Randomly choose state of node from probability distribution conditioned on *pvalues*.
 		This method has two parts: (1) determining the proper probability
@@ -150,36 +151,36 @@ class Lgandd():
 
 		# find correct Gaussian
 		lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
+		s = 0
 
 		# calculate Bayesian parameters (mean and variance)
-		mean_final = []
-		var_final = []
 		mean = lgdistribution["mean_base"]
-		if len(lgpvals) != 0:
-			if (self.Vdataentry["parents"] != None):
-				for x in range(len(lgpvals)):
-					if (lgpvals[x] != "default"):
-						mean += lgpvals[x] * lgdistribution["mean_scal"][x]
-					else:
-
-						# temporary error check 
-						print ("Attempted to sample node with unassigned parents.")
-			variance = lgdistribution["variance"]
-			mean_final = mean
-			var_final = variance	
+		#if (self.Vdataentry["parents"] != None):
+		if (len(lgpvals) != 0):
+			for x in range(len(lgpvals)):
+				if (lgpvals[x] != "default"):
+					mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+				else:
+					# temporary error check 
+					print ("Attempted to sample node with unassigned parents.")
+			variance = lgdistribution["variance"]	
+			s = random.gauss(mean, math.sqrt(variance))
 		else:
-			if (str(type(mean)) == "<class 'list'>"):
-				dist = DiscreteDistribution.from_samples(lgdistribution["mean_scal"])
-				i = dist.sample(1)[0]
-				mean_final = mean[i]
-				var_final = lgdistribution["variance"][i]
+			if isinstance(mean, list):
+				n_comp = len(lgdistribution["mean_scal"])
+				gmm = GMM(n_components=n_comp, priors=lgdistribution["mean_scal"], means=lgdistribution["mean_base"], covariances=lgdistribution["variance"])
+				s = gmm.sample(1)
+				s = s[0][0]
 			else:
-				mean_final = mean
-				var_final = lgdistribution["variance"]
+				variance = lgdistribution["variance"]
+				s = random.gauss(mean, math.sqrt(variance))
+        
+
+			
 		# draw random outcome from Gaussian
 		# note that this built in function takes the standard deviation, not the
 		# variance, thus requiring a square root
-		return random.gauss(mean_final, math.sqrt(var_final))
+		return s
 
 	def choose_mix(self, pvalues, outcome):
 		'''

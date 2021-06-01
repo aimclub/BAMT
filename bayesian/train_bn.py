@@ -32,6 +32,8 @@ from fedot.core.composer.optimisers.gp_comp.gp_optimiser import (
     GeneticSchemeTypesEnum)
 from fedot.core.composer.optimisers.gp_comp.operators.mutation import MutationTypesEnum
 from fedot.core.log import default_log
+from itertools import groupby
+from gmr import GMM
 
 
 
@@ -661,25 +663,35 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
             #mean_base = np.mean(data[node].values)
             #variance = np.var(data[node].values)
             n_comp = n_component(data, [node])
-            gmm = GaussianMixture(n_components=n_comp)
-            gmm.fit(np.transpose([data[node].values]))
-            means = gmm.means_
-            means_list = []
-            for el in means:
-                means_list.append(el[0])
-            var = gmm.covariances_
-            var_list = []
-            for v in var:
-                var_list.append(v[0][0])
-            cat = gmm.predict(np.transpose([data[node].values]))
-            dis = list(cat)#str(DiscreteDistribution.from_samples(cat))
-            dis = [int(w) for w in dis]
+            # gmm = GaussianMixture(n_components=n_comp)
+            # gmm.fit(np.transpose([data[node].values]))
+            # means = gmm.means_
+            # means_list = []
+            # for el in means:
+            #     means_list.append(el[0])
+            # var = gmm.covariances_
+            # var_list = []
+            # for v in var:
+            #     var_list.append(v[0][0])
+            gmm = GMM(n_components=n_comp)
+            gmm.from_samples(np.transpose([data[node].values]))
+            # cat = sorted(gmm.predict(np.transpose([data[node].values])))
+            # dist = []
+            # dist.append(np.unique(cat).tolist())
+            # dist.append([(len(list(group)))/len(cat) for key, group in groupby(cat)])
+            means = gmm.means.tolist()
+            cov = gmm.covariances.tolist()
+            weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
+            w = []
+            for row in weigts:
+                w.append(np.mean(row))
+            
             if (len(children) != 0):
-                node_data['Vdata'][node] = {"mean_base": means_list, "mean_scal": dis, "parents": None,
-                                            "variance": var_list, "type": "lg", "children": children}
+                node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
+                                            "variance": cov, "type": "lg", "children": children}
             else:
-                node_data['Vdata'][node] = {"mean_base": means_list, "mean_scal": dis, "parents": None,
-                                            "variance": var_list, "type": "lg", "children": None}
+                node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
+                                            "variance": cov, "type": "lg", "children": None}
         if (node_type[node] == "cont") & (len(parents) != 0):
             disc_parents = []
             cont_parents = []
@@ -870,21 +882,30 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         #mean_base = np.mean(new_data[node].values)
                         #variance = np.var(new_data[node].values)
                         n_comp = n_component(new_data, [node])
-                        gmm = GaussianMixture(n_components=n_comp)
-                        gmm.fit(np.transpose([new_data[node].values]))
-                        means = gmm.means_
-                            #key_comb = [str(x) for x in comb]
-                        means_list = []
-                        for el in means:
-                            means_list.append(el[0])
-                        var = gmm.covariances_
-                        var_list = []
-                        for v in var:
-                            var_list.append(v[0][0])
-                        cat = gmm.predict(np.transpose([new_data[node].values]))
-                        dis = list(cat)#str(DiscreteDistribution.from_samples(cat))
-                        dis = [int(w) for w in dis]
-                        hycprob[str(key_comb)] = {'variance': var_list, 'mean_base': means_list, 'mean_scal': dis}
+                        gmm = GMM(n_components=n_comp)
+                        gmm.from_samples(np.transpose([new_data[node].values]))
+                        means = gmm.means.tolist()
+                        cov = gmm.covariances.tolist()
+                        weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
+                        w = []
+                        for row in weigts:
+                            w.append(np.mean(row))
+                        # gmm = GaussianMixture(n_components=n_comp)
+                        # gmm.fit(np.transpose([new_data[node].values]))
+                        # means = gmm.means_
+                        #     #key_comb = [str(x) for x in comb]
+                        # means_list = []
+                        # for el in means:
+                        #     means_list.append(el[0])
+                        # var = gmm.covariances_
+                        # var_list = []
+                        # for v in var:
+                        #     var_list.append(v[0][0])
+                        # cat = sorted(gmm.predict(np.transpose([new_data[node].values])))
+                        # dist = []
+                        # dist.append(np.unique(cat).tolist())
+                        # dist.append([(len(list(group)))/len(cat) for key, group in groupby(cat)])
+                        hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                         
                     else:
                         if new_data.shape[0] == 0:
@@ -919,28 +940,42 @@ def RSE(y_true, y_predicted):
     return rse
 
 def n_component(data: pd.DataFrame, columns: list):
-    bic = -1000000000000000
-    n = 0
-    max_comp = 6
+    n = 1
+    max_comp = 10
     if data.shape[0] < max_comp:
         max_comp = data.shape[0]
-    for i in range(1, max_comp, 1):
-        gm = GaussianMixture(n_components=i, random_state=0)
-        if len(columns) == 1:
-            x = np.transpose([data[columns[0]].values])
-        else:
-            x = data[columns].values
+    if len(columns) == 1:
+        x = np.transpose([data[columns[0]].values])
+    else:
+        x = data[columns].values
+    n1 = n_BIC(x, max_comp)
+    n2 = n_AIC(x, max_comp)
+    n = int((n1 + n2) / 2)
+    return(n)
 
-        gm.fit(x)
-        ll_current = np.sum(gm.score_samples(x))  
-        bic_current = (BIC(ll_current, i, data.shape[0]))
-        if bic_current > bic:
+def n_BIC(data: np.ndarray, max_comp: int):
+    n = 1
+    bic = 100000000000000000
+    for i in range(1, max_comp+1, 1):
+        gm = GaussianMixture(n_components=i, random_state=0)
+        gm.fit(data)
+        bic_current = gm.bic(data)
+        if bic_current < bic:
             bic = bic_current
             n = i
         else:
             break
-
-    return(n)
-
-def BIC (LL, n_components, n):
-    return (LL - ((0.5)*math.log(n)*(n_components-1 + 2*n_components)))
+    return n
+def n_AIC(data: np.ndarray, max_comp: int):
+    n = 1
+    aic = 100000000000000000
+    for i in range(1, max_comp+1, 1):
+        gm = GaussianMixture(n_components=i, random_state=0)
+        gm.fit(data)
+        aic_current = gm.aic(data)
+        if aic_current < aic:
+            aic = aic_current
+            n = i
+        else:
+            break
+    return n

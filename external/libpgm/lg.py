@@ -26,12 +26,14 @@
 This module contains tools for representing linear Gaussian nodes -- those with a continuous linear Gaussian distribution of outcomes and a finite number of linear Gaussian parents -- as class instances with their own *choose* method to choose an outcome for themselves based on parent outcomes.
 
 '''
+from bayesian.train_bn import n_component
 import random
 import math
 from scipy.spatial import distance
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from pomegranate import DiscreteDistribution
+from gmr import GMM
 class Lg():
     '''
     This class represents a linear Gaussian node, as described above. It contains the *Vdataentry* attribute and the *choose* method.
@@ -56,7 +58,7 @@ class Lg():
         self.Vdataentry = Vdataentry
         '''A dict containing CPD data for the node.'''
 
-    def choose(self, pvalues, outcome):
+    def choose_simple(self, pvalues, outcome):
         '''
         Randomly choose state of node from probability distribution conditioned on *pvalues*.
         This method has two parts: (1) determining the proper probability
@@ -85,7 +87,7 @@ class Lg():
         # variance, thus requiring a square root
         return random.gauss(mean, math.sqrt(variance))
 
-    def choose_gmm(self, pvalues, outcome):
+    def choose(self, pvalues, outcome):
         '''
         Randomly choose state of node from probability distribution conditioned on *pvalues*.
         This method has two parts: (1) determining the proper probability
@@ -99,6 +101,7 @@ class Lg():
         random.seed()
 
         # calculate Bayesian parameters (mean and variance)
+        s = 0
         mean = self.Vdataentry["mean_base"]
         if (self.Vdataentry["parents"] != None):
             for x in range(len(self.Vdataentry["parents"])):
@@ -107,11 +110,11 @@ class Lg():
                 else:
                     print ("Attempted to sample node with unassigned parents.")
             variance = self.Vdataentry["variance"]
+            s = random.gauss(mean, math.sqrt(variance))
         else:
-            dist = DiscreteDistribution.from_samples(self.Vdataentry["mean_scal"])
-            index = dist.sample(1)[0]
-            mean = mean[index]
-            variance = self.Vdataentry["variance"][index]
+            n_comp = len(self.Vdataentry["mean_scal"])
+            gmm = GMM(n_components=n_comp, priors=self.Vdataentry["mean_scal"], means=self.Vdataentry["mean_base"], covariances=self.Vdataentry["variance"])
+            s = gmm.sample(1)[0][0]
         
 
         
@@ -119,7 +122,7 @@ class Lg():
         # draw random outcome from Gaussian
         # note that this built in function takes the standard deviation, not the
         # variance, thus requiring a square root
-        return random.gauss(mean, math.sqrt(variance))      
+        return s  
 
     def choose_mix(self, pvalues, outcome):
         '''
