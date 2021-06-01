@@ -103,14 +103,23 @@ class Lg():
         # calculate Bayesian parameters (mean and variance)
         s = 0
         mean = self.Vdataentry["mean_base"]
+        variance = self.Vdataentry["variance"]
+        w = self.Vdataentry["mean_scal"]
+        indexes = [i for i in range (1, (len(self.Vdataentry["parents"])+1), 1)]
         if (self.Vdataentry["parents"] != None):
+            X = []
             for x in range(len(self.Vdataentry["parents"])):
                 if (pvalues[x] != "default"):
-                    mean += pvalues[x] * self.Vdataentry["mean_scal"][x]
+                    X.append(pvalues[x])
                 else:
                     print ("Attempted to sample node with unassigned parents.")
-            variance = self.Vdataentry["variance"]
-            s = random.gauss(mean, math.sqrt(variance))
+            nans = [l for l in X if np.isnan(l)]
+            if len(nans) == 0:
+                n_comp = len(self.Vdataentry["mean_scal"])
+                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                s = gmm.predict(indexes, [X])[0][0]
+            else:
+                s = np.nan
         else:
             n_comp = len(self.Vdataentry["mean_scal"])
             gmm = GMM(n_components=n_comp, priors=self.Vdataentry["mean_scal"], means=self.Vdataentry["mean_base"], covariances=self.Vdataentry["variance"])

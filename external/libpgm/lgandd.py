@@ -157,14 +157,33 @@ class Lgandd():
 		mean = lgdistribution["mean_base"]
 		#if (self.Vdataentry["parents"] != None):
 		if (len(lgpvals) != 0):
-			for x in range(len(lgpvals)):
-				if (lgpvals[x] != "default"):
-					mean += lgpvals[x] * lgdistribution["mean_scal"][x]
-				else:
+			if isinstance(mean, list):
+				variance = lgdistribution["variance"]
+				w = lgdistribution["mean_scal"]
+				indexes = [i for i in range (1, (len(lgpvals)+1), 1)]
+				X = []
+				for x in range(len(lgpvals)):
+					if (lgpvals[x] != "default"):
+						X.append(lgpvals[x])
+					else:
 					# temporary error check 
-					print ("Attempted to sample node with unassigned parents.")
-			variance = lgdistribution["variance"]	
-			s = random.gauss(mean, math.sqrt(variance))
+						print ("Attempted to sample node with unassigned parents.")
+				nans = [l for l in X if np.isnan(l)]
+				if len(nans) == 0:
+					n_comp = len(lgdistribution["mean_scal"])
+					gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+					s = gmm.predict(indexes, [X])[0][0]
+				else:
+					s = np.nan
+			else:
+				for x in range(len(lgpvals)):
+					if (lgpvals[x] != "default"):
+						mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+					else:
+					# temporary error check 
+						print ("Attempted to sample node with unassigned parents.")
+				variance = lgdistribution["variance"]	
+				s = random.gauss(mean, math.sqrt(variance))
 		else:
 			if isinstance(mean, list):
 				n_comp = len(lgdistribution["mean_scal"])
@@ -174,7 +193,7 @@ class Lgandd():
 			else:
 				variance = lgdistribution["variance"]
 				s = random.gauss(mean, math.sqrt(variance))
-        
+		
 
 			
 		# draw random outcome from Gaussian
