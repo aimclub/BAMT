@@ -105,24 +105,21 @@ class Lg():
         mean = self.Vdataentry["mean_base"]
         variance = self.Vdataentry["variance"]
         w = self.Vdataentry["mean_scal"]
+        n_comp = len(self.Vdataentry["mean_scal"])
         indexes = [i for i in range (1, (len(self.Vdataentry["parents"])+1), 1)]
         if (self.Vdataentry["parents"] != None):
-            X = []
-            for x in range(len(self.Vdataentry["parents"])):
-                if (pvalues[x] != "default"):
-                    X.append(pvalues[x])
-                else:
-                    print ("Attempted to sample node with unassigned parents.")
-            nans = [l for l in X if np.isnan(l)]
-            if len(nans) == 0:
-                n_comp = len(self.Vdataentry["mean_scal"])
+            # for x in range(len(self.Vdataentry["parents"])):
+            #     if (pvalues[x] != "default"):
+            #         X.append(pvalues[x])
+            #     else:
+            #         print ("Attempted to sample node with unassigned parents.")
+            if not np.isnan(np.array(pvalues)).any():
                 gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-                s = gmm.predict(indexes, [X])[0][0]
+                s = gmm.predict(indexes, [pvalues])[0][0]
             else:
                 s = np.nan
         else:
-            n_comp = len(self.Vdataentry["mean_scal"])
-            gmm = GMM(n_components=n_comp, priors=self.Vdataentry["mean_scal"], means=self.Vdataentry["mean_base"], covariances=self.Vdataentry["variance"])
+            gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
             s = gmm.sample(1)[0][0]
         
 
