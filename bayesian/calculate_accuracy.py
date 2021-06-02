@@ -7,6 +7,8 @@ from external.libpgm.sampleaggregator import SampleAggregator
 from preprocess.discretization import get_nodes_type
 from external.libpgm.hybayesiannetwork import HyBayesianNetwork
 from typing import Tuple
+from bayesian.train_bn import structure_learning, parameter_learning
+from bayesian.save_bn import save_structure, save_params, read_structure, read_params
 
 
 def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> Tuple[dict, dict, list, list]:
@@ -60,3 +62,72 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> T
         if node_type[key] == 'cont':
             rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False), 2)
     return accuracy_dict, rmse_dict, real_param, pred_param
+
+
+def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, search: str = 'HC', score: str = 'K2', normed: bool = True) -> Tuple[dict, dict]:
+    """Function for Leave One out cross validation of BN
+
+    Args:
+        initial_data (pd.DataFrame): source dataset without coding and discretization.
+        data_for_strucure_learning (pd.DataFrame): can be discretized or not depends on what type of structure learning you want. For K2 only discrete can be.
+        search (str, optional): search strategy for structural learning (HC or evo). Defaults to 'HC'.
+        score (str, optional): Score function for HC structure learning. Defaults to 'K2'.
+        normed (bool, optional): Flag that define type of rmse, if 'false' then raw rmse will be out. Defaults to True.
+
+    Returns:
+        Tuple[dict, dict]: accuracy dict and rmse dict.
+    """    
+    accuracy_dict = dict()
+    rmse_dict = dict()
+    columns = initial_data.columns.tolist()
+    node_type = get_nodes_type(initial_data)
+    if (score == 'K2') & ('cont' in get_nodes_type(data_for_strucure_learning).values()):
+        raise Exception("With K2 function you can use only discrete data for structure learning")
+    pred_param = [[0 for j in range(initial_data.shape[0])] for i in range(len(columns))]
+    real_param = [[0 for j in range(initial_data.shape[0])] for i in range(len(columns))]
+    for i in range (initial_data.shape[0]):
+        test = dict(initial_data.iloc[i,:])
+        train_data = data_for_strucure_learning.drop(index=i)
+        param_train = initial_data.drop(index=i)
+        train_data.reset_index(inplace=True, drop = True)
+        param_train.reset_index(inplace=True, drop = True)
+        bn = structure_learning(train_data, search, node_type, score)
+        params = parameter_learning(param_train, node_type, bn)
+        save_structure(bn, 'LOO_net')
+        skel = read_structure('LOO_net')
+        save_params(params, 'LOO_net_param')
+        params = read_params('LOO_net_param')
+        all_bn = HyBayesianNetwork(skel, params)
+        for n, key in enumerate(columns):
+            train_dict = copy(test)
+            train_dict.pop(key)
+            try:
+                if node_type[key] == 'disc':
+                    agg = SampleAggregator()
+                    sample = agg.aggregate(all_bn.randomsample(2000, train_dict))
+                    sorted_res = sorted(sample[key].items(), key=operator.itemgetter(1), reverse=True)
+                    pred_param[n][i] = sorted_res[0][0]
+                    real_param[n][i] = test[key]
+                if node_type[key] == 'cont':
+                    sample = pd.DataFrame(all_bn.randomsample(2000, train_dict))
+                    if (initial_data[key] > 0).any():
+                        sample = sample.loc[sample[key] >= 0]
+                    if sample.shape[0] == 0:
+                        print(i)
+                    else:
+                        pred = np.mean(sample[key].values)
+                        pred_param[n][i] = pred
+                        real_param[n][i] = test[key]
+            except Exception as ex:
+                print(ex)
+    for n, key in enumerate(columns):
+        if node_type[key] == 'disc':
+            accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]),2)
+        if node_type[key] == 'cont':
+            if normed:
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 2)
+            else:
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False),2)
+    return accuracy_dict, rmse_dict
+
+
