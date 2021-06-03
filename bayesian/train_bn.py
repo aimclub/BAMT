@@ -851,7 +851,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             # variance = (RSE(new_data[node].values, predict)) ** 2
                             # hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': list(model.coef_)}
                     else:
-                        if new_data.shape == 0:
+                        if new_data.shape[0] == 0:
                             mean_base = np.nan
                             variance = np.nan
                             scal = list(np.full(len(cont_parents), np.nan))
