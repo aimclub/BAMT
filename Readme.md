@@ -17,7 +17,12 @@ Difference from existing implementations:
 Generating synthetic data
 =========================
 In terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
+![title](img/synth_data_gen.png)
 
+Oil and Gas Reservoirs Parameters Analysis
+==========================================
+Bayesian networks can be used to restore gaps in reservoirs data, search for anomalous values, and also to search for analogous reservoirs.
+![title](img/concept.pdf)
 Functionality of the developed code:   
 
 save_bn.py - Function for saving and reading a trained model from file.  
