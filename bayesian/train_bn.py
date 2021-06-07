@@ -794,7 +794,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     #     mean_base = np.mean(new_data[node].values)
                     #     variance = np.var(new_data[node].values)
                     key_comb = [str(x) for x in comb]
-                    if new_data.shape[0] > 5:
+                    if new_data.shape[0] > 1:
                     #     #model = linear_model.BayesianRidge()
                     #     model = linear_model.LinearRegression()
                     #     #model = SVR(kernel='linear', C=100, gamma='auto')
@@ -889,7 +889,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         mask = (mask) & (data[col] == val)
                     new_data = data[mask]
                     key_comb = [str(x) for x in comb]
-                    if new_data.shape[0] > 5:
+                    if new_data.shape[0] > 1:
                         #mean_base, std = norm.fit(new_data[node].values)
                         #variance = std ** 2
                         # mean_base = np.mean(new_data[node].values)
