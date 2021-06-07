@@ -2,6 +2,7 @@ from copy import copy
 import pandas as pd
 from sklearn import preprocessing
 from sklearn.preprocessing import KBinsDiscretizer
+from typing import Tuple
 
 
 
@@ -48,7 +49,7 @@ def get_nodes_type(data: pd.DataFrame) -> dict:
     return column_type
 
 
-def discretization(data: pd.DataFrame, method: str, columns: list, bins: int = 5) -> (pd.DataFrame, KBinsDiscretizer):
+def discretization(data: pd.DataFrame, method: str, columns: list, bins: int = 5) -> Tuple[pd.DataFrame, KBinsDiscretizer]:
     """Discretization of continuous parameters
 
     Args:
@@ -83,7 +84,7 @@ def discretization(data: pd.DataFrame, method: str, columns: list, bins: int = 5
     return d_data, est
 
 
-def code_categories(data: pd.DataFrame, method: str, columns: list) -> (pd.DataFrame, dict):
+def code_categories(data: pd.DataFrame, method: str, columns: list) -> Tuple[pd.DataFrame, dict]:
     """Encoding categorical parameters
 
     Args:

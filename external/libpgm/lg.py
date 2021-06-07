@@ -58,7 +58,7 @@ class Lg():
         self.Vdataentry = Vdataentry
         '''A dict containing CPD data for the node.'''
 
-    def choose(self, pvalues, outcome):
+    def choose(self, pvalues, method, outcome):
         '''
         Randomly choose state of node from probability distribution conditioned on *pvalues*.
         This method has two parts: (1) determining the proper probability
@@ -70,22 +70,35 @@ class Lg():
         
         '''
         random.seed()
+        sample = 0
+        if method == 'simple':
+            # calculate Bayesian parameters (mean and variance)
+            mean = self.Vdataentry["mean_base"]
+            if (self.Vdataentry["parents"] != None):
+                for x in range(len(self.Vdataentry["parents"])):
+                    if (pvalues[x] != "default"):
+                        mean += pvalues[x] * self.Vdataentry["mean_scal"][x]
+                    else:
+                        print ("Attempted to sample node with unassigned parents.")
 
-        # calculate Bayesian parameters (mean and variance)
-        mean = self.Vdataentry["mean_base"]
-        if (self.Vdataentry["parents"] != None):
-            for x in range(len(self.Vdataentry["parents"])):
-                if (pvalues[x] != "default"):
-                    mean += pvalues[x] * self.Vdataentry["mean_scal"][x]
+            variance = self.Vdataentry["variance"]
+            sample = random.gauss(mean, math.sqrt(variance))
+        elif method == 'mix':
+            mean = self.Vdataentry["mean_base"]
+            variance = self.Vdataentry["variance"]
+            w = self.Vdataentry["mean_scal"]
+            n_comp = len(self.Vdataentry["mean_scal"])
+            indexes = [i for i in range (1, (len(self.Vdataentry["parents"])+1), 1)]
+            if (self.Vdataentry["parents"] != None):
+                if not np.isnan(np.array(pvalues)).any():
+                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                    sample = gmm.predict(indexes, [pvalues])[0][0]
                 else:
-                    print ("Attempted to sample node with unassigned parents.")
-
-        variance = self.Vdataentry["variance"]
-
-        # draw random outcome from Gaussian
-        # note that this built in function takes the standard deviation, not the
-        # variance, thus requiring a square root
-        return random.gauss(mean, math.sqrt(variance))
+                    sample = np.nan
+            else:
+                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                sample = gmm.sample(1)[0][0]
+        return sample
 
     def choose_gmm(self, pvalues, outcome):
         '''

@@ -11,13 +11,14 @@ from bayesian.train_bn import structure_learning, parameter_learning
 from bayesian.save_bn import save_structure, save_params, read_structure, read_params
 
 
-def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> Tuple[dict, dict, list, list]:
+def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str) -> Tuple[dict, dict, list, list]:
     """Function for calculating of params restoration accuracy
 
     Args:
         bn (HyBayesianNetwork): fitted BN
         data (pd.DataFrame): test dataset
         columns (list): list of params for restoration
+        method (str): method of sampling - simple or mix
 
     Returns:
         dict: accuracy score (discrete vars)
@@ -40,12 +41,12 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> T
             try:
                 if node_type[key] == 'disc':
                     agg = SampleAggregator()
-                    sample = agg.aggregate(bn.randomsample(2000, train_dict))
+                    sample = agg.aggregate(bn.randomsample(2000, method, train_dict))
                     sorted_res = sorted(sample[key].items(), key=operator.itemgetter(1), reverse=True)
                     pred_param[n][i] = sorted_res[0][0]
                     real_param[n][i] = test[key]
                 if node_type[key] == 'cont':
-                    sample = pd.DataFrame(bn.randomsample(2000, train_dict))
+                    sample = pd.DataFrame(bn.randomsample(2000, method, train_dict))
                     if (data[key] > 0).any():
                         sample = sample.loc[sample[key] >= 0]
                     if sample.shape[0] == 0:
@@ -64,12 +65,13 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list) -> T
     return accuracy_dict, rmse_dict, real_param, pred_param
 
 
-def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, search: str = 'HC', score: str = 'K2', normed: bool = True) -> Tuple[dict, dict]:
+def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, search: str = 'HC', score: str = 'K2',normed: bool = True) -> Tuple[dict, dict]:
     """Function for Leave One out cross validation of BN
 
     Args:
         initial_data (pd.DataFrame): source dataset without coding and discretization.
         data_for_strucure_learning (pd.DataFrame): can be discretized or not depends on what type of structure learning you want. For K2 only discrete can be.
+        method (str): method of sampling - simple or mix
         search (str, optional): search strategy for structural learning (HC or evo). Defaults to 'HC'.
         score (str, optional): Score function for HC structure learning. Defaults to 'K2'.
         normed (bool, optional): Flag that define type of rmse, if 'false' then raw rmse will be out. Defaults to True.
@@ -92,7 +94,7 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
         train_data.reset_index(inplace=True, drop = True)
         param_train.reset_index(inplace=True, drop = True)
         bn = structure_learning(train_data, search, node_type, score)
-        params = parameter_learning(param_train, node_type, bn)
+        params = parameter_learning(param_train, node_type, bn, method)
         save_structure(bn, 'LOO_net')
         skel = read_structure('LOO_net')
         save_params(params, 'LOO_net_param')
@@ -104,12 +106,12 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
             try:
                 if node_type[key] == 'disc':
                     agg = SampleAggregator()
-                    sample = agg.aggregate(all_bn.randomsample(2000, train_dict))
+                    sample = agg.aggregate(all_bn.randomsample(2000, method, train_dict))
                     sorted_res = sorted(sample[key].items(), key=operator.itemgetter(1), reverse=True)
                     pred_param[n][i] = sorted_res[0][0]
                     real_param[n][i] = test[key]
                 if node_type[key] == 'cont':
-                    sample = pd.DataFrame(all_bn.randomsample(2000, train_dict))
+                    sample = pd.DataFrame(all_bn.randomsample(2000, method, train_dict))
                     if (initial_data[key] > 0).any():
                         sample = sample.loc[sample[key] >= 0]
                     if sample.shape[0] == 0:

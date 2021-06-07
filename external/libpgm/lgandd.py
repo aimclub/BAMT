@@ -68,7 +68,7 @@ class Lgandd():
 		self.Vdataentry = Vdataentry
 		'''A dict containing CPD data for the node.'''
 
-	def choose(self, pvalues, outcome):
+	def choose(self, pvalues, method, outcome):
 		'''
 		Randomly choose state of node from probability distribution conditioned on *pvalues*.
 		This method has two parts: (1) determining the proper probability
@@ -79,43 +79,73 @@ class Lgandd():
 		The function goes to the entry of ``"cprob"`` that matches the outcomes of its discrete parents. Then, it constructs a Gaussian distribution based on its Gaussian parents and the parameters found at that entry. Last, it samples from that distribution and returns its outcome.
 		'''
 		random.seed()
+		sample = 0
 
-		# split parents by type
-		dispvals = []
-		lgpvals = []
-		for pval in pvalues:
-			if (isinstance(pval, str)):
-				dispvals.append(pval)
-			else:
-				lgpvals.append(pval)
-	  
-
-		# error check
-		try: 
-			a = dispvals[0]
-			a = lgpvals[0]
-		except IndexError:
-			#print ("Did not find LG and discrete type parents.")
-			s = "Did not find LG and discrete type parents."
-
-		# find correct Gaussian
-		lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
-
-		# calculate Bayesian parameters (mean and variance)
-		mean = lgdistribution["mean_base"]
-		if (self.Vdataentry["parents"] != None):
-			for x in range(len(lgpvals)):
-				if (lgpvals[x] != "default"):
-					mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+		if method == 'simple':
+			# split parents by type
+			dispvals = []
+			lgpvals = []
+			for pval in pvalues:
+				if (isinstance(pval, str)):
+					dispvals.append(pval)
 				else:
-
+					lgpvals.append(pval)
+			# find correct Gaussian
+			lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
+			# calculate Bayesian parameters (mean and variance)
+			mean = lgdistribution["mean_base"]
+			if (self.Vdataentry["parents"] != None):
+				for x in range(len(lgpvals)):
+					if (lgpvals[x] != "default"):
+						mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+					else:
+						# temporary error check 
+						print ("Attempted to sample node with unassigned parents.")
+			variance = lgdistribution["variance"]
+			sample = random.gauss(mean, math.sqrt(variance))  
+		elif method == 'mix':
+			# split parents by type
+			dispvals = []
+			lgpvals = []
+			for pval in pvalues:
+				if (isinstance(pval, str)):
+					dispvals.append(pval)
+				else:
+					lgpvals.append(pval)
+		# find correct Gaussian
+			lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
+		# calculate Bayesian parameters (mean and variance)
+			mean = lgdistribution["mean_base"]
+			variance = lgdistribution["variance"]
+			w = lgdistribution["mean_scal"]
+		#if (self.Vdataentry["parents"] != None):
+			if (len(lgpvals) != 0):
+				if isinstance(mean, list):
+					indexes = [i for i in range (1, (len(lgpvals)+1), 1)]
+					if not np.isnan(np.array(lgpvals)).any():
+						n_comp = len(w)
+						gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+						sample = gmm.predict(indexes, [lgpvals])[0][0]
+					else:
+						sample = np.nan
+				else:
+					for x in range(len(lgpvals)):
+						if (lgpvals[x] != "default"):
+							mean += lgpvals[x] * w[x]
+						else:
 					# temporary error check 
-					print ("Attempted to sample node with unassigned parents.")
+							print ("Attempted to sample node with unassigned parents.")	
+					sample = random.gauss(mean, math.sqrt(variance))
+			else:
+				if isinstance(mean, list):
+					n_comp = len(w)
+					gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+					sample = gmm.sample(1)
+					sample = sample[0][0]
+				else:
+					sample = random.gauss(mean, math.sqrt(variance))
 
-		variance = lgdistribution["variance"]
-
-		# draw random outcome from Gaussian (I love python)
-		return random.gauss(mean, math.sqrt(variance))     
+		return sample    
 
 
 	def choose_gmm(self, pvalues, outcome):

@@ -49,7 +49,7 @@ class Discrete():
         self.Vdataentry = Vdataentry
         '''A dict containing CPD data for the node.'''
 
-    def choose(self, pvalues, outcome):
+    def choose(self, pvalues, method, outcome):
         '''
         Randomly choose state of node from a probability distribution conditioned on parent values *pvalues*.
 

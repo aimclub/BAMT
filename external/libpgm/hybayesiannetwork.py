@@ -73,7 +73,7 @@ class HyBayesianNetwork(OrderedSkeleton):
             # check that inputs match up
             assert sorted(self.V) == sorted(self.Vdata.keys()), "Node data did not match graph skeleton nodes."
 
-    def randomsample(self, n, evidence=None):
+    def randomsample(self, n, method, evidence=None):
         '''
         Produce *n* random samples from the Bayesian networki, subject to *evidence*, and return them in a list. This function requires the *nodes* attribute to be instantiated.
         
@@ -138,13 +138,13 @@ class HyBayesianNetwork(OrderedSkeleton):
                 if (p == []):
                     pvalues = []
                 else:
-                    pvalues = [outcome[t] for t in self.Vdata[name][
-                        "parents"]]  # ideally can we pull this from the skeleton so as not to store parent data at all?
+                    pvalues = [outcome[t] for t in self.Vdata[name]["parents"]]  # ideally can we pull this from the skeleton so as not to store parent data at all?
                     for pvalue in pvalues:
                         assert (pvalue != 'default', "Graph skeleton was not topologically ordered.")
 
                 # use built in function to determine outcome
-                return node.choose(pvalues, outcome)
+                
+                return node.choose(pvalues, method, outcome)
 
             for s in self.V:
                 if (outcome[s] == "default"):
