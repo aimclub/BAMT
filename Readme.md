@@ -7,6 +7,7 @@ In terms of training Bayesian networks on data, the following algorithms are imp
 - Building the structure of a Bayesian network based on expert knowledge by directly specifying the structure of the network;
 - Building the structure of a Bayesian network on data using three algorithms - Hill Climbing, evolutionary and PC. For Hill Climbing, the following score functions are implemented - MI, K2, BIC, AIC. The algorithms work on both discrete and mixed data.
 - Training the parameters of distributions in the nodes of the network on the basis of data.
+
 Difference from existing implementations:
 - Algorithms work on mixed data;
 - Structural learning implements score-functions for mixed data;
@@ -17,13 +18,15 @@ Difference from existing implementations:
 Generating synthetic data
 =========================
 In terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
-![title](img/synth_data_gen.png)
+![title](img/synth_gen.png)
 
 Oil and Gas Reservoirs Parameters Analysis
 ==========================================
 Bayesian networks can be used to restore gaps in reservoirs data, search for anomalous values, and also to search for analogous reservoirs.
-![title](img/concept.pdf)
-Functionality of the developed code:   
+![title](img/concept.png)
+
+Project structure
+=================
 
 save_bn.py - Function for saving and reading a trained model from file.  
 
