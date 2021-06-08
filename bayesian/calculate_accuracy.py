@@ -1,3 +1,4 @@
+from math import isnan
 import operator
 from copy import copy
 import numpy as np
@@ -11,7 +12,7 @@ from bayesian.train_bn import structure_learning, parameter_learning
 from bayesian.save_bn import save_structure, save_params, read_structure, read_params
 
 
-def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str) -> Tuple[dict, dict, list, list]:
+def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str, normed: bool = True) -> Tuple[dict, dict, list, list]:
     """Function for calculating of params restoration accuracy
 
     Args:
@@ -19,6 +20,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
         data (pd.DataFrame): test dataset
         columns (list): list of params for restoration
         method (str): method of sampling - simple or mix
+        normed (bool): Flag that define type of rmse, if 'false' then raw rmse will be out. Defaults to True.
 
     Returns:
         dict: accuracy score (discrete vars)
@@ -50,18 +52,27 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
                     if (data[key] > 0).any():
                         sample = sample.loc[sample[key] >= 0]
                     if sample.shape[0] == 0:
-                        print(i)
+                        pred_param[n][i] = np.nan
+                        real_param[n][i] = np.nan
                     else:
                         pred = np.mean(sample[key].values)
                         pred_param[n][i] = pred
                         real_param[n][i] = test[key]
             except Exception as ex:
                 print(ex)
+                pred_param[n][i] = np.nan
+                real_param[n][i] = np.nan
+    for i in range(len(columns)):
+        pred_param[i] = [k for k in pred_param[i] if str(k) != 'nan']
+        real_param[i] = [k for k in real_param[i] if str(k) != 'nan']
     for n, key in enumerate(columns):
         if node_type[key] == 'disc':
-            accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]), 2)
+            accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]),2)
         if node_type[key] == 'cont':
-            rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False), 2)
+            if normed:
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 2)
+            else:
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False),2)
     return accuracy_dict, rmse_dict, real_param, pred_param
 
 
@@ -115,13 +126,19 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
                     if (initial_data[key] > 0).any():
                         sample = sample.loc[sample[key] >= 0]
                     if sample.shape[0] == 0:
-                        print(i)
+                        pred_param[n][i] = np.nan
+                        real_param[n][i] = np.nan
                     else:
                         pred = np.mean(sample[key].values)
                         pred_param[n][i] = pred
                         real_param[n][i] = test[key]
             except Exception as ex:
                 print(ex)
+                pred_param[n][i] = np.nan
+                real_param[n][i] = np.nan
+    for l in range(len(columns)):
+        pred_param[l] = [element for element in pred_param[l] if str(element) != 'nan']
+        real_param[l] = [element for element in real_param[l] if str(element) != 'nan']
     for n, key in enumerate(columns):
         if node_type[key] == 'disc':
             accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]),2)
@@ -130,6 +147,6 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
                 rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 2)
             else:
                 rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False),2)
-    return accuracy_dict, rmse_dict
+    return accuracy_dict, rmse_dict, real_param, pred_param
 
 
