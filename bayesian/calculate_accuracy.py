@@ -76,13 +76,14 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
     return accuracy_dict, rmse_dict, real_param, pred_param
 
 
-def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, search: str = 'HC', score: str = 'K2',normed: bool = True) -> Tuple[dict, dict]:
+def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2',normed: bool = True) -> Tuple[dict, dict]:
     """Function for Leave One out cross validation of BN
 
     Args:
         initial_data (pd.DataFrame): source dataset without coding and discretization.
         data_for_strucure_learning (pd.DataFrame): can be discretized or not depends on what type of structure learning you want. For K2 only discrete can be.
         method (str): method of sampling - simple or mix
+        columns (list): list of params for accuracy estimation
         search (str, optional): search strategy for structural learning (HC or evo). Defaults to 'HC'.
         score (str, optional): Score function for HC structure learning. Defaults to 'K2'.
         normed (bool, optional): Flag that define type of rmse, if 'false' then raw rmse will be out. Defaults to True.
@@ -92,7 +93,6 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
     """    
     accuracy_dict = dict()
     rmse_dict = dict()
-    columns = initial_data.columns.tolist()
     node_type = get_nodes_type(initial_data)
     if (score == 'K2') & ('cont' in get_nodes_type(data_for_strucure_learning).values()):
         raise Exception("With K2 function you can use only discrete data for structure learning")
