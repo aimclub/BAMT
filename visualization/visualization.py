@@ -8,47 +8,173 @@ from pyvis.network import Network
 from matplotlib.colors import CSS4_COLORS, TABLEAU_COLORS
 from matplotlib.patches import Rectangle
 import random
+import math
 
-
-def draw_comparative_hist(parameter: str, original_data: pd.DataFrame, synthetic_data: pd.DataFrame, node_type: dict):
-    """Function for drawing comparative distribution
+def get_probability(sample: pd.DataFrame, initial_data: pd.DataFrame, parameter: str) -> dict:
+    """Helper function for calculation probability
+       of each label in a sample. Also calculate
+       confidence interval for a probability
 
     Args:
-        parameter (str): name of parameter
-        original_data (pd.DataFrame): original dataset
-        data_without_restore (pd.DataFrame): sample of bn with node
-        data_with_restore (pd.DataFrame): sample of bn without node
-        node_type (dict): dictionary with types of nodes
-    """
-    if (node_type[parameter] == 'disc'):
-        df1 = pd.DataFrame()
-        df1[parameter] = original_data[parameter]
-        df1['Data'] = 'Исходные данные'
-        df1['Probability'] = df1[parameter].apply(
-            lambda x: (df1.groupby(parameter)[parameter].count()[x]) / original_data.shape[0])
-        df2 = pd.DataFrame()
-        df2[parameter] = synthetic_data[parameter]
-        df2['Data'] = 'Синтетические данные'
-        df2['Probability'] = df2[parameter].apply(
-            lambda x: (df2.groupby(parameter)[parameter].count()[x]) / synthetic_data.shape[0])
-        # df3 = pd.DataFrame()
-        # df3[parameter] = data_with_restore[parameter]
-        # df3['Data'] = 'Данные из сети без изучаемого узла'
-        # df3['Probability'] = df3[parameter].apply(
-        #     lambda x: (df3.groupby(parameter)[parameter].count()[x]) / data_with_restore.shape[0])
-        final_df = pd.concat([df1, df2])
-        ax = sns.barplot(x=parameter, y="Probability", hue="Data", data=final_df)
-        ax.xaxis.set_tick_params(rotation=45)
-    else:
-        ax = sns.distplot(original_data[parameter], hist=False, label='Исходные данные')
-        ax = sns.distplot(synthetic_data[parameter], hist=False, label='Синтетические данные')
-        #ax = sns.distplot(data_with_restore[parameter], hist=False, label='Данные из сети без изучаемого узла')
-        ax.xaxis.set_tick_params(rotation=45)
-        ax.legend()
+        sample (pd.DataFrame): Data sampled from a bayesian network
+        initial_data (pd.DataFrame): Source encoded dataset
+        parameter (str): Name of the parameter in which
+        we want to calculate probabilities
+        of labels
 
-    # ax.set_xticks(range(0, original_data[parameter].nunique(), 5))
+    Returns:
+        dict: Dictionary in which
+        key - is a label
+        value - is a list [lower bound of the interval, probability, higher bound of the interval]
+    """
+    dict_prob = dict([(n, []) for n in initial_data[parameter].unique()])
+
+    for i in dict_prob:
+        grouped = sample.groupby(parameter)[parameter].count()
+        if i in grouped:
+            p = (sample.groupby(parameter)[parameter].count()[i]) / sample.shape[0]
+            std = 1.96 * math.sqrt(((1 - p) * p) / sample.shape[0])
+            start = p - std
+            end = p + std
+            dict_prob[i].append(start)
+            dict_prob[i].append(p)
+            dict_prob[i].append(end)
+        else:
+            dict_prob[i].append(0)
+            dict_prob[i].append(0)
+            dict_prob[i].append(0)
+
+    return dict_prob
+
+
+def grouped_barplot(df, cat, subcat, val, err):
+    u = df[cat].unique()
+    x = np.arange(len(u))
+    subx = df[subcat].unique()
+    offsets = (np.arange(len(subx)) - np.arange(len(subx)).mean()) / (len(subx) + 1.)
+    width = np.diff(offsets).mean()
+    for i, gr in enumerate(subx):
+        dfg = df[df[subcat] == gr]
+        plt.bar(x + offsets[i], dfg[val].values, width=width,
+                label="{}".format(gr), yerr=dfg[err].values)
+    plt.xlabel(cat)
+    plt.ylabel(val)
+    if isinstance(u[0], float):
+        u = [round(_, 1) for _ in u]
+
+    plt.xticks(x, u, rotation=90)
+    plt.xticks([i for i in range (0,26,1)], [i for i in range (0,26,1)])
+    plt.legend()
+    plt.show()
+
+
+def draw_comparative_hist(parameter: str, original_data: pd.DataFrame,
+                          synthetic_data: pd.DataFrame, node_type: dict):
+    
+
+    if node_type[parameter] == 'disc':
+        plt.clf()
+        df1 = pd.DataFrame()
+        probs = get_probability(sample=original_data, initial_data=original_data,parameter=parameter)
+
+        df1[parameter] = list(probs.keys())
+
+        df1['Probability'] = [p[1] for p in probs.values()]
+        df1['Error'] = [p[2] - p[1] for p in probs.values()]
+        df1['Data'] = 'Original data'
+
+        df2 = pd.DataFrame()
+        probs = get_probability(sample=synthetic_data, initial_data=original_data, parameter=parameter)
+        df2[parameter] = list(probs.keys())
+        df2['Probability'] = [p[1] for p in probs.values()]
+        df2['Error'] = [p[2] - p[1] for p in probs.values()]
+        df2['Data'] = 'Synthetic data'
+
+        final_df = pd.concat([df1, df2])
+
+        grouped_barplot(final_df, parameter, 'Data', 'Probability', 'Error')
+    # else:
+    #     sns.distplot(processor.data[parameter], hist=False, label='Исходные данные')
+    #     sns.distplot(data_without_restore[parameter], hist=False, label='Данные из сети с изучаемым узлом')
+    #     ax = sns.distplot(data_with_restore[parameter], hist=False, label='Данные из сети без изучаемого узла')
+    #     ax.legend()
+    
 
     plt.show()
+    plt.close()
+
+
+def draw_confidence_chart(confidence_res: dict):
+    conf_res_names = list(confidence_res.keys())
+    conf_res_values = list(confidence_res.values())
+
+    df = pd.DataFrame()
+    df['Confidence'] = conf_res_values
+    df['Parameter'] = conf_res_names
+    ax = sns.barplot(x='Parameter', y='Confidence', data=df)
+
+    ax.set_xticklabels(range(len(conf_res_names)))
+    ax.set_xticklabels(conf_res_names, rotation=90)
+
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def draw_comparative_hist(parameter: str, original_data: pd.DataFrame, synthetic_data: pd.DataFrame, node_type: dict):
+#     """Function for drawing comparative distribution
+
+#     Args:
+#         parameter (str): name of parameter
+#         original_data (pd.DataFrame): original dataset
+#         data_without_restore (pd.DataFrame): sample of bn with node
+#         data_with_restore (pd.DataFrame): sample of bn without node
+#         node_type (dict): dictionary with types of nodes
+#     """
+#     if (node_type[parameter] == 'disc'):
+#         df1 = pd.DataFrame()
+#         df1[parameter] = original_data[parameter]
+#         df1['Data'] = 'Исходные данные'
+#         df1['Probability'] = df1[parameter].apply(
+#             lambda x: (df1.groupby(parameter)[parameter].count()[x]) / original_data.shape[0])
+#         df2 = pd.DataFrame()
+#         df2[parameter] = synthetic_data[parameter]
+#         df2['Data'] = 'Синтетические данные'
+#         df2['Probability'] = df2[parameter].apply(
+#             lambda x: (df2.groupby(parameter)[parameter].count()[x]) / synthetic_data.shape[0])
+#         # df3 = pd.DataFrame()
+#         # df3[parameter] = data_with_restore[parameter]
+#         # df3['Data'] = 'Данные из сети без изучаемого узла'
+#         # df3['Probability'] = df3[parameter].apply(
+#         #     lambda x: (df3.groupby(parameter)[parameter].count()[x]) / data_with_restore.shape[0])
+#         final_df = pd.concat([df1, df2])
+#         ax = sns.barplot(x=parameter, y="Probability", hue="Data", data=final_df)
+#         ax.xaxis.set_tick_params(rotation=45)
+#     else:
+#         ax = sns.distplot(original_data[parameter], hist=False, label='Original data')
+#         ax = sns.distplot(synthetic_data[parameter], hist=False, label='Synthetic data')
+#         #ax = sns.distplot(data_with_restore[parameter], hist=False, label='Данные из сети без изучаемого узла')
+#         ax.xaxis.set_tick_params(rotation=45)
+#         ax.legend()
+
+#     # ax.set_xticks(range(0, original_data[parameter].nunique(), 5))
+
+#     plt.show()
 
 
 def draw_BN(bn1: dict, node_type: dict, name: str):
