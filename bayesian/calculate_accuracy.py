@@ -1,4 +1,3 @@
-from math import isnan
 import operator
 from copy import copy
 import numpy as np
@@ -10,6 +9,7 @@ from external.libpgm.hybayesiannetwork import HyBayesianNetwork
 from typing import Tuple
 from bayesian.train_bn import structure_learning, parameter_learning
 from bayesian.save_bn import save_structure, save_params, read_structure, read_params
+from sklearn.model_selection import train_test_split
 
 
 def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str, normed: bool = True) -> Tuple[dict, dict, list, list]:

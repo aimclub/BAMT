@@ -34,6 +34,9 @@ from fedot.core.composer.optimisers.gp_comp.operators.mutation import MutationTy
 from fedot.core.log import default_log
 from itertools import groupby
 from gmr import GMM
+from sklearn.ensemble import IsolationForest
+from sklearn.cluster import DBSCAN
+from sklearn.covariance import EllipticEnvelope
 
 
 
@@ -660,15 +663,15 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
             gmm.from_samples(np.transpose([data[node].values]))
             means = gmm.means.tolist()
             cov = gmm.covariances.tolist()
-            weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
-            w = []
-            for row in weigts:
-                w.append(np.mean(row))
+            weigts = gmm.priors.tolist()#np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
+            # w = []
+            # for row in weigts:
+            #     w.append(np.mean(row))
             if (len(children) != 0):
-                node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
+                node_data['Vdata'][node] = {"mean_base": means, "mean_scal": weigts, "parents": None,
                                             "variance": cov, "type": "lg", "children": children}
             else:
-                node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
+                node_data['Vdata'][node] = {"mean_base": means, "mean_scal": weigts, "parents": None,
                                             "variance": cov, "type": "lg", "children": None}
         if (node_type[node] == "cont") & (len(parents) != 0):
             disc_parents = []
@@ -680,21 +683,30 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     cont_parents.append(parent)
             if (len(disc_parents) == 0) & (len(cont_parents) != 0):
                 nodes = [node] + cont_parents
-                n_comp = n_component(data, nodes)
+                # iso = IsolationForest(contamination=0.1)
+                # yhat = iso.fit_predict(data[nodes].values)
+                # mask = yhat != -1
+                # ee = EllipticEnvelope(contamination=0.01)
+                # yhat = ee.fit_predict(data[nodes].values)
+                # mask = yhat != -1
+                # new_data = data[mask]
+                new_data = copy(data[nodes])
+                new_data.reset_index(inplace=True, drop=True)
+                n_comp = n_component(new_data, nodes)
                 gmm = GMM(n_components=n_comp)
-                gmm.from_samples(data[nodes].values)
+                gmm.from_samples(new_data[nodes].values)
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
-                weigts = np.transpose(gmm.to_responsibilities(data[nodes].values))
-                w = []
-                for row in weigts:
-                    w.append(np.mean(row))
+                weigts = gmm.priors.tolist()#np.transpose(gmm.to_responsibilities(new_data[nodes].values))
+                # w = []
+                # for row in weigts:
+                #     w.append(np.mean(row))
                 if (len(children) != 0):
-                    node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w,
+                    node_data['Vdata'][node] = {"mean_base": means, "mean_scal": weigts,
                                                 "parents": parents, "variance": cov, "type": "lg",
                                                 "children": children}
                 else:
-                    node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w,
+                    node_data['Vdata'][node] = {"mean_base": means, "mean_scal": weigts,
                                                 "parents": parents, "variance": cov, "type": "lg",
                                                 "children": None}
             if (len(disc_parents) != 0) & (len(cont_parents) != 0):
@@ -711,18 +723,24 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         mask = (mask) & (data[col] == val)
                     new_data = data[mask]
                     key_comb = [str(x) for x in comb]
-                    if new_data.shape[0] > 1:
+                    if new_data.shape[0] > 5:
                         nodes = [node] + cont_parents
+                        #iso = IsolationForest(contamination=0.1)
+                        #yhat = iso.fit_predict(new_data[nodes].values)
+                        # ee = EllipticEnvelope(contamination=0.01)
+                        # yhat = ee.fit_predict(new_data[nodes].values)
+                        # mask = yhat != -1
+                        # new_data = new_data[mask]
                         n_comp = n_component(new_data, nodes)
                         gmm = GMM(n_components=n_comp)
                         gmm.from_samples(new_data[nodes].values)
                         means = gmm.means.tolist()
                         cov = gmm.covariances.tolist()
-                        weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
-                        w = []
-                        for row in weigts:
-                            w.append(np.mean(row))
-                        hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
+                        weigts = gmm.priors.tolist()#np.transpose(gmm.to_responsibilities(new_data[nodes].values))
+                        # w = []
+                        # for row in weigts:
+                        #     w.append(np.mean(row))
+                        hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': weigts}
                     else:
                         if new_data.shape[0] == 0:
                             mean_base = np.nan
@@ -762,17 +780,17 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         mask = (mask) & (data[col] == val)
                     new_data = data[mask]
                     key_comb = [str(x) for x in comb]
-                    if new_data.shape[0] > 1:
+                    if new_data.shape[0] > 5:
                         n_comp = n_component(new_data, [node])
                         gmm = GMM(n_components=n_comp)
                         gmm.from_samples(np.transpose([new_data[node].values]))
                         means = gmm.means.tolist()
                         cov = gmm.covariances.tolist()
-                        weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
-                        w = []
-                        for row in weigts:
-                            w.append(np.mean(row))
-                        hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
+                        weigts = gmm.priors.tolist()#np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
+                        # w = []
+                        # for row in weigts:
+                        #     w.append(np.mean(row))
+                        hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': weigts}
                     else:
                         if new_data.shape[0] == 0:
                             mean_base = np.nan
@@ -806,6 +824,8 @@ def RSE(y_true, y_predicted):
 def n_component(data: pd.DataFrame, columns: list):
     n = 1
     max_comp = 10
+    size = data.shape[0]
+    d = len(columns)
     if data.shape[0] < max_comp:
         max_comp = data.shape[0]
     if len(columns) == 1:
@@ -814,7 +834,9 @@ def n_component(data: pd.DataFrame, columns: list):
         x = data[columns].values
     n1 = n_BIC(x, max_comp)
     n2 = n_AIC(x, max_comp)
+    # n3 = n_comp_sample(size, d)
     n = int((n1 + n2) / 2)
+    #n = round ((n + n3)/2)
     return(n)
 
 def n_BIC(data: np.ndarray, max_comp: int):
@@ -842,4 +864,22 @@ def n_AIC(data: np.ndarray, max_comp: int):
             n = i
         else:
             break
+    return n
+def n_comp_sample (size: int, d: int):
+    d1_05 = [0.225, 0.417]
+    d1_08 = [0.136, 0.79]
+    d1_099 = [0.015, 1.391]
+    d2_08 = [0.07, 0.703]
+    d3_08 = [0.042, 0.547]
+    n = 1
+    if (size <= 50) & (d == 1):
+        n = size*d1_05[0] + d1_05[1]
+    if (size > 50) & (size <= 100) & (d == 1):
+        n = size*d1_08[0] + d1_08[1]
+    if (size > 100) & (d == 1):
+        n = size*d1_099[0] + d1_099[1]
+    if d == 2:
+        n = size*d2_08[0] + d2_08[1]
+    if d == 3:
+        n = size*d3_08[0] + d3_08[1]
     return n
