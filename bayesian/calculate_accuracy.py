@@ -76,7 +76,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
     return accuracy_dict, rmse_dict, real_param, pred_param
 
 
-def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2',normed: bool = True) -> Tuple[dict, dict]:
+def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2',normed: bool = True) -> Tuple[dict, dict, list, list]:
     """Function for Leave One out cross validation of BN
 
     Args:

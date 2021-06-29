@@ -332,17 +332,17 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
         if score == "K2":
             hc_K2Score = HillClimbSearch(data, scoring_method=K2Score(data))
             if init_edges == None:
-                best_model_K2Score = hc_K2Score.estimate(black_list=blacklist, white_list=white_list)
+                best_model_K2Score = hc_K2Score.estimate(black_list=blacklist, white_list=white_list, show_progress=False)
             else:
                 if remove_init_edges:
                     startdag = DAG()
                     startdag.add_nodes_from(nodes=datacol)
                     startdag.add_edges_from(ebunch=init_edges)
                     best_model_K2Score = hc_K2Score.estimate(black_list=blacklist, white_list=white_list,
-                                                         start_dag=startdag)
+                                                         start_dag=startdag, show_progress=False)
                 else:
                     best_model_K2Score = hc_K2Score.estimate(black_list=blacklist, white_list=white_list,
-                                                         fixed_edges=init_edges)
+                                                         fixed_edges=init_edges, show_progress=False)
             structure = [list(x) for x in list(best_model_K2Score.edges())]
             skeleton['E'] = structure
 
@@ -837,7 +837,7 @@ def n_component(data: pd.DataFrame, columns: list):
     # n3 = n_comp_sample(size, d)
     n = int((n1 + n2) / 2)
     #n = round ((n + n3)/2)
-    return(n)
+    return n
 
 def n_BIC(data: np.ndarray, max_comp: int):
     n = 1
