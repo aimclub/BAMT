@@ -135,7 +135,8 @@ class GPChainOptimiser:
     def optimise(self, objective_function, offspring_rate: float = 0.5,
                  on_next_iteration_callback: Optional[Callable] = None):
         if on_next_iteration_callback is None:
-            on_next_iteration_callback = self.default_on_next_iteration_callback
+            pass
+            #on_next_iteration_callback = self.default_on_next_iteration_callback
 
         if self.population is None:
             self.population = self._make_population(self.requirements.pop_size)
@@ -153,7 +154,7 @@ class GPChainOptimiser:
             if self.archive is not None:
                 self.archive.update(self.population)
 
-            on_next_iteration_callback(self.population, self.archive)
+            #on_next_iteration_callback(self.population, self.archive)
 
             self.log_info_about_best()
 
@@ -206,7 +207,7 @@ class GPChainOptimiser:
                 if self.archive is not None:
                     self.archive.update(self.population)
 
-                on_next_iteration_callback(self.population, self.archive)
+                #on_next_iteration_callback(self.population, self.archive)
                 self.log.info(f'spent time: {round(t.minutes_from_start, 1)} min')
                 self.log_info_about_best()
 

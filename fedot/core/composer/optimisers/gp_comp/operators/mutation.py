@@ -1,4 +1,5 @@
 from copy import deepcopy
+from fedot.core.chains.graph_node import SecondaryGraphNode
 from functools import partial
 from random import choice, randint, random
 from typing import Any
@@ -10,7 +11,7 @@ from fedot.core.composer.optimisers.gp_comp.gp_operators import node_depth, node
 from fedot.core.log import Log
 from fedot.core.utils import ComparableEnum as Enum
 
-MAX_NUM_OF_ATTEMPTS = 10
+MAX_NUM_OF_ATTEMPTS = int(1e5)
 
 
 class MutationTypesEnum(Enum):
@@ -19,6 +20,12 @@ class MutationTypesEnum(Enum):
     local_growth = 'local_growth'
     reduce = 'reduce'
     parameter_change = 'parameter_change'
+    simple_add_edge = 'simple_add_edge'
+    add_edge = 'add_edge'
+    simple_del_edge = 'simple_del_edge'
+    del_edge = 'del_edge'
+    simple_inv_edge = 'simple_inv_edge'
+    inv_edge = 'inv_edge'
     none = 'none'
 
 
@@ -39,7 +46,7 @@ def get_mutation_prob(mut_id, root_node):
     default_mutation_prob = 0.7
     if mut_id in list(MutationStrengthEnum):
         mutation_strength = mut_id.value
-        mutation_prob = mutation_strength / (node_depth(root_node) + 1)
+        mutation_prob = mutation_strength / (max([node_depth(root) for root in root_node]) + 1)
     else:
         mutation_prob = default_mutation_prob
     return mutation_prob
@@ -59,8 +66,9 @@ def mutation(types: List[MutationTypesEnum], chain_generation_params, chain: Cha
         if mutation_type in mutation_by_type:
             for _ in range(MAX_NUM_OF_ATTEMPTS):
                 new_chain = mutation_by_type[mutation_type](chain=deepcopy(chain), requirements=requirements,
-                                                            chain_generation_params=chain_generation_params,
-                                                            max_depth=max_depth)
+                                                                chain_generation_params=chain_generation_params,
+                                                                max_depth=max_depth)
+
                 is_correct_chain = constraint_function(new_chain,
                                                        chain_generation_params.rules_for_constraint)
                 if is_correct_chain:
@@ -83,17 +91,21 @@ def simple_mutation(chain: Any, requirements, chain_generation_params, max_depth
     def replace_node_to_random_recursive(node: Any) -> Any:
         if node.nodes_from:
             if random() < node_mutation_probability:
-                secondary_node = chain_generation_params.secondary_node_func(choice(requirements.secondary),
+                sec = set(requirements.secondary).difference(set(chain.nodes))
+                if sec:
+                    secondary_node = chain_generation_params.secondary_node_func(choice(list(sec)),
                                                                              nodes_from=node.nodes_from)
-                chain.update_node(node, secondary_node)
+                    chain.update_node(node, secondary_node)
             for child in node.nodes_from:
                 replace_node_to_random_recursive(child)
         else:
             if random() < node_mutation_probability:
-                primary_node = chain_generation_params.primary_node_func(operation_type=choice(requirements.primary))
-                chain.update_node(node, primary_node)
+                prim = set(requirements.primary).difference(set(chain.nodes))
+                if prim:
+                    primary_node = chain_generation_params.primary_node_func(operation_type=choice(list(prim)))
+                    chain.update_node(node, primary_node)
 
-    replace_node_to_random_recursive(chain.root_node)
+    replace_node_to_random_recursive(choice(chain.root_node))
 
     return chain
 
@@ -110,7 +122,7 @@ def growth_mutation(chain: Any, requirements, chain_generation_params, max_depth
     node_from_chain = choice(nodes_from_height(chain, random_layer_in_chain))
     if local_growth:
         is_primary_node_selected = (not node_from_chain.nodes_from) or (
-                node_from_chain.nodes_from and node_from_chain != chain.root_node and randint(0, 1))
+                node_from_chain.nodes_from and node_from_chain not in chain.root_node and randint(0, 1))
     else:
         is_primary_node_selected = randint(0, 1) and not node_height(chain, node_from_chain) < max_depth
     if is_primary_node_selected:
@@ -122,6 +134,10 @@ def growth_mutation(chain: Any, requirements, chain_generation_params, max_depth
             max_depth = max_depth - node_height(chain, node_from_chain)
         new_subtree = random_chain(chain_generation_params=chain_generation_params, requirements=requirements,
                                    max_depth=max_depth).root_node
+    if isinstance(node_from_chain, list):
+        node_from_chain = choice(node_from_chain)
+    if isinstance(new_subtree, list):
+        new_subtree = choice(new_subtree)
     chain.replace_node_with_parents(node_from_chain, new_subtree)
     return chain
 
@@ -133,15 +149,21 @@ def reduce_mutation(chain: Any, requirements, chain_generation_params, max_depth
     Otherwise, it is replaced by a random primary node.
     """
 
-    nodes = [node for node in chain.nodes if node is not chain.root_node]
-    node_to_del = choice(nodes)
+    nodes = [node for node in chain.nodes if node not in chain.root_node]
+    if nodes:
+        node_to_del = choice(nodes)
+    else:
+        return chain
     childs = chain.node_childs(node_to_del)
     is_possible_to_delete = all([len(child.nodes_from) - 1 >= requirements.min_arity for child in childs])
     if is_possible_to_delete:
         chain.delete_subtree(node_to_del)
     else:
-        primary_node = chain_generation_params.primary_node_func(operation_type=choice(requirements.primary))
-        chain.replace_node_with_parents(node_to_del, primary_node)
+        prim = set(requirements.primary).difference(set(map(str,chain.nodes)))
+        if prim:
+            primary_node = chain_generation_params.primary_node_func(operation_type=choice(list(prim)))
+            #primary_node = chain_generation_params.primary_node_func(operation_type=choice(requirements.primary))
+            chain.replace_node_with_parents(node_to_del, primary_node)
     return chain
 
 
@@ -160,11 +182,103 @@ def parameter_change_mutation(chain: Any, requirements, **kwargs) -> Any:
 
     return chain
 
+def simple_add_edge_mutation(chain: Any, requirements, **kwargs) -> Any:
+    """
+    TODODO
+    """
+    possible_nodes = [node for node in chain.nodes if node.nodes_from and (len(node.nodes_from) + 1 <= requirements.max_arity) and (type(node) == SecondaryGraphNode)]
+    if not possible_nodes:
+        return chain
+    else:
+        first = choice(possible_nodes)
+        second = choice(chain.nodes)
+        first.nodes_from.append(second)
+    return chain
+
+def add_edge_mutation(chain: Any, requirements, **kwargs) -> Any:
+    """
+    TODODO
+    """
+    node_mutation_probability = get_mutation_prob(mut_id=requirements.mutation_strength,
+                                                  root_node=chain.root_node)
+    possible_nodes = [node for node in chain.nodes if node.nodes_from and (len(node.nodes_from) + 1 <= requirements.max_arity) and (type(node) == SecondaryGraphNode)]
+    for node in possible_nodes:
+        if random() < node_mutation_probability:
+            second = choice(chain.nodes)
+            node.nodes_from.append(second)
+    return chain
+
+def simple_del_edge_mutation(chain: Any, requirements, **kwargs) -> Any:
+    """
+    TODODO
+    """
+    possible_nodes = [node for node in chain.nodes if node.nodes_from and (len(node.nodes_from) - 1 >= requirements.min_arity) and (type(node) == SecondaryGraphNode)]
+    if not possible_nodes:
+        return chain
+    else:
+        first = choice(possible_nodes)
+        second = choice(first.nodes_from)
+        first.nodes_from.remove(second)
+    return chain
+
+def del_edge_mutation(chain: Any, requirements, **kwargs) -> Any:
+    """
+    TODODO
+    """
+    node_mutation_probability = get_mutation_prob(mut_id=requirements.mutation_strength,
+                                                  root_node=chain.root_node)
+    possible_nodes = [node for node in chain.nodes if node.nodes_from and (len(node.nodes_from) - 1 >= requirements.min_arity) and (type(node) == SecondaryGraphNode)]
+    for node in possible_nodes:
+        if random() < node_mutation_probability:
+            second = choice(node.nodes_from)
+            node.nodes_from.remove(second)
+    return chain
+
+def simple_inv_edge_mutation(chain: Any, requirements, **kwargs) -> Any:
+    """
+    TODODO
+    """
+    possible_nodes = [node for node in chain.nodes if node.nodes_from and (len(node.nodes_from) - 1 >= requirements.min_arity) and (type(node) == SecondaryGraphNode)]
+    seconds = {node: [second for second in node.nodes_from if second.nodes_from and (len(second.nodes_from) + 1 <= requirements.max_arity) and (type(second) == SecondaryGraphNode)] for node in possible_nodes}
+    possible_nodes = [node for node in possible_nodes if seconds[node]]
+    if not possible_nodes:
+        return chain
+    else:
+        first = choice(possible_nodes)
+        second = choice(seconds[first])
+        first.nodes_from.remove(second)
+        second.nodes_from.append(first)
+    return chain
+
+def inv_edge_mutation(chain: Any, requirements, **kwargs) -> Any:
+    """
+    TODODO
+    """
+    node_mutation_probability = get_mutation_prob(mut_id=requirements.mutation_strength,
+                                                  root_node=chain.root_node)
+    possible_nodes = [node for node in chain.nodes if node.nodes_from and (len(node.nodes_from) - 1 >= requirements.min_arity) and (type(node) == SecondaryGraphNode)]
+    seconds = {node: [second for second in node.nodes_from if second.nodes_from and (len(second.nodes_from) + 1 <= requirements.max_arity) and (type(second) == SecondaryGraphNode)] for node in possible_nodes}
+    possible_nodes = [node for node in possible_nodes if seconds[node]]
+    if not possible_nodes:
+        return chain
+    else:
+        for first in possible_nodes:
+            if random() < node_mutation_probability:
+                second = choice(seconds[first])
+                first.nodes_from.remove(second)
+                second.nodes_from.append(first)
+    return chain
 
 mutation_by_type = {
     MutationTypesEnum.simple: simple_mutation,
     MutationTypesEnum.growth: partial(growth_mutation, local_growth=False),
     MutationTypesEnum.local_growth: partial(growth_mutation, local_growth=True),
     MutationTypesEnum.reduce: reduce_mutation,
-    MutationTypesEnum.parameter_change: parameter_change_mutation
+    MutationTypesEnum.parameter_change: parameter_change_mutation,
+    MutationTypesEnum.simple_add_edge: simple_add_edge_mutation,
+    MutationTypesEnum.add_edge: add_edge_mutation,
+    MutationTypesEnum.simple_del_edge: simple_del_edge_mutation,
+    MutationTypesEnum.del_edge: del_edge_mutation,
+    MutationTypesEnum.simple_inv_edge: simple_inv_edge_mutation,
+    MutationTypesEnum.inv_edge: inv_edge_mutation
 }

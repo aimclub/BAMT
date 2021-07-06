@@ -28,7 +28,7 @@ class ComposingHistory:
         return chain_template
 
     def add_to_history(self, individuals: List[Any]):
-        try:
+        """try:
             new_individuals = []
             chains_comp_time = []
             for chain in individuals:
@@ -37,7 +37,14 @@ class ComposingHistory:
             self.chains.append(new_individuals)
             self.chains_comp_time_history.append(chains_comp_time)
         except Exception as ex:
-            print(f'Cannot add to history: {ex}')
+            print(f'Cannot add to history: {ex}')"""
+        new_individuals = []
+        chains_comp_time = []
+        for chain in individuals:
+            new_individuals.append(self._convert_chain_to_template(chain))
+            chains_comp_time.append(chain.computation_time)
+        self.chains.append(new_individuals)
+        self.chains_comp_time_history.append(chains_comp_time)
 
     def add_to_archive_history(self, individuals: List[Any]):
         try:

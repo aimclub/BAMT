@@ -48,6 +48,28 @@ class ChainTemplate:
         creating a OperationTemplate with unique id for each Node. In addition,
         checking whether this Node has been visited yet.
         """
+        """if not node:
+            nodes_from = []
+        else:
+            nodes = self.root_node
+            if parent_nodes:
+                nonlocal nodes
+                next = parent_nodes
+                next_next = []
+                for node in next:
+                    if node.nodes_from:
+                        next_next.extend(node.nodes_from)
+                next_next = [el for el, _ in groupby(next_next)] 
+                next = [node for node in next if node not in next_next]
+                nodes.extend(next)
+                recursive_sort(next_next)
+            next = []
+            for node in nodes:
+                if node.nodes_from:
+                        next.extend(node.nodes_from)
+            next = [el for el, _ in groupby(next)]                     
+            self._extract_chain_structure(next, len(visited_nodes), visited_nodes)"""
+            
 
         if node.nodes_from:
             nodes_from = []

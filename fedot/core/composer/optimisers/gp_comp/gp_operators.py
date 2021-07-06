@@ -1,16 +1,61 @@
 from copy import deepcopy
-from random import choice, randint
+from random import choice, randint, uniform, random
 from typing import (Any, Callable, List, Tuple)
-
+from itertools import groupby
+from uuid import uuid4
+from fedot.core.chains.graph_node import PrimaryGraphNode
+from fedot.core.chains.chain_convert import chain_as_nx_graph
 from fedot.core.composer.constraint import constraint_function
 from fedot.core.composer.optimisers.utils.multi_objective_fitness import MultiObjFitness
 
+def _has_no_duplicates(graph):
+    _, labels = chain_as_nx_graph(graph)
+    list_of_nodes = []
+    for node in labels.values():
+        list_of_nodes.append(str(node))
+    if len(list_of_nodes) != len(set(list_of_nodes)):
+        return False
+    return True
+
+def node_depth(node: Any) -> int:
+    if not node:
+        return 0
+    elif not node.nodes_from:
+        return 0
+    else:
+        return 1 + max([node_depth(next_node) for next_node in node.nodes_from])
+
+def nodes_from_depth(chain: Any, selected_height: int) -> List[Any]:
+    nodes = []
+    def get_nodes(chain: Any, node: Any, current_height):
+        nonlocal nodes
+        if current_height == selected_height:
+                nodes.extend(node)
+                return nodes
+        elif isinstance(node, list):
+            parents = []
+            for simple_node in node:
+                if chain.node_childs(simple_node):
+                    parents.extend(chain.node_childs(simple_node))
+            parents = [el for el, _ in groupby(parents)]
+            nodes.extend(get_nodes(chain, parents, current_height + 1))
+            return nodes
+        else:
+            if chain.node_childs(node):
+                    nodes.extend(get_nodes(chain, chain.node_childs(node), current_height + 1))
+            return nodes
+    first = [node for node in chain.nodes if type(node) == PrimaryGraphNode]
+    if not len(first):
+        print("THERE ISN'T PRIMARY NODE")
+    nodes = get_nodes(chain, first, current_height=0)
+    nodes = [el for el, _ in groupby(nodes)]
+    return nodes
 
 def node_height(chain: Any, node: Any) -> int:
     def recursive_child_height(parent_node: Any) -> int:
         node_child = chain.node_childs(parent_node)
         if node_child:
-            height = recursive_child_height(node_child[0]) + 1
+            height = max(recursive_child_height(child) for child in node_child) + 1
             return height
         else:
             return 0
@@ -19,26 +64,30 @@ def node_height(chain: Any, node: Any) -> int:
     return height
 
 
-def node_depth(node: Any) -> int:
-    if not node.nodes_from:
-        return 0
-    else:
-        return 1 + max([node_depth(next_node) for next_node in node.nodes_from])
-
-
 def nodes_from_height(chain: Any, selected_height: int) -> List[Any]:
+    nodes = []
     def get_nodes(node: Any, current_height):
-        nodes = []
+        nonlocal nodes
         if current_height == selected_height:
-            nodes.append(node)
+                nodes.extend(node)
+                return nodes
+        elif isinstance(node, list):
+            parents = []
+            for simple_node in node:
+                if simple_node.nodes_from:
+                    parents.extend(simple_node.nodes_from)
+            parents = [el for el, _ in groupby(parents)]
+            nodes.extend(get_nodes(parents, current_height + 1))
+            return nodes
         else:
             if node.nodes_from:
-                for child in node.nodes_from:
-                    nodes += get_nodes(child, current_height + 1)
-        return nodes
+                nodes.extend(get_nodes(node.nodes_from, current_height + 1))
+            return nodes
 
     nodes = get_nodes(chain.root_node, current_height=0)
+    nodes = [el for el, _ in groupby(nodes)]
     return nodes
+
 
 
 def random_chain(chain_generation_params, requirements, max_depth=None) -> Any:
@@ -48,20 +97,71 @@ def random_chain(chain_generation_params, requirements, max_depth=None) -> Any:
     max_depth = max_depth if max_depth else requirements.max_depth
 
     def chain_growth(chain: Any, node_parent: Any):
-        offspring_size = randint(requirements.min_arity, requirements.max_arity)
-        for offspring_node in range(offspring_size):
-            height = node_height(chain, node_parent)
-            is_max_depth_exceeded = height >= max_depth - 1
-            is_primary_node_selected = height < max_depth - 1 and randint(0, 1)
-            if is_max_depth_exceeded or is_primary_node_selected:
-                primary_node = primary_node_func(operation_type=choice(requirements.primary))
-                node_parent.nodes_from.append(primary_node)
-                chain.add_node(primary_node)
-            else:
-                secondary_node = secondary_node_func(operation_type=choice(requirements.secondary))
-                chain.add_node(secondary_node)
-                node_parent.nodes_from.append(secondary_node)
-                chain_growth(chain, secondary_node)
+        coin = uniform(0, 1)
+        prim = set(requirements.primary).difference(set(map(str,chain.nodes)))
+        if coin > 0.3:
+            second = []
+            offspring_size = {parent: randint(requirements.min_arity, requirements.max_arity) for parent in node_parent}
+            while sum(list(offspring_size.values())) > 0:
+                full = sum(list(offspring_size.values()))
+                parents = []
+                while not parents:
+                    parents = [parent for parent in node_parent if offspring_size[parent]/full > random()]
+
+                height = max([node_height(chain, parent) for parent in parents])
+                is_max_depth_exceeded = height >= max_depth - 1
+                is_primary_node_selected = height < max_depth - 1 and randint(0, 1)
+                if is_max_depth_exceeded or is_primary_node_selected:
+                    #primary_node = primary_node_func(operation_type=choice(requirements.primary))
+                    if prim:
+                        primary_node = primary_node_func(operation_type=choice(list(prim)))
+                    else:
+                        break
+                    prim.difference_update(set(str(primary_node))) 
+                    [parent.nodes_from.append(primary_node) for parent in parents]
+                    chain.add_node(primary_node)
+                    if not _has_no_duplicates(chain):
+                        break
+                else:
+                    #secondary_node = secondary_node_func(operation_type=choice(requirements.secondary))
+                    if prim:
+                        secondary_node = secondary_node_func(operation_type=choice(list(prim)))
+                    else:
+                        break
+                    prim.difference_update(set(str(secondary_node)))
+                    chain.add_node(secondary_node)
+                    if not _has_no_duplicates(chain):
+                        break
+                    [parent.nodes_from.append(secondary_node) for parent in parents]
+                    second.append(secondary_node)
+                for parent in parents:
+                    offspring_size[parent] -= 1
+            """for offspring_node in range(offspring_size):
+                height = node_height(chain, parent)
+                is_max_depth_exceeded = height >= max_depth - 1
+                is_primary_node_selected = height < max_depth - 1 and randint(0, 1)
+                if is_max_depth_exceeded or is_primary_node_selected:
+                    primary_node = primary_node_func(operation_type=choice(requirements.primary))
+                    parent.nodes_from.append(primary_node)
+                    chain.add_node(primary_node)
+                else:
+                    secondary_node = secondary_node_func(operation_type=choice(requirements.secondary))
+                    chain.add_node(secondary_node)
+                    parent.nodes_from.append(secondary_node)"""
+                    #node_parent = list(filter(lambda a: a != parent, node_parent))
+                    #node_parent.append(secondary_node)
+                    #chain_growth(chain, node_parent)
+                    #second.append(secondary_node)
+            if second:
+                chain_growth(chain, second)
+        else:
+            #chain_root = secondary_node_func(operation_type=choice(requirements.secondary))
+            if prim:
+                chain_root = secondary_node_func(operation_type=choice(list(prim)))
+                prim.difference_update(set(str(chain_root)))
+                chain.add_node(chain_root)
+                node_parent.append(chain_root)
+                chain_growth(chain, node_parent)
 
     is_correct_chain = False
     chain = None
@@ -69,7 +169,7 @@ def random_chain(chain_generation_params, requirements, max_depth=None) -> Any:
         chain = chain_class()
         chain_root = secondary_node_func(operation_type=choice(requirements.secondary))
         chain.add_node(chain_root)
-        chain_growth(chain, chain_root)
+        chain_growth(chain, [chain_root])
         is_correct_chain = constraint_function(chain,
                                                chain_generation_params.rules_for_constraint)
     return chain
@@ -99,13 +199,29 @@ def equivalent_subtree(chain_first: Any, chain_second: Any) -> List[Tuple[Any, A
 
 def replace_subtrees(chain_first: Any, chain_second: Any, node_from_first: Any, node_from_second: Any,
                      layer_in_first: int, layer_in_second: int, max_depth: int):
+    if isinstance(node_from_first, list):
+        print('In REPLACE_SUBTREES there are few nodes as roots')
+        if len(node_from_first) > 0:
+            node_from_first = choice(node_from_first)
+        else:
+            node_from_first = None
+    if isinstance(node_from_second, list):
+        print('In REPLACE_SUBTREES there are few nodes as roots')
+        if len(node_from_second) > 0:
+            node_from_second = choice(node_from_second)
+        else:
+            node_from_second = None
     node_from_chain_first_copy = deepcopy(node_from_first)
 
-    summary_depth = layer_in_first + node_depth(node_from_second)
+    chain_first_copy = deepcopy(chain_first)
+    #summary_depth = layer_in_first + node_depth(node_from_second)
+    summary_depth = chain_first_copy.depth
     if summary_depth <= max_depth and summary_depth != 0:
         chain_first.replace_node_with_parents(node_from_first, node_from_second)
 
-    summary_depth = layer_in_second + node_depth(node_from_first)
+    chain_second_copy = deepcopy(chain_second)
+    #summary_depth = layer_in_second + node_depth(node_from_first)
+    summary_depth = chain_second_copy.depth
     if summary_depth <= max_depth and summary_depth != 0:
         chain_second.replace_node_with_parents(node_from_second, node_from_chain_first_copy)
 
