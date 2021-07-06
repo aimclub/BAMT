@@ -1,3 +1,7 @@
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
 import itertools
 from copy import copy
 import math
@@ -5,10 +9,8 @@ from preprocess.discretization import get_nodes_type
 import numpy as np
 import pandas as pd
 from pgmpy.base import DAG
-from pgmpy.estimators import HillClimbSearch
-from pgmpy.estimators import K2Score, PC
+from pgmpy.estimators import HillClimbSearch, K2Score, PC
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
-from scipy.stats import norm
 from sklearn import linear_model
 from bayesian.structure_score import MIG, LLG, BICG, AICG
 from sklearn.mixture import GaussianMixture
@@ -19,7 +21,6 @@ import datetime
 import random
 from functools import partial
 from networkx.algorithms.cycles import simple_cycles
-from pgmpy.estimators import K2Score
 from pgmpy.models import BayesianModel
 from fedot.core.chains.chain_convert import chain_as_nx_graph
 from fedot.core.chains.chain_validation import has_no_self_cycled_nodes
@@ -31,6 +32,7 @@ from fedot.core.composer.optimisers.gp_comp.gp_optimiser import (
     GPChainOptimiserParameters,
     GeneticSchemeTypesEnum)
 from fedot.core.composer.optimisers.gp_comp.operators.mutation import MutationTypesEnum
+from fedot.core.composer.optimisers.gp_comp.operators.crossover import CrossoverTypesEnum
 from fedot.core.log import default_log
 from itertools import groupby
 from gmr import GMM
@@ -44,7 +46,6 @@ from sklearn.covariance import EllipticEnvelope
 
 random.seed(1)
 np.random.seed(1)
-
 
 def k2_metric(network: GraphObject, data: pd.DataFrame):
     nodes = data.columns.to_list()
@@ -139,7 +140,7 @@ def mi_metric(network: GraphObject, data: pd.DataFrame):
     #score = mi(struct, data) - 10*(2*(len(struct)) / ((len(nodes) - 1)*len(nodes)))#+ 100*(len(no_nodes) / len(nodes))
     return [score]
 
-def info_metric(network: GraphObject, data: pd.DataFrame, method='LL'):
+def info_metric(network: GraphObject, data: pd.DataFrame, method='BIC'):
     nodes = data.columns.to_list()
     graph, labels = chain_as_nx_graph(network)
     struct = []
@@ -153,7 +154,6 @@ def info_metric(network: GraphObject, data: pd.DataFrame, method='LL'):
     #return [random.random()]
     score = info_score(struct, data, method) #+ 100*(len(no_nodes) / len(nodes))
     return [score]
-
 
 def run_bayesian_K2(data: pd.DataFrame, max_lead_time: datetime.timedelta = datetime.timedelta(minutes=5)):
     #data = pd.read_csv(f'{project_root()}\\data\\geo_encoded.csv')
@@ -204,8 +204,8 @@ def run_bayesian_MI(data: pd.DataFrame,  node_types: dict, max_lead_time: dateti
     requirements = GPComposerRequirements(
         primary=nodes_types,
         secondary=nodes_types, max_arity=4,
-        max_depth=3, pop_size=50, num_of_generations=30,
-        crossover_prob=0.8, mutation_prob=0.9, max_lead_time=max_lead_time)
+        max_depth=8, pop_size=200, num_of_generations=15,
+        crossover_prob=0.2, mutation_prob=0.9, max_lead_time=max_lead_time)
 
     optimiser_parameters = GPChainOptimiserParameters(
         genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
@@ -213,7 +213,14 @@ def run_bayesian_MI(data: pd.DataFrame,  node_types: dict, max_lead_time: dateti
             MutationTypesEnum.simple,
             MutationTypesEnum.reduce,
             MutationTypesEnum.growth,
-            MutationTypesEnum.local_growth])
+            MutationTypesEnum.local_growth,
+            MutationTypesEnum.simple_add_edge,
+            MutationTypesEnum.add_edge,
+            MutationTypesEnum.simple_del_edge,
+            MutationTypesEnum.del_edge,
+            MutationTypesEnum.simple_inv_edge,
+            MutationTypesEnum.inv_edge],
+        crossover_types = [CrossoverTypesEnum.none])
 
     chain_generation_params = ChainGenerationParams(
         chain_class=GraphObject,
@@ -232,17 +239,17 @@ def run_bayesian_MI(data: pd.DataFrame,  node_types: dict, max_lead_time: dateti
 
     return optimized_network
 
-def run_bayesian_info(data: pd.DataFrame, max_lead_time: datetime.timedelta = datetime.timedelta(minutes=5), method = 'LL'):
+def run_bayesian_info(data: pd.DataFrame, node_types: dict, max_lead_time: datetime.timedelta = datetime.timedelta(minutes=15), method = 'BIC'):
     #data = pd.read_csv(f'{project_root()}\\data\\geo_encoded.csv')
     nodes_types = data.columns.to_list()
-    global node_types
-    node_types = get_nodes_type(data)
+    global node_type
+    node_type = copy(node_types)
     rules = [has_no_self_cycled_nodes, _has_no_cycle, _has_no_duplicates, _has_disc_parents]
 
     requirements = GPComposerRequirements(
         primary=nodes_types,
-        secondary=nodes_types, max_arity=5,
-        max_depth=3, pop_size=50, num_of_generations=30,
+        secondary=nodes_types, max_arity=4,
+        max_depth=8, pop_size=200, num_of_generations=15,
         crossover_prob=0.8, mutation_prob=0.9, max_lead_time=max_lead_time)
 
     optimiser_parameters = GPChainOptimiserParameters(
@@ -251,7 +258,14 @@ def run_bayesian_info(data: pd.DataFrame, max_lead_time: datetime.timedelta = da
             MutationTypesEnum.simple,
             MutationTypesEnum.reduce,
             MutationTypesEnum.growth,
-            MutationTypesEnum.local_growth])
+            MutationTypesEnum.local_growth,
+            MutationTypesEnum.simple_add_edge,
+            MutationTypesEnum.add_edge,
+            MutationTypesEnum.simple_del_edge,
+            MutationTypesEnum.del_edge,
+            MutationTypesEnum.simple_inv_edge,
+            MutationTypesEnum.inv_edge],
+            crossover_types = [CrossoverTypesEnum.none])
 
     chain_generation_params = ChainGenerationParams(
         chain_class=GraphObject,
@@ -265,8 +279,7 @@ def run_bayesian_info(data: pd.DataFrame, max_lead_time: datetime.timedelta = da
         parameters=optimiser_parameters,
         requirements=requirements, initial_chain=None,
         log=default_log(logger_name='Bayesian', verbose_level=4))
-
-    optimized_network = optimizer.optimise(partial(info_metric, data=data))
+    optimized_network = optimizer.optimise(partial(info_metric, data=data, method=method))
 
     return optimized_network
 
@@ -396,7 +409,6 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
             for pair in graph.edges():
                 struct.append([str(labels[pair[0]]), str(labels[pair[1]])])
             skeleton['E'] = struct
-       
         if score == "K2":
             chain = run_bayesian_K2(data)
             graph, labels = chain_as_nx_graph(chain)
@@ -406,7 +418,7 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
             skeleton['E'] = struct
 
         if (score == "LL") | (score == "BIC") | (score == "AIC"):
-            chain = run_bayesian_info(data, method = score)
+            chain = run_bayesian_info(data, node_types = node_type, method = score)
             graph, labels = chain_as_nx_graph(chain)
             struct = []
             for pair in graph.edges():

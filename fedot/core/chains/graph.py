@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 from fedot.core.chains.graph_node import GraphNode, PrimaryGraphNode, SecondaryGraphNode
 from fedot.core.composer.visualisation import ChainVisualiser
 from fedot.core.log import Log, default_log
+from itertools import groupby
 
 ERROR_PREFIX = 'Invalid chain configuration:'
 
@@ -54,8 +55,17 @@ class GraphObject:
 
     def _actualise_old_node_childs(self, old_node: GraphNode, new_node: GraphNode):
         old_node_offspring = self.node_childs(old_node)
+        arr = deepcopy([old_node_child.nodes_from for old_node_child in old_node_offspring])
         for old_node_child in old_node_offspring:
-            old_node_child.nodes_from[old_node_child.nodes_from.index(old_node)] = new_node
+            """if len(set(old_node_child.nodes_from)) != len(old_node_child.nodes_from):
+                print('Duplicates in _actualise_old_node_childs')"""
+            if old_node in old_node_child.nodes_from:
+                old_node_child.nodes_from[old_node_child.nodes_from.index(old_node)] = new_node
+            elif new_node not in old_node_child.nodes_from:
+                print('Houston, we have a problem in _actualise_old_node_childs')
+                print(old_node, new_node)
+                print(*arr)
+            
 
     def replace_node_with_parents(self, old_node: GraphNode, new_node: GraphNode):
         """Exchange subtrees with old and new nodes as roots of subtrees"""
@@ -66,22 +76,32 @@ class GraphObject:
         self._sort_nodes()
 
     def update_node(self, old_node: GraphNode, new_node: GraphNode):
-        if type(new_node) is not type(old_node):
+        self._actualise_old_node_childs(old_node, new_node)
+        new_node.nodes_from = old_node.nodes_from
+        if old_node in self.nodes:
+            self.nodes.remove(old_node)
+        self.nodes.append(new_node)
+        self._sort_nodes()
+        """if type(new_node) is not type(old_node):
             raise ValueError(f"Can't update {old_node.__class__.__name__} "
                              f"with {new_node.__class__.__name__}")
 
-        self._actualise_old_node_childs(old_node, new_node)
-        new_node.nodes_from = old_node.nodes_from
-        self.nodes.remove(old_node)
-        self.nodes.append(new_node)
-        self._sort_nodes()
+            self._actualise_old_node_childs(old_node, new_node)
+            new_node.nodes_from = old_node.nodes_from
+            self.nodes.remove(old_node)
+            self.nodes.append(new_node)
+            self._sort_nodes()"""
+        
 
     def delete_subtree(self, subtree_root_node: GraphNode):
         """Delete node with all the parents it has"""
-        for node_child in self.node_childs(subtree_root_node):
-            node_child.nodes_from.remove(subtree_root_node)
+        """for node_child in self.node_childs(subtree_root_node):
+            node_child.nodes_from.remove(subtree_root_node)"""
         for subtree_node in subtree_root_node.ordered_subnodes_hierarchy():
-            self.nodes.remove(subtree_node)
+            for node_child in self.node_childs(subtree_node):
+                node_child.nodes_from.remove(subtree_node)
+            if subtree_node in self.nodes:
+                self.nodes.remove(subtree_node)
 
     def delete_node(self, node: GraphNode):
         """ This method redirects edges of parents to
@@ -135,14 +155,43 @@ class GraphObject:
 
     def _sort_nodes(self):
         """layer by layer sorting"""
-        nodes = self.root_node.ordered_subnodes_hierarchy()
+        nodes = self.root_node
+        def recursive_sort(parent_nodes: list):
+            if parent_nodes:
+                nonlocal nodes
+                next = parent_nodes
+                next_next = []
+                for node in next:
+                    if node.nodes_from:
+                        next_next.extend(node.nodes_from)
+                next_next = [el for el, _ in groupby(next_next)] 
+                next = [node for node in next if node not in next_next]
+                nodes.extend(next)
+                recursive_sort(next_next)
+        next = []
+        for node in nodes:
+            if node.nodes_from:
+                    next.extend(node.nodes_from)
+        next = [el for el, _ in groupby(next)]                     
+        recursive_sort(next)
         self.nodes = nodes
+
+        """roots = self.root_node
+        if isinstance(roots, list):
+            nodes = roots
+        else:
+            nodes = [roots]
+        for root in nodes:
+            nodes.extend(root.ordered_subnodes_hierarchy())
+        
+        self.nodes = [el for el, _ in groupby(nodes)]"""
 
     def show(self, path: str = None):
         ChainVisualiser().visualise(self, path)
 
     def __eq__(self, other) -> bool:
-        return self.root_node.descriptive_id == other.root_node.descriptive_id
+        return bool(set([root.descriptive_id for root in self.root_node]) - set([root.descriptive_id for root in other.root_node]))
+        #return self.root_node.descriptive_id == other.root_node.descriptive_id
 
     def __str__(self):
         description = {
@@ -156,14 +205,15 @@ class GraphObject:
         return self.__str__()
 
     @property
-    def root_node(self) -> Optional[GraphNode]:
+    def root_node(self) -> List[Optional[GraphNode]]:
         if len(self.nodes) == 0:
             return None
         root = [node for node in self.nodes
                 if not self._is_node_has_child(node)]
-        if len(root) > 1:
-            raise ValueError(f'{ERROR_PREFIX} More than 1 root_nodes in chain')
-        return root[0]
+        """if len(root) > 1:
+            raise ValueError(f'{ERROR_PREFIX} More than 1 root_nodes in chain')"""
+        #return root[0]
+        return root
 
     @property
     def length(self) -> int:
@@ -175,6 +225,10 @@ class GraphObject:
             if node is None:
                 return 0
             if isinstance(node, PrimaryGraphNode):
+                return 1
+            elif isinstance(node, list):
+                return max([_depth_recursive(next_root) for next_root in node])
+            elif not node.nodes_from:
                 return 1
             else:
                 return 1 + max([_depth_recursive(next_node) for next_node in node.nodes_from])

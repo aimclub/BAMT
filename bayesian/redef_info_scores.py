@@ -3,7 +3,7 @@
 # currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # parentdir = os.path.dirname(currentdir)
 # sys.path.insert(0,parentdir)
-
+import sys
 import numpy as np
 import pandas as pd
 from copy import copy
@@ -33,7 +33,7 @@ def info_score(edges: list, data: pd.DataFrame, method='LL'):
 		sum_score += score(copy(data[child_parents]), method)
 	nodes_without_edges = list(set(data.columns).difference(set(nodes_with_edges)))
 	for var in nodes_without_edges:
-		sum_score += score(copy(data[var]), method)
+		sum_score += score(copy(data[[var]]), method)
 	return sum_score
 	
 
@@ -133,14 +133,18 @@ def log_lik_local(data, method = 'LL'):
 def BIC_local(data, method = 'BIC'):
 	NROW = data.shape[0]
 	log_score = log_lik_local(data, method = method)
-	penalty = 0.5 * num_params(data) * np.log(NROW)
+	try:
+		penalty = 0.5 * num_params(data) * np.log(NROW)
+	except OverflowError as err:
+		#print(data)
+		penalty = sys.float_info.max
 	return log_score - penalty
 
 def num_params(data):
 	if isinstance(data, pd.DataFrame):
 		return num_params(data.values)
 	if isinstance(data, pd.Series):
-		print(np.array(data))
+		#print(np.array(data))
 		return num_params(np.array(copy(data)))
 	if isinstance(data, np.ndarray):
 		node_type = get_type_numpy(data)
@@ -152,12 +156,18 @@ def num_params(data):
 			if node_type[param] == 'disc':
 				columns_for_code.append(param)
 		prod = 1
-		for var in columns_for_code:
-			prod *= len(np.unique(np.array(data[:,var])))
-		if columns_for_discrete != []:
-			k = len(columns_for_discrete)
-			prod *= int(k*(k+1)/2) + k
-		return prod
+		try:
+			for var in columns_for_code:
+				if data.ndim == 1:
+					prod *= len(np.unique(np.array(data)))
+				else:
+					prod *= len(np.unique(np.array(data[:,var])))
+			if columns_for_discrete != []:
+				k = len(columns_for_discrete)
+				prod *= k
+			return prod
+		except OverflowError as err:
+			return sys.float_info.max
 	else:
 		print('Num_params: Unexpected data type')
 		print(data)

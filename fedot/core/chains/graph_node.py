@@ -1,5 +1,6 @@
 from copy import copy
 from typing import Any, List, Optional
+from itertools import groupby
 
 from fedot.core.log import default_log
 
@@ -55,14 +56,41 @@ class GraphNode:
         return self.__str__()
 
     def ordered_subnodes_hierarchy(self, visited=None) -> List['GraphNode']:
-        if visited is None:
+        """if visited is None:
             visited = []
         nodes = [self]
         if self.nodes_from:
             for parent in self.nodes_from:
                 if parent not in visited:
-                    nodes.extend(parent.ordered_subnodes_hierarchy(visited))
-
+                    nodes.extend(parent.ordered_subnodes_hierarchy(visited))"""
+        nodes = [self]
+        def recursive_sort(parent_nodes: list):
+            if parent_nodes:
+                nonlocal nodes
+                next = parent_nodes
+                next_next = []
+                for node in next:
+                    if node.nodes_from:
+                        next_next.extend(node.nodes_from)
+                next_next = [el for el, _ in groupby(next_next)] 
+                next = [node for node in next if node not in next_next]
+                nodes.extend(next)
+                recursive_sort(next_next)
+        recursive_sort(self.nodes_from)
+                    
+        """if visited is None:
+            visited = []
+        if isinstance(self, list):
+            nodes = self
+        else:
+            nodes = [self]
+        for root in nodes:
+            if root.nodes_from:
+                for parent in root.nodes_from:
+                    if parent not in visited:
+                        nodes.extend(parent.ordered_subnodes_hierarchy(visited))"""
+        if any([isinstance(node, list) for node in nodes]):
+            print(nodes)
         return nodes
 
 

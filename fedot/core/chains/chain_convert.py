@@ -15,10 +15,15 @@ def chain_as_nx_graph(chain: 'GraphObject'):
         graph.add_node(unique_id)
 
     def add_edges(graph, chain, new_node_idx):
-        for node in chain.nodes:
-            if node.nodes_from is not None:
-                for child in node.nodes_from:
-                    graph.add_edge(new_node_idx[child], new_node_idx[node])
+        try:
+            for node in chain.nodes:
+                if node.nodes_from is not None:
+                    for child in node.nodes_from:
+                        #You need to correct mutation and problem with removing
+                        if child in chain.nodes:
+                            graph.add_edge(new_node_idx[child], new_node_idx[node])
+        except:
+            pass
 
     add_edges(graph, chain, new_node_idx)
     return graph, node_labels
