@@ -206,7 +206,7 @@ def run_bayesian_MI(data: pd.DataFrame,  node_types: dict, max_lead_time: dateti
     requirements = GPComposerRequirements(
         primary=nodes_types,
         secondary=nodes_types, max_arity=4,
-        max_depth=8, pop_size=200, num_of_generations=15,
+        max_depth=6, pop_size=100, num_of_generations=15,
         crossover_prob=0.2, mutation_prob=0.9, max_lead_time=max_lead_time)
 
     optimiser_parameters = GPChainOptimiserParameters(
@@ -287,7 +287,7 @@ def run_bayesian_info(data: pd.DataFrame, node_types: dict, max_lead_time: datet
 
 def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: str = 'MI', init_nodes: list = None,
                        white_list: list = None,
-                       init_edges: list = None, remove_init_edges: bool = True, black_list: list = None) -> dict:
+                       init_edges: list = None, remove_init_edges: bool = True, black_list: list = None, cont_disc = False) -> dict:
     """Function for bayesian networks structure learning
 
     Args:
@@ -300,6 +300,7 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
         init_edges (list, optional): start edges of graph (set user). Defaults to None.
         remove_init_edges (bool, optional): flag that allow to delete start edges (or not allow). Defaults to True.
         black_list (list, optional): forbidden edges. Defaults to None.
+        cont_disc (bool, optional): flag that allow to delete start edges (or not allow). Defaults to False.
 
     Returns:
         dict: dictionary with structure (values are lists of nodes and edges)
@@ -308,11 +309,12 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
     datacol = data.columns.to_list()
     if init_nodes:
         blacklist = [(x, y) for x in datacol for y in init_nodes if x != y]
-    for x in datacol:
-        for y in datacol:
-            if x != y:
-                if (node_type[x] == 'cont') & (node_type[y] == 'disc'):
-                    blacklist.append((x, y))
+    if not cont_disc:    
+        for x in datacol:
+            for y in datacol:
+                if x != y:
+                    if (node_type[x] == 'cont') & (node_type[y] == 'disc'):
+                        blacklist.append((x, y))
     if black_list:
         blacklist = blacklist + black_list
 
@@ -479,6 +481,13 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                     children.append(edge[1])
                 if edge.index(node) == 1:
                     parents.append(edge[0])
+        disc_parents = []
+        cont_parents = []
+        for parent in parents:
+            if node_type[parent] == 'disc':
+                disc_parents.append(parent)
+            else:
+                cont_parents.append(parent)
         if (node_type[node] == "disc") & (len(parents) == 0):
             numoutcomes = int(len(data[node].unique()))
             dist = DiscreteDistribution.from_samples(data[node].values)
@@ -490,25 +499,84 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
             else:
                 node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": None, "vals": vals,
                                             "type": "discrete", "children": None}
+
         if (node_type[node] == "disc") & (len(parents) != 0):
-            numoutcomes = int(len(data[node].unique()))
-            dist = DiscreteDistribution.from_samples(data[node].values)
-            vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
-            dist = ConditionalProbabilityTable.from_samples(data[parents + [node]].values)
-            params = dist.parameters[0]
-            cprob = dict()
-            for i in range(0, len(params), len(vals)):
-                probs = []
-                for j in range(i, (i + len(vals))):
-                    probs.append(params[j][-1])
-                combination = [str(x) for x in params[i][0:len(parents)]]
-                cprob[str(combination)] = probs
-            if (len(children) != 0):
-                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
-                                            "vals": vals, "type": "discrete", "children": children}
-            else:
-                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
-                                            "vals": vals, "type": "discrete", "children": None}
+            if (len(disc_parents) != 0) & (len(cont_parents) == 0):
+                numoutcomes = int(len(data[node].unique()))
+                dist = DiscreteDistribution.from_samples(data[node].values)
+                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
+                dist = ConditionalProbabilityTable.from_samples(data[parents + [node]].values)
+                params = dist.parameters[0]
+                cprob = dict()
+                for i in range(0, len(params), len(vals)):
+                    probs = []
+                    for j in range(i, (i + len(vals))):
+                        probs.append(params[j][-1])
+                    combination = [str(x) for x in params[i][0:len(parents)]]
+                    cprob[str(combination)] = probs
+                if (len(children) != 0):
+                    node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
+                                                "vals": vals, "type": "discrete", "children": children}
+                else:
+                    node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
+                                                "vals": vals, "type": "discrete", "children": None}
+
+            if (len(disc_parents) == 0):
+                model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+                model.fit(data[parents].values, data[node].values)
+                if (len(children) != 0):
+                    node_data['Vdata'][node] = {"mean_base": list(model.intercept_), "mean_scal": list(model.coef_.reshape(1,-1)[0]),
+                                                "parents": parents, 'classes': list(model.classes_), "type": "logit",
+                                                "children": children}
+                else:
+                    node_data['Vdata'][node] = {"mean_base": list(model.intercept_), "mean_scal": list(model.coef_.reshape(1,-1)[0]),
+                                                "parents": parents, 'classes': list(model.classes_), "type": "logit",
+                                                "children": None}
+
+            if (len(disc_parents) != 0) & (len(cont_parents) != 0):
+                hycprob = dict()
+                values = []
+                combinations = []
+                for d_p in disc_parents:
+                    values.append(np.unique(data[d_p].values))
+                for xs in itertools.product(*values):
+                    combinations.append(list(xs))
+                for comb in combinations:
+                    mask = np.full(len(data), True)
+                    for col, val in zip(disc_parents, comb):
+                        mask = (mask) & (data[col] == val)
+                    new_data = data[mask]
+                    mean_base = [np.nan]
+                    classes = []
+                    if new_data.shape[0] != 0:
+                        model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+                        values = set(new_data[node])
+                        if len(values) > 1:
+                            model.fit(new_data[cont_parents].values, new_data[node].values)
+                            mean_base = model.intercept_
+                            classes = model.classes_
+                            coef = model.coef_
+                        else:
+                            mean_base = np.array([0.0])
+                            coef = np.array([sys.float_info.max])
+                            classes = list(values)
+                            
+                        key_comb = [str(x) for x in comb]
+                        hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base),
+                                                  'mean_scal': list(coef.reshape(1,-1)[0])}
+                    else:
+                        scal = list(np.full(len(cont_parents), np.nan))
+                        key_comb = [str(x) for x in comb]
+                        hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base), 'mean_scal': scal}
+                if (len(children) != 0):
+                    node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": children,
+                                                "hybcprob": hycprob}
+                else:
+                    node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": None,
+                                                "hybcprob": hycprob}
+
+            
+
         if (node_type[node] == "cont") & (len(parents) == 0):
             mean_base = np.mean(data[node].values)
             variance = np.var(data[node].values)
@@ -519,14 +587,6 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                 node_data['Vdata'][node] = {"mean_base": mean_base, "mean_scal": [], "parents": None,
                                             "variance": variance, "type": "lg", "children": None}
         if (node_type[node] == "cont") & (len(parents) != 0):
-            disc_parents = []
-            cont_parents = []
-            for parent in parents:
-                if node_type[parent] == 'disc':
-                    disc_parents.append(parent)
-                else:
-                    cont_parents.append(parent)
-
             if (len(disc_parents) == 0):
                 model = linear_model.LinearRegression()
                 predict = []
@@ -640,6 +700,13 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     children.append(edge[1])
                 if edge.index(node) == 1:
                     parents.append(edge[0])
+        disc_parents = []
+        cont_parents = []
+        for parent in parents:
+            if node_type[parent] == 'disc':
+                disc_parents.append(parent)
+            else:
+                cont_parents.append(parent)
 
         if (node_type[node] == "disc") & (len(parents) == 0):
             numoutcomes = int(len(data[node].unique()))
@@ -653,24 +720,79 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": None, "vals": vals,
                                             "type": "discrete", "children": None}
         if (node_type[node] == "disc") & (len(parents) != 0):
-            numoutcomes = int(len(data[node].unique()))
-            dist = DiscreteDistribution.from_samples(data[node].values)
-            vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
-            dist = ConditionalProbabilityTable.from_samples(data[parents + [node]].values)
-            params = dist.parameters[0]
-            cprob = dict()
-            for i in range(0, len(params), len(vals)):
-                probs = []
-                for j in range(i, (i + len(vals))):
-                    probs.append(params[j][-1])
-                combination = [str(x) for x in params[i][0:len(parents)]]
-                cprob[str(combination)] = probs
-            if (len(children) != 0):
-                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
-                                            "vals": vals, "type": "discrete", "children": children}
-            else:
-                node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
-                                            "vals": vals, "type": "discrete", "children": None}
+            if (len(disc_parents) != 0) & (len(cont_parents) == 0):
+                numoutcomes = int(len(data[node].unique()))
+                dist = DiscreteDistribution.from_samples(data[node].values)
+                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
+                dist = ConditionalProbabilityTable.from_samples(data[parents + [node]].values)
+                params = dist.parameters[0]
+                cprob = dict()
+                for i in range(0, len(params), len(vals)):
+                    probs = []
+                    for j in range(i, (i + len(vals))):
+                        probs.append(params[j][-1])
+                    combination = [str(x) for x in params[i][0:len(parents)]]
+                    cprob[str(combination)] = probs
+                if (len(children) != 0):
+                    node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
+                                                "vals": vals, "type": "discrete", "children": children}
+                else:
+                    node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
+                                                "vals": vals, "type": "discrete", "children": None}
+
+            if (len(disc_parents) == 0):
+                model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+                model.fit(data[parents].values, data[node].values)
+                if (len(children) != 0):
+                    node_data['Vdata'][node] = {"mean_base": list(model.intercept_), "mean_scal": list(model.coef_.reshape(1,-1)[0]),
+                                                "parents": parents, 'classes': list(model.classes_), "type": "logit",
+                                                "children": children}
+                else:
+                    node_data['Vdata'][node] = {"mean_base": list(model.intercept_), "mean_scal": list(model.coef_.reshape(1,-1)[0]),
+                                                "parents": parents, 'classes': list(model.classes_), "type": "logit",
+                                                "children": None}
+
+            if (len(disc_parents) != 0) & (len(cont_parents) != 0):
+                hycprob = dict()
+                values = []
+                combinations = []
+                for d_p in disc_parents:
+                    values.append(np.unique(data[d_p].values))
+                for xs in itertools.product(*values):
+                    combinations.append(list(xs))
+                for comb in combinations:
+                    mask = np.full(len(data), True)
+                    for col, val in zip(disc_parents, comb):
+                        mask = (mask) & (data[col] == val)
+                    new_data = data[mask]
+                    mean_base = [np.nan]
+                    classes = []
+                    if new_data.shape[0] != 0:
+                        model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+                        values = set(new_data[node])
+                        if len(values) > 1:
+                            model.fit(new_data[cont_parents].values, new_data[node].values)
+                            mean_base = model.intercept_
+                            classes = model.classes_
+                            coef = model.coef_
+                        else:
+                            mean_base = np.array([0.0])
+                            coef = np.array([sys.float_info.max])
+                            classes = list(values)
+                            
+                        key_comb = [str(x) for x in comb]
+                        hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base),
+                                                  'mean_scal': list(coef.reshape(1,-1)[0])}
+                    else:
+                        scal = list(np.full(len(cont_parents), np.nan))
+                        key_comb = [str(x) for x in comb]
+                        hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base), 'mean_scal': scal}
+                if (len(children) != 0):
+                    node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": children,
+                                                "hybcprob": hycprob}
+                else:
+                    node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": None,
+                                                "hybcprob": hycprob}
         if (node_type[node] == "cont") & (len(parents) == 0):
             n_comp = int((component(data, [node], 'aic') + component(data, [node], 'bic')) / 2)
             #n_comp = n_component(data, [node])
@@ -690,13 +812,6 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
                                             "variance": cov, "type": "lg", "children": None}
         if (node_type[node] == "cont") & (len(parents) != 0):
-            disc_parents = []
-            cont_parents = []
-            for parent in parents:
-                if node_type[parent] == 'disc':
-                    disc_parents.append(parent)
-                else:
-                    cont_parents.append(parent)
             if (len(disc_parents) == 0) & (len(cont_parents) != 0):
                 nodes = [node] + cont_parents
                 # iso = IsolationForest(contamination=0.1)
