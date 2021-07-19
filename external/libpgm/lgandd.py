@@ -86,7 +86,7 @@ class Lgandd():
 			dispvals = []
 			lgpvals = []
 			for pval in pvalues:
-				if (isinstance(pval, str)):
+				if ((isinstance(pval, str)) | ((isinstance(pval, int)))):
 					dispvals.append(pval)
 				else:
 					lgpvals.append(pval)
@@ -103,12 +103,12 @@ class Lgandd():
 						print ("Attempted to sample node with unassigned parents.")
 			variance = lgdistribution["variance"]
 			sample = random.gauss(mean, math.sqrt(variance))  
-		elif method == 'mix':
+		else:
 			# split parents by type
 			dispvals = []
 			lgpvals = []
 			for pval in pvalues:
-				if (isinstance(pval, str)):
+				if ((isinstance(pval, str)) | ((isinstance(pval, int)))):
 					dispvals.append(pval)
 				else:
 					lgpvals.append(pval)
@@ -120,30 +120,30 @@ class Lgandd():
 			w = lgdistribution["mean_scal"]
 		#if (self.Vdataentry["parents"] != None):
 			if (len(lgpvals) != 0):
-				if isinstance(mean, list):
-					indexes = [i for i in range (1, (len(lgpvals)+1), 1)]
-					if not np.isnan(np.array(lgpvals)).any():
-						n_comp = len(w)
-						gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-						sample = gmm.predict(indexes, [lgpvals])[0][0]
-					else:
-						sample = np.nan
-				else:
-					for x in range(len(lgpvals)):
-						if (lgpvals[x] != "default"):
-							mean += lgpvals[x] * w[x]
-						else:
-					# temporary error check 
-							print ("Attempted to sample node with unassigned parents.")	
-					sample = random.gauss(mean, math.sqrt(variance))
+				# if isinstance(mean, list):
+				indexes = [i for i in range (1, (len(lgpvals)+1), 1)]
+					# if not np.isnan(np.array(lgpvals)).any():
+				n_comp = len(w)
+				gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+				sample = gmm.predict(indexes, [lgpvals])[0][0]
+					# else:
+					# 	sample = np.nan
+				# else:
+				# 	for x in range(len(lgpvals)):
+				# 		if (lgpvals[x] != "default"):
+				# 			mean += lgpvals[x] * w[x]
+				# 		else:
+				# 	# temporary error check 
+				# 			print ("Attempted to sample node with unassigned parents.")	
+				# 	sample = random.gauss(mean, math.sqrt(variance))
 			else:
-				if isinstance(mean, list):
-					n_comp = len(w)
-					gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-					sample = gmm.sample(1)
-					sample = sample[0][0]
-				else:
-					sample = random.gauss(mean, math.sqrt(variance))
+				# if isinstance(mean, list):
+				n_comp = len(w)
+				gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+				sample = gmm.sample(1)
+				sample = sample[0][0]
+				# else:
+				# 	sample = random.gauss(mean, math.sqrt(variance))
 
 		return sample    
 

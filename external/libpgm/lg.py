@@ -26,7 +26,7 @@
 This module contains tools for representing linear Gaussian nodes -- those with a continuous linear Gaussian distribution of outcomes and a finite number of linear Gaussian parents -- as class instances with their own *choose* method to choose an outcome for themselves based on parent outcomes.
 
 '''
-from bayesian.train_bn import n_component
+
 import random
 import math
 from scipy.spatial import distance
@@ -83,18 +83,19 @@ class Lg():
 
             variance = self.Vdataentry["variance"]
             sample = random.gauss(mean, math.sqrt(variance))
-        elif method == 'mix':
+        else:
             mean = self.Vdataentry["mean_base"]
             variance = self.Vdataentry["variance"]
             w = self.Vdataentry["mean_scal"]
             n_comp = len(self.Vdataentry["mean_scal"])
-            indexes = [i for i in range (1, (len(self.Vdataentry["parents"])+1), 1)]
+            
             if (self.Vdataentry["parents"] != None):
-                if not np.isnan(np.array(pvalues)).any():
-                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-                    sample = gmm.predict(indexes, [pvalues])[0][0]
-                else:
-                    sample = np.nan
+                indexes = [i for i in range (1, (len(self.Vdataentry["parents"])+1), 1)]
+                #if not np.isnan(np.array(pvalues)).any():
+                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                sample = gmm.predict(indexes, [pvalues])[0][0]
+                # else:
+                #     sample = np.nan
             else:
                 gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
                 sample = gmm.sample(1)[0][0]

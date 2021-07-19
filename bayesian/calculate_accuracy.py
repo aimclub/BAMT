@@ -33,7 +33,8 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
     rmse_dict = dict()
     pred_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
     real_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
-    data = data[columns]
+    #data = data[columns]
+    indexes = []
     node_type = get_nodes_type(data)
     for i in range(data.shape[0]):
         test = dict(data.iloc[i, :])
@@ -58,6 +59,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
                         pred = np.mean(sample[key].values)
                         pred_param[n][i] = pred
                         real_param[n][i] = test[key]
+                        indexes.append(i)
             except Exception as ex:
                 print(ex)
                 pred_param[n][i] = np.nan
@@ -73,7 +75,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
                 rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 2)
             else:
                 rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False),2)
-    return accuracy_dict, rmse_dict, real_param, pred_param
+    return accuracy_dict, rmse_dict, real_param, pred_param, indexes
 
 
 def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2',normed: bool = True) -> Tuple[dict, dict, list, list]:
