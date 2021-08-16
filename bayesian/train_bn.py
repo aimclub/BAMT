@@ -1,4 +1,6 @@
 import os,sys,inspect
+
+from sklearn.utils.multiclass import _is_integral_float
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
@@ -41,6 +43,8 @@ from sklearn.cluster import DBSCAN
 from sklearn.covariance import EllipticEnvelope
 from scipy.stats.distributions import chi2
 from scipy import stats
+from scipy.stats.mstats import mquantiles
+from sklearn.linear_model import LinearRegression
 
 
 
@@ -795,6 +799,14 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                                                 "hybcprob": hycprob}
         if (node_type[node] == "cont") & (len(parents) == 0):
             n_comp = int((component(data, [node], 'aic') + component(data, [node], 'bic')) / 2)
+            # Z = func_for_ndim(1)
+            # n_sample_comp = sample_n_comp(data.shape[0], Z)
+            # if n_comp > n_sample_comp:
+            #     n_comp = n_sample_comp
+
+            
+    
+
             #n_comp = n_component(data, [node])
             gmm = GMM(n_components=n_comp)
             gmm.from_samples(np.transpose([data[node].values]))
@@ -823,8 +835,47 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 # new_data = data[mask]
                 new_data = copy(data[nodes])
                 new_data.reset_index(inplace=True, drop=True)
+                # Nbins=5
+                # nth=95.
+                # x = []
+                # if len(cont_parents) == 1:
+                #     x = new_data[cont_parents[0]].values
+                # else:
+                #     for c_p in cont_parents:
+                #         x.append(list(new_data[c_p].values))
+                # y = new_data[node].values
+                # t =quantile2d(y,x,Nbins,nth)
+                # ii_norm = []
+                # if len(cont_parents) == 1:
+                #     ii=[]
+                #     for i in range(Nbins):
+                #         ii=ii+np.argwhere(((t.binnumber==i) & (x<t.statistic[i]))).flatten().tolist()
+                #     ii=np.array(ii,dtype=int)
+                #     ii_norm = copy(ii)
+                # else:
+                #     ii=[]
+                #     for i in range(Nbins):
+                #         for j in range(len(x)):
+                #             ii=ii+np.argwhere(((t.binnumber==i) & (x[j]<t.statistic[j][i]))).flatten().tolist()
+                #     ii=np.array(ii,dtype=int)
+                #     ii = list(ii)
+                #     for i in range(len(y)):
+                #         if ii.count(i) == len(x):
+                #             ii_norm.append(i)
+                # quantile = list(mquantiles(new_data.values, [0.95], axis=0).data[0])
+                # quantile_index = []
+                # for i in range(new_data.shape[0]):
+                #     if list(new_data.values[i]) < quantile:
+                #         quantile_index.append(i)
+                #new_data = new_data.loc[ii_norm, :]
+                #new_data.reset_index(inplace=True, drop=True)
                 n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                # Z = func_for_ndim(len(nodes))
+                # n_sample_comp = sample_n_comp(new_data.shape[0], Z)
+                # if n_comp > n_sample_comp:
+                #     n_comp = n_sample_comp
                 #n_comp = n_component(new_data, nodes)
+                
                 gmm = GMM(n_components=n_comp)
                 gmm.from_samples(new_data[nodes].values)
                 means = gmm.means.tolist()
@@ -854,6 +905,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     for col, val in zip(disc_parents, comb):
                         mask = (mask) & (data[col] == val)
                     new_data = data[mask]
+                    new_data.reset_index(inplace=True, drop=True)
                     key_comb = [str(x) for x in comb]
                     nodes = [node] + cont_parents
                     if new_data.shape[0] > 5:
@@ -863,7 +915,52 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         # yhat = ee.fit_predict(new_data[nodes].values)
                         # mask = yhat != -1
                         # new_data = new_data[mask]
+                        # quantile = list(mquantiles(new_data[nodes].values, [0.95], axis=0).data[0])
+                        # quantile_index = []
+                        # for i in range(new_data.shape[0]):
+                        #     if list(new_data[nodes].values[i]) < quantile:
+                        #         quantile_index.append(i)
+                        # new_data = new_data.loc[quantile_index, :]
+                        # new_data.reset_index(inplace=True, drop=True)
+                      
+                        # Nbins=5
+                        # if new_data.shape[0] < 10:
+                        #     Nbins = 2
+                        # nth=95.
+                        # x = []
+                        # if len(cont_parents) == 1:
+                        #     x = new_data[cont_parents[0]].values
+                        # else:
+                        #     for c_p in cont_parents:
+                        #         x.append(list(new_data[c_p].values))
+                        # y = new_data[node].values
+                        # t=quantile2d(y,x,Nbins,nth)
+                        # ii_norm = []
+                        # if len(cont_parents) == 1:
+                        #     ii=[]
+                        #     for i in range(Nbins):
+                        #         ii=ii+np.argwhere(((t.binnumber==i) & (x<t.statistic[i]))).flatten().tolist()
+                        #     ii=np.array(ii,dtype=int)
+                        #     ii_norm = copy(ii)
+                        # else:
+                        #     ii=[]
+                        #     for i in range(Nbins):
+                        #         for j in range(len(x)):
+                        #             ii=ii+np.argwhere(((t.binnumber==i) & (x[j]<t.statistic[j][i]))).flatten().tolist()
+                        #     ii=np.array(ii,dtype=int)
+                        #     ii = list(ii)
+                        #     for i in range(len(y)):
+                        #         if ii.count(i) == len(x):
+                        #             ii_norm.append(i)
+                        #     if len(ii_norm) <= 1:
+                        #         ii_norm = [o for o in range(len(y))]
+                        # new_data = new_data.loc[ii_norm, :]
+                        # new_data.reset_index(inplace=True, drop=True)
                         n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                        # Z = func_for_ndim(len(nodes))
+                        # n_sample_comp = sample_n_comp(new_data.shape[0], Z)
+                        # if n_comp > n_sample_comp:
+                        #     n_comp = n_sample_comp
                         #n_comp = n_component(new_data, nodes)
                         gmm = GMM(n_components=n_comp)
                         gmm.from_samples(new_data[nodes].values)
@@ -893,6 +990,14 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             # hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base,
                             #                       'mean_scal': list(model.coef_)}
                             n_comp = 1
+                            # print(new_data)
+                            # quantile = list(mquantiles(new_data.values, [0.95], axis=0).data[0])
+                            # quantile_index = []
+                            # for i in range(new_data.shape[0]):
+                            #     if list(new_data.values[i]) < quantile:
+                            #         quantile_index.append(i)
+                            # new_data = new_data.loc[quantile_index, :]
+                            # new_data.reset_index(inplace=True, drop=True)
                             #n_comp = n_component(new_data, nodes)
                             gmm = GMM(n_components=n_comp)
                             gmm.from_samples(new_data[nodes].values)
@@ -926,6 +1031,10 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     key_comb = [str(x) for x in comb]
                     if new_data.shape[0] > 5:
                         n_comp = int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
+                        # Z = func_for_ndim(1)
+                        # n_sample_comp = sample_n_comp(new_data.shape[0], Z)
+                        # if n_comp > n_sample_comp:
+                        #     n_comp = n_sample_comp
                         #n_comp = n_component(new_data, [node])
                         gmm = GMM(n_components=n_comp)
                         gmm.from_samples(np.transpose([new_data[node].values]))
@@ -1124,21 +1233,34 @@ def n_AIC(data: np.ndarray, max_comp: int):
         else:
             break
     return n
-def n_comp_sample (size: int, d: int):
-    d1_05 = [0.225, 0.417]
-    d1_08 = [0.136, 0.79]
-    d1_099 = [0.015, 1.391]
-    d2_08 = [0.07, 0.703]
-    d3_08 = [0.042, 0.547]
-    n = 1
-    if (size <= 50) & (d == 1):
-        n = size*d1_05[0] + d1_05[1]
-    if (size > 50) & (size <= 100) & (d == 1):
-        n = size*d1_08[0] + d1_08[1]
-    if (size > 100) & (d == 1):
-        n = size*d1_099[0] + d1_099[1]
-    if d == 2:
-        n = size*d2_08[0] + d2_08[1]
-    if d == 3:
-        n = size*d3_08[0] + d3_08[1]
-    return n
+coef095 = [13.5, 43.5, 73.25, 101.25, 133.5, 161.75, 198.0, 217.25, 249.25, 275.25]
+intercept095 = [-7.499999999999993,
+ -29.66666666666662,
+ -39.666666666666615,
+ -56.49999999999994,
+ -76.33333333333329,
+ -78.33333333333329,
+ -105.49999999999989,
+ -94.99999999999994,
+ -113.66666666666663,
+ -92.49999999999977]
+
+def func_for_ndim (n_dim):
+    Zpred095 = []
+    for j in range(10):
+        Zpred095.append(n_dim*coef095[j] + intercept095[j])
+    return Zpred095
+def sample_n_comp (size, Z):
+    m095 = LinearRegression().fit(np.transpose([Z]), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    return round(m095.predict([[size]])[0])
+
+
+
+def quantile2d(x,y,Nbins,nth):
+    from numpy import percentile
+    from scipy.stats import binned_statistic
+    def myperc(x,n=nth):
+        return(percentile(x,n))
+    t=binned_statistic(x,y,statistic=myperc,bins=Nbins)
+    
+    return t

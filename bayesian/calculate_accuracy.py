@@ -10,9 +10,99 @@ from typing import Tuple
 from bayesian.train_bn import structure_learning, parameter_learning
 from bayesian.save_bn import save_structure, save_params, read_structure, read_params
 from sklearn.model_selection import train_test_split
+from joblib import Parallel, delayed
+import cpuinfo
 
 
-def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str, normed: bool = True) -> Tuple[dict, dict, list, list]:
+
+def parall_accuracy(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str, parall_count: int = 1, normed: str = 'none'):
+    def wrapper(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str):
+        pred_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
+        real_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
+
+        #data = data[columns]
+        indexes = []
+        node_type = get_nodes_type(data)
+        if len(data) == 1:
+            for i in range(data.shape[0]):
+                test = dict(data.iloc[i, :])
+                for n, key in enumerate(columns):
+                    train_dict = copy(test)
+                    train_dict.pop(key)
+                    try:
+                        if node_type[key] == 'disc':
+                            agg = SampleAggregator()
+                            sample = agg.aggregate(bn.randomsample(2000, method, train_dict))
+                            sorted_res = sorted(sample[key].items(), key=operator.itemgetter(1), reverse=True)
+                            pred_param[n][i] = sorted_res[0][0]
+                            real_param[n][i] = test[key]
+                        if node_type[key] == 'cont':
+                            sample = pd.DataFrame(bn.randomsample(2000, method, train_dict))
+                            if (data[key] > 0).all():
+                                sample = sample.loc[sample[key] >= 0]
+                            if sample.shape[0] == 0:
+                                pred_param[n][i] = np.nan
+                                real_param[n][i] = np.nan
+                            else:
+                                pred = np.mean(sample[key].values)
+                                pred_param[n][i] = pred
+                                real_param[n][i] = test[key]
+                                indexes.append(i)
+                    except Exception as ex:
+                        print(ex)
+                        pred_param[n][i] = np.nan
+                        real_param[n][i] = np.nan
+            for i in range(len(columns)):
+                pred_param[i] = [k for k in pred_param[i] if str(k) != 'nan']
+                real_param[i] = [k for k in real_param[i] if str(k) != 'nan']
+                
+            return {'real_param': [el[0] if el else np.nan for el in real_param], 'pred_param': [el[0] if el else np.nan for el in pred_param], 'indexes': indexes}
+        else:
+            raise Exception('Wrapper for one row from pandas.DataFrame')
+
+    accuracy_dict = dict()
+    rmse_dict = dict()
+    pred_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
+    real_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
+    indexes = []
+    node_type = get_nodes_type(data)
+    
+    processed_list = Parallel(n_jobs=parall_count)( delayed(wrapper)( bn, data.loc[[i]], columns, method) for i in data.index)
+    
+    for i in range(data.shape[0]):
+        curr_real = processed_list[i]['real_param']
+        curr_pred = processed_list[i]['pred_param']
+        curr_ind = processed_list[i]['indexes']
+        for n, key in enumerate(columns):
+            real_param[n][i] = curr_real[n]
+            pred_param[n][i] = curr_pred[n]
+            if curr_ind:
+                indexes.extend([i for _ in range(len(curr_ind))])
+                
+    for i in range(len(columns)):
+        pred_param[i] = [k for k in pred_param[i] if str(k) != 'nan']
+        real_param[i] = [k for k in real_param[i] if str(k) != 'nan']
+
+    for n, key in enumerate(columns):
+        if node_type[key] == 'disc':
+            accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]),2)
+        if node_type[key] == 'cont':
+            if normed == 'range':
+                #rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 3)
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(data[key].values) - np.min(data[key].values)), 3)
+            elif normed == 'std':
+                #std = np.std(real_param[n])
+                std = np.std(data[key].values)
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / std, 3)
+            elif normed == 'none':
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False), 3)
+
+    return  accuracy_dict, rmse_dict, real_param, pred_param, indexes
+
+
+
+
+def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str, normed: str = 'none') -> Tuple[dict, dict, list, list]:
     """Function for calculating of params restoration accuracy
 
     Args:
@@ -37,6 +127,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
     indexes = []
     node_type = get_nodes_type(data)
     for i in range(data.shape[0]):
+        print(i)
         test = dict(data.iloc[i, :])
         for n, key in enumerate(columns):
             train_dict = copy(test)
@@ -50,20 +141,22 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
                     real_param[n][i] = test[key]
                 if node_type[key] == 'cont':
                     sample = pd.DataFrame(bn.randomsample(2000, method, train_dict))
-                    if (data[key] > 0).any():
+                    if (data[key] > 0).all():
                         sample = sample.loc[sample[key] >= 0]
                     if sample.shape[0] == 0:
                         pred_param[n][i] = np.nan
                         real_param[n][i] = np.nan
+                        indexes.append({key:i})
                     else:
                         pred = np.mean(sample[key].values)
                         pred_param[n][i] = pred
                         real_param[n][i] = test[key]
-                        indexes.append(i)
+                        #indexes.append(i)
             except Exception as ex:
                 print(ex)
                 pred_param[n][i] = np.nan
                 real_param[n][i] = np.nan
+                indexes.append({key:i})
     for i in range(len(columns)):
         pred_param[i] = [k for k in pred_param[i] if str(k) != 'nan']
         real_param[i] = [k for k in real_param[i] if str(k) != 'nan']
@@ -71,14 +164,17 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
         if node_type[key] == 'disc':
             accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]),2)
         if node_type[key] == 'cont':
-            if normed:
-                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 2)
-            else:
-                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False),2)
+            if normed == 'range':
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 3)
+            elif normed == 'std':
+                std = np.std(real_param[n])
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / std, 3)
+            elif normed == 'none':
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False), 3)
     return accuracy_dict, rmse_dict, real_param, pred_param, indexes
 
 
-def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2',normed: bool = True) -> Tuple[dict, dict, list, list]:
+def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2', normed: str = 'none') -> Tuple[dict, dict, list, list]:
     """Function for Leave One out cross validation of BN
 
     Args:
@@ -145,10 +241,13 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
         if node_type[key] == 'disc':
             accuracy_dict[key] = round(accuracy_score(real_param[n], pred_param[n]),2)
         if node_type[key] == 'cont':
-            if normed:
-                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 2)
-            else:
-                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False),2)
+            if normed == 'range':
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / (np.max(real_param[n]) - np.min(real_param[n])), 3)
+            elif normed == 'std':
+                std = np.std(real_param[n])
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / std, 3)
+            elif normed == 'none':
+                rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False), 3)
     return accuracy_dict, rmse_dict, real_param, pred_param
 
 
