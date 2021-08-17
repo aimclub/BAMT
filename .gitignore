@@ -9,3 +9,62 @@ visualization/__pycache__
 visualization/__pycache__/visualization.cpython-38.pyc
 visualization/__pycache__/visualization.cpython-38.pyc
 visualization/__pycache__/visualization.cpython-38.pyc
+data/clust_Tectonic regime_0.csv
+data/daks_processed_with_rf_ntg.csv
+data/daks_processed_with_rf.csv
+data/daks_processed.csv
+.gitignore
+data/geo3_1.csv
+data/geo3.csv
+.gitignore
+experiments/gmm_experiments_results/beta05.txt
+experiments/gmm_experiments_results/beta08 2d.txt
+experiments/gmm_experiments_results/beta08 3d.txt
+experiments/gmm_experiments_results/beta08.txt
+experiments/gmm_experiments_results/beta085 2d.txt
+experiments/gmm_experiments_results/beta085 3d.txt
+experiments/gmm_experiments_results/beta085.txt
+experiments/gmm_experiments_results/beta095 2d.txt
+experiments/gmm_experiments_results/beta095.txt
+experiments/gmm_experiments_results/beta098 2d.txt
+experiments/gmm_experiments_results/beta099 2d.txt
+experiments/gmm_experiments_results/beta099 3d.txt
+experiments/gmm_experiments_results/beta099.txt
+experiments/gmm_experiments_results/beta0953d.txt
+.gitignore
+experiments/mdpi_exp_and_results/acc_1_iter.csv
+experiments/mdpi_exp_and_results/acc_2_iter.csv
+experiments/mdpi_exp_and_results/acc_3_iter.csv
+experiments/mdpi_exp_and_results/acc_all_comb.csv
+experiments/mdpi_exp_and_results/acc_cosine_size_20_40_60.csv
+experiments/mdpi_exp_and_results/acc_cosine_size_20_40.csv
+experiments/mdpi_exp_and_results/acc_cosine_size_20.csv
+experiments/mdpi_exp_and_results/acc_cosine_size.csv
+experiments/mdpi_exp_and_results/acc_gower_size.csv
+experiments/mdpi_exp_and_results/acc_hamming_size.csv
+experiments/mdpi_exp_and_results/cluster_watt.csv
+experiments/mdpi_exp_and_results/cluster1.csv
+experiments/mdpi_exp_and_results/cluster2.csv
+experiments/mdpi_exp_and_results/cluster3.csv
+experiments/mdpi_exp_and_results/edges.csv
+.gitignore
+experiments/mdpi_exp_and_results/rf_on_cluster.csv
+experiments/mdpi_exp_and_results/rmse_1_iter.csv
+experiments/mdpi_exp_and_results/rmse_2_iter.csv
+experiments/mdpi_exp_and_results/rmse_3_iter.csv
+experiments/mdpi_exp_and_results/rmse_all_comb.csv
+experiments/mdpi_exp_and_results/rmse_cosine_size_20_40_60.csv
+experiments/mdpi_exp_and_results/rmse_cosine_size_20_40.csv
+experiments/mdpi_exp_and_results/rmse_cosine_size_20.csv
+experiments/mdpi_exp_and_results/rmse_cosine_size.csv
+experiments/mdpi_exp_and_results/rmse_gower_size.csv
+experiments/mdpi_exp_and_results/rmse_hamming_size.csv
+experiments/mix_params_learning_exp_and_results/geo_noLoo_results_logit.csv
+experiments/mix_params_learning_exp_and_results/socio_results_logit.csv
+experiments/ysc_exp/socio_results_cont.csv
+experiments/ysc_exp/socio_results_disc.csv
+graph/healthcare_results_graph.csv
+graph/mehra_results_graph.csv
+graph/sangiovese_results_graph.csv
+visualization/__pycache__/visualization.cpython-38.pyc
+visualization/__pycache__/visualization.cpython-38.pyc
