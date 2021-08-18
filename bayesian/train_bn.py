@@ -798,7 +798,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": None,
                                                 "hybcprob": hycprob}
         if (node_type[node] == "cont") & (len(parents) == 0):
-            n_comp = int((component(data, [node], 'aic') + component(data, [node], 'bic')) / 2)
+            #n_comp = int((component(data, [node], 'aic') + component(data, [node], 'bic')) / 2)
+            n_comp = component(data, [node], 'quantile')
             # Z = func_for_ndim(1)
             # n_sample_comp = sample_n_comp(data.shape[0], Z)
             # if n_comp > n_sample_comp:
@@ -869,7 +870,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 #         quantile_index.append(i)
                 #new_data = new_data.loc[ii_norm, :]
                 #new_data.reset_index(inplace=True, drop=True)
-                n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                #n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                n_comp = component(new_data, nodes, 'quantile')
                 # Z = func_for_ndim(len(nodes))
                 # n_sample_comp = sample_n_comp(new_data.shape[0], Z)
                 # if n_comp > n_sample_comp:
@@ -956,7 +958,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                         #         ii_norm = [o for o in range(len(y))]
                         # new_data = new_data.loc[ii_norm, :]
                         # new_data.reset_index(inplace=True, drop=True)
-                        n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                        #n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                        n_comp = component(new_data, nodes, 'quantile')
                         # Z = func_for_ndim(len(nodes))
                         # n_sample_comp = sample_n_comp(new_data.shape[0], Z)
                         # if n_comp > n_sample_comp:
@@ -1008,6 +1011,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             for row in weigts:
                                 w.append(np.mean(row))
                             hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
+                        else:
+                            hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
 
                 if (len(children) != 0):
                     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,
@@ -1030,7 +1035,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     new_data = data[mask]
                     key_comb = [str(x) for x in comb]
                     if new_data.shape[0] > 5:
-                        n_comp = int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
+                        #n_comp = int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
+                        n_comp = component(new_data, [node], 'quantile')
                         # Z = func_for_ndim(1)
                         # n_sample_comp = sample_n_comp(new_data.shape[0], Z)
                         # if n_comp > n_sample_comp:
@@ -1061,6 +1067,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             for row in weigts:
                                 w.append(np.mean(row))
                             hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
+                        else:
+                            hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
 
                 if (len(children) != 0):
                     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,

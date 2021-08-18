@@ -88,17 +88,21 @@ class Lg():
             variance = self.Vdataentry["variance"]
             w = self.Vdataentry["mean_scal"]
             n_comp = len(self.Vdataentry["mean_scal"])
-            
-            if (self.Vdataentry["parents"] != None):
-                indexes = [i for i in range (1, (len(self.Vdataentry["parents"])+1), 1)]
-                #if not np.isnan(np.array(pvalues)).any():
-                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-                sample = gmm.predict(indexes, [pvalues])[0][0]
-                # else:
-                #     sample = np.nan
+            if n_comp != 0:
+                if (self.Vdataentry["parents"] != None):
+                    indexes = [i for i in range (1, (len(self.Vdataentry["parents"])+1), 1)]
+                    if not np.isnan(np.array(pvalues)).all():
+                        gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                        sample = gmm.predict(indexes, [pvalues])[0][0]
+                    else:
+                        sample = np.nan
+                else:
+                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                    sample = gmm.sample(1)[0][0]
             else:
-                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-                sample = gmm.sample(1)[0][0]
+                sample = np.nan
+            
+            
         return sample
 
     def choose_gmm(self, pvalues, outcome):

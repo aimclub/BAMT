@@ -38,7 +38,7 @@ def parall_accuracy(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, me
                             real_param[n][i] = test[key]
                         if node_type[key] == 'cont':
                             sample = pd.DataFrame(bn.randomsample(2000, method, train_dict))
-                            if (data[key] > 0).all():
+                            if (data[key] >= 0).all():
                                 sample = sample.loc[sample[key] >= 0]
                             if sample.shape[0] == 0:
                                 pred_param[n][i] = np.nan
@@ -141,7 +141,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
                     real_param[n][i] = test[key]
                 if node_type[key] == 'cont':
                     sample = pd.DataFrame(bn.randomsample(2000, method, train_dict))
-                    if (data[key] > 0).all():
+                    if (data[key] >= 0).all():
                         sample = sample.loc[sample[key] >= 0]
                     if sample.shape[0] == 0:
                         pred_param[n][i] = np.nan
@@ -221,7 +221,7 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
                     real_param[n][i] = test[key]
                 if node_type[key] == 'cont':
                     sample = pd.DataFrame(all_bn.randomsample(2000, method, train_dict))
-                    if (initial_data[key] > 0).any():
+                    if (initial_data[key] >= 0).all():
                         sample = sample.loc[sample[key] >= 0]
                     if sample.shape[0] == 0:
                         pred_param[n][i] = np.nan

@@ -82,7 +82,6 @@ class Lgandd():
 		sample = 0
 
 		if method == 'simple':
-			# split parents by type
 			dispvals = []
 			lgpvals = []
 			for pval in pvalues:
@@ -90,21 +89,17 @@ class Lgandd():
 					dispvals.append(pval)
 				else:
 					lgpvals.append(pval)
-			# find correct Gaussian
 			lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
-			# calculate Bayesian parameters (mean and variance)
 			mean = lgdistribution["mean_base"]
 			if (self.Vdataentry["parents"] != None):
 				for x in range(len(lgpvals)):
 					if (lgpvals[x] != "default"):
 						mean += lgpvals[x] * lgdistribution["mean_scal"][x]
 					else:
-						# temporary error check 
 						print ("Attempted to sample node with unassigned parents.")
 			variance = lgdistribution["variance"]
 			sample = random.gauss(mean, math.sqrt(variance))  
 		else:
-			# split parents by type
 			dispvals = []
 			lgpvals = []
 			for pval in pvalues:
@@ -112,38 +107,27 @@ class Lgandd():
 					dispvals.append(pval)
 				else:
 					lgpvals.append(pval)
-		# find correct Gaussian
 			lgdistribution = self.Vdataentry["hybcprob"][str(dispvals)]
-		# calculate Bayesian parameters (mean and variance)
 			mean = lgdistribution["mean_base"]
 			variance = lgdistribution["variance"]
 			w = lgdistribution["mean_scal"]
-		#if (self.Vdataentry["parents"] != None):
-			if (len(lgpvals) != 0):
-				# if isinstance(mean, list):
-				indexes = [i for i in range (1, (len(lgpvals)+1), 1)]
-					# if not np.isnan(np.array(lgpvals)).any():
-				n_comp = len(w)
-				gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-				sample = gmm.predict(indexes, [lgpvals])[0][0]
-					# else:
-					# 	sample = np.nan
-				# else:
-				# 	for x in range(len(lgpvals)):
-				# 		if (lgpvals[x] != "default"):
-				# 			mean += lgpvals[x] * w[x]
-				# 		else:
-				# 	# temporary error check 
-				# 			print ("Attempted to sample node with unassigned parents.")	
-				# 	sample = random.gauss(mean, math.sqrt(variance))
+			if len(w) != 0:
+				if (len(lgpvals) != 0):
+					indexes = [i for i in range (1, (len(lgpvals)+1), 1)]
+					if not np.isnan(np.array(lgpvals)).all():
+						n_comp = len(w)
+						gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+						sample = gmm.predict(indexes, [lgpvals])[0][0]
+					else:
+						sample = np.nan
+				else:
+					n_comp = len(w)
+					gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+					sample = gmm.sample(1)
+					sample = sample[0][0]
 			else:
-				# if isinstance(mean, list):
-				n_comp = len(w)
-				gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-				sample = gmm.sample(1)
-				sample = sample[0][0]
-				# else:
-				# 	sample = random.gauss(mean, math.sqrt(variance))
+				sample = np.nan
+			
 
 		return sample    
 
