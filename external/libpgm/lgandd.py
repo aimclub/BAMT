@@ -123,8 +123,7 @@ class Lgandd():
 				else:
 					n_comp = len(w)
 					gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
-					sample = gmm.sample(1)
-					sample = sample[0][0]
+					sample = gmm.sample(1)[0][0]
 			else:
 				sample = np.nan
 			

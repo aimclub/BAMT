@@ -9,13 +9,25 @@ from external.libpgm.hybayesiannetwork import HyBayesianNetwork
 from typing import Tuple
 from bayesian.train_bn import structure_learning, parameter_learning
 from bayesian.save_bn import save_structure, save_params, read_structure, read_params
-from sklearn.model_selection import train_test_split
 from joblib import Parallel, delayed
-import cpuinfo
 
 
 
-def parall_accuracy(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str, parall_count: int = 1, normed: str = 'none'):
+
+def parall_accuracy(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str, parall_count: int = 1, normed: str = 'none') -> Tuple[dict, dict, list, list]:
+    """Function for calculating accuracy in parallel
+
+    Args:
+        bn (HyBayesianNetwork): trained BN
+        data (pd.DataFrame): test dataset
+        columns (list): list of columns for restoration
+        method (str): method of restoration (simple or mix)
+        parall_count (int, optional):number of threads. Defaults to 1.
+        normed (str, optional): type of rmse normalization (range, std, none). Defaults to 'none'.
+
+    Returns:
+        Tuple[dict, dict, list, list]: accuracy, rmse, real data, predicted data
+    """     
     def wrapper(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, method: str):
         pred_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
         real_param = [[0 for j in range(data.shape[0])] for i in range(len(columns))]
@@ -110,14 +122,12 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
         data (pd.DataFrame): test dataset
         columns (list): list of params for restoration
         method (str): method of sampling - simple or mix
-        normed (bool): Flag that define type of rmse, if 'false' then raw rmse will be out. Defaults to True.
+        normed (str, optional): type of rmse normalization (range, std, none). Defaults to 'none'.
 
     Returns:
-        dict: accuracy score (discrete vars)
-        dict: rmse score (continuous vars)
-        list: real data of params
-        list: predicted data of params
-    """
+        Tuple[dict, dict, list, list]: accuracy, rmse, real data, predicted data
+    """    
+    
 
     accuracy_dict = dict()
     rmse_dict = dict()
@@ -175,7 +185,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
 
 
 def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2', normed: str = 'none') -> Tuple[dict, dict, list, list]:
-    """Function for Leave One out cross validation of BN
+    """Function for Leave One Out cross validation of BN
 
     Args:
         initial_data (pd.DataFrame): source dataset without coding and discretization.
@@ -184,11 +194,14 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
         columns (list): list of params for accuracy estimation
         search (str, optional): search strategy for structural learning (HC or evo). Defaults to 'HC'.
         score (str, optional): Score function for HC structure learning. Defaults to 'K2'.
-        normed (bool, optional): Flag that define type of rmse, if 'false' then raw rmse will be out. Defaults to True.
+        normed (str, optional): type of rmse normalization (range, std, none). Defaults to 'none'.
+
+    Raises:
+        Exception: With K2 function you can use only discrete data for structure learning
 
     Returns:
-        Tuple[dict, dict]: accuracy dict and rmse dict.
-    """    
+        Tuple[dict, dict, list, list]: accuracy, rmse, real data, predicted data
+    """   
     accuracy_dict = dict()
     rmse_dict = dict()
     node_type = get_nodes_type(initial_data)

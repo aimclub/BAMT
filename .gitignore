@@ -68,3 +68,9 @@ graph/mehra_results_graph.csv
 graph/sangiovese_results_graph.csv
 visualization/__pycache__/visualization.cpython-38.pyc
 visualization/__pycache__/visualization.cpython-38.pyc
+experiments/bayesian
+experiments/core
+experiments/external
+experiments/fedot
+experiments/preprocess
+experiments/visualization
