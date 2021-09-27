@@ -802,15 +802,16 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": None,
                                                 "hybcprob": hycprob}
         if (node_type[node] == "cont") & (len(parents) == 0):
-            n_comp = int((component(data, [node], 'aic') + component(data, [node], 'bic')) / 2)
+            n_comp = int((component(data, [node], 'aic') + component(data, [node], 'bic')) / 2)#component(data, [node], 'LRTS')#
+            #n_comp = 3
             gmm = GMM(n_components=n_comp)
             gmm.from_samples(np.transpose([data[node].values]))
             means = gmm.means.tolist()
             cov = gmm.covariances.tolist()
-            weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
-            w = []
-            for row in weigts:
-                w.append(np.mean(row))
+            #weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
+            w = gmm.priors.tolist()#[]
+            # for row in weigts:
+            #     w.append(np.mean(row))
             if (len(children) != 0):
                 node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
                                             "variance": cov, "type": "lg", "children": children}
@@ -822,15 +823,16 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 nodes = [node] + cont_parents
                 new_data = copy(data[nodes])
                 new_data.reset_index(inplace=True, drop=True)
-                n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)#component(new_data, nodes, 'LRTS')#
+                #n_comp = 3
                 gmm = GMM(n_components=n_comp)
                 gmm.from_samples(new_data[nodes].values)
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
-                weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
-                w = []
-                for row in weigts:
-                    w.append(np.mean(row))
+                #weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
+                w = gmm.priors.tolist()#[]
+                # for row in weigts:
+                #     w.append(np.mean(row))
                 if (len(children) != 0):
                     node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w,
                                                 "parents": parents, "variance": cov, "type": "lg",
@@ -856,15 +858,16 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     key_comb = [str(x) for x in comb]
                     nodes = [node] + cont_parents
                     if new_data.shape[0] > 5:
-                        n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                        n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)#component(new_data, nodes, 'LRTS')#int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                        #n_comp = 3
                         gmm = GMM(n_components=n_comp)
                         gmm.from_samples(new_data[nodes].values)
                         means = gmm.means.tolist()
                         cov = gmm.covariances.tolist()
-                        weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
-                        w = []
-                        for row in weigts:
-                            w.append(np.mean(row))
+                        #weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
+                        w = gmm.priors.tolist()#[]
+                        # for row in weigts:
+                        #     w.append(np.mean(row))
                         hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                     else:
                         if new_data.shape[0] != 0:
@@ -873,10 +876,10 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             gmm.from_samples(new_data[nodes].values)
                             means = gmm.means.tolist()
                             cov = gmm.covariances.tolist()
-                            weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
-                            w = []
-                            for row in weigts:
-                                w.append(np.mean(row))
+                            #weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
+                            w = gmm.priors.tolist()
+                            # for row in weigts:
+                            #     w.append(np.mean(row))
                             hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                         else:
                             hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
@@ -902,15 +905,16 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     new_data = data[mask]
                     key_comb = [str(x) for x in comb]
                     if new_data.shape[0] > 5:
-                        n_comp = int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
+                        n_comp = int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)#component(new_data, [node], 'LRTS')#int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
+                        #n_comp = 3
                         gmm = GMM(n_components=n_comp)
                         gmm.from_samples(np.transpose([new_data[node].values]))
                         means = gmm.means.tolist()
                         cov = gmm.covariances.tolist()
-                        weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
-                        w = []
-                        for row in weigts:
-                            w.append(np.mean(row))
+                        #weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
+                        w = gmm.priors.tolist()#[]
+                        # for row in weigts:
+                        #     w.append(np.mean(row))
                         hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                     else:
                         if new_data.shape[0] != 0:
@@ -919,10 +923,10 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                             gmm.from_samples(np.transpose([new_data[node].values]))
                             means = gmm.means.tolist()
                             cov = gmm.covariances.tolist()
-                            weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
-                            w = []
-                            for row in weigts:
-                                w.append(np.mean(row))
+                            #weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
+                            w = gmm.priors.tolist()#[]
+                            # for row in weigts:
+                            #     w.append(np.mean(row))
                             hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                         else:
                             hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
