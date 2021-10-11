@@ -304,11 +304,10 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
     if init_nodes:
         blacklist = [(x, y) for x in datacol for y in init_nodes if x != y]
     if not cont_disc:    
-        for x in datacol:
-            for y in datacol:
-                if x != y:
-                    if (node_type[x] == 'cont') & (node_type[y] == 'disc'):
-                        blacklist.append((x, y))
+        for x, y in itertools.product(datacol, repeat=2):
+            if x != y:
+                if (node_type[x] == 'cont') & (node_type[y] == 'disc'):
+                    blacklist.append((x, y))
     if black_list:
         blacklist = blacklist + black_list
 
@@ -341,9 +340,12 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
             skeleton['E'] = structure
             
         if score == "K2":
-            hc_K2Score = HillClimbSearch(data, K2Score(data))
+            hc_K2Score = HillClimbSearch(data)
             if init_edges == None:
-                best_model_K2Score = hc_K2Score.estimate(black_list=blacklist, white_list=white_list,max_iter=max_iter, show_progress=False)
+                best_model_K2Score = hc_K2Score.estimate(
+                    scoring_method=K2Score(data)
+                    black_list=blacklist, white_list=white_list,
+                    max_iter=max_iter, show_progress=False)
             else:
                 if remove_init_edges:
                     startdag = DAG()
