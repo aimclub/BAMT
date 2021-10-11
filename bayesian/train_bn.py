@@ -343,7 +343,7 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
             hc_K2Score = HillClimbSearch(data)
             if init_edges == None:
                 best_model_K2Score = hc_K2Score.estimate(
-                    scoring_method=K2Score(data)
+                    scoring_method=K2Score(data),
                     black_list=blacklist, white_list=white_list,
                     max_iter=max_iter, show_progress=False)
             else:
@@ -361,9 +361,9 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
 
 
         if score == 'MI_mixed':
-            hc_mi_mixed = HillClimbSearch(data, scoring_method=MIG(data=data))
+            hc_mi_mixed = HillClimbSearch(data)
             if init_edges == None:
-                best_model_mi_mixed = hc_mi_mixed.estimate(black_list=blacklist, white_list=white_list)
+                best_model_mi_mixed = hc_mi_mixed.estimate(scoring_method=MIG(data=data), black_list=blacklist, white_list=white_list)
             else:
                 if remove_init_edges:
                     startdag = DAG()
