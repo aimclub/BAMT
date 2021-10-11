@@ -280,7 +280,7 @@ def run_bayesian_info(data: pd.DataFrame, node_types: dict, max_lead_time: datet
     return optimized_network
 
 def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: str = 'MI', init_nodes: list = None,
-                       white_list: list = None,
+                       white_list: list = None, max_iter=1e6,
                        init_edges: list = None, remove_init_edges: bool = True, black_list: list = None, cont_disc = False) -> dict:
     """Function for bayesian networks structure learning
 
@@ -341,9 +341,9 @@ def structure_learning(data: pd.DataFrame, search: str, node_type: dict, score: 
             skeleton['E'] = structure
             
         if score == "K2":
-            hc_K2Score = HillClimbSearch(data, scoring_method=K2Score(data))
+            hc_K2Score = HillClimbSearch(data, K2Score(data))
             if init_edges == None:
-                best_model_K2Score = hc_K2Score.estimate(black_list=blacklist, white_list=white_list, show_progress=False)
+                best_model_K2Score = hc_K2Score.estimate(black_list=blacklist, white_list=white_list,max_iter=max_iter, show_progress=False)
             else:
                 if remove_init_edges:
                     startdag = DAG()
