@@ -14,7 +14,7 @@ from block_learning.partial_bn_train import direct_connect, direct_train
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-vk_data = pd.read_csv("data/vk_data.csv")
+vk_data = pd.read_csv("../data/vk_data.csv")
 
 p2 = time.time()
 print(f"Time elapsed for uploading data: {p2 - p1}")
@@ -56,11 +56,10 @@ n = 1
 hybns = []
 learning_loop_start = time.time()
 for module, module_d, node_type in zip(modules, modules_d, nodes_types):
-    print(f"STAGE: {n}")
-    bn = structure_learning(module_d, 'HC', node_types, 'K2', num_iter=1e5, show_progress=False)
+    bn = structure_learning(module_d, 'HC', node_types, 'K2', num_iter=1e5)
     param = parameter_learning(module, node_types, bn, 'simple')
     l1 = time.time()
-    print(f"STAGE {n} elapsed {l1 - learning_loop_start}")
+    print(f"STAGE {n}: elapsed {l1 - learning_loop_start}")
 
 
     save_structure(bn, 'full_net')
@@ -94,14 +93,10 @@ draw_BN(final_struct, nd, 'final_structure')
 
 # Time elapsed for importing: 5.485136270523071
 # Time elapsed for uploading data: 0.5628087520599365
-# STAGE: 1
-# STAGE 1 elapsed 0.9903216361999512
-# STAGE: 2
-# STAGE 2 elapsed 1.9904534816741943
-# STAGE: 3
-# STAGE 3 elapsed 3.5354082584381104
-# STAGE: 4
-# STAGE 4 elapsed 4.835458040237427
+# STAGE 1: elapsed 0.9903216361999512
+# STAGE 2: elapsed 1.9904534816741943
+# STAGE 3: elapsed 3.5354082584381104
+# STAGE 4: elapsed 4.835458040237427
 # FOR LOOP FINISHED
 #   0%|          | 33/1000000 [00:16<138:40:40,  2.00it/s]
 # ['0 1', '0 2', '0 3']
@@ -110,6 +105,4 @@ draw_BN(final_struct, nd, 'final_structure')
 # 0 2
 # 0 3
 # DIRECT TRAIN FINISHED (477.1661093235016)
-#
-# Process finished with exit code 0
 
