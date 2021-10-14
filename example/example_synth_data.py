@@ -56,7 +56,7 @@ n = 1
 hybns = []
 learning_loop_start = time.time()
 for module, module_d, node_type in zip(modules, modules_d, nodes_types):
-    bn = structure_learning(module_d, 'HC', node_types, 'K2', num_iter=1e5)
+    bn = structure_learning(module_d, 'HC', node_types, 'K2', max_iter=1e5)
     param = parameter_learning(module, node_types, bn, 'simple')
     l1 = time.time()
     print(f"STAGE {n}: elapsed {l1 - learning_loop_start}")
