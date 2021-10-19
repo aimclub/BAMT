@@ -210,6 +210,7 @@ def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.Da
     pred_param = [[0 for j in range(initial_data.shape[0])] for i in range(len(columns))]
     real_param = [[0 for j in range(initial_data.shape[0])] for i in range(len(columns))]
     for i in range (initial_data.shape[0]):
+        print(i)
         test = dict(initial_data.iloc[i,:])
         train_data = data_for_strucure_learning.drop(index=i)
         param_train = initial_data.drop(index=i)
