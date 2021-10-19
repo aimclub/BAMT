@@ -180,8 +180,8 @@ def direct_connect (hybns: list, data: pd.DataFrame, node_type: dict):
                 for x in bn1['V']:
                     for y in bn2['V']:
                         white_list = white_list + [(x, y), (y, x)]                 
-    hc_K2Score = HillClimbSearch(data, scoring_method=K2Score(data))
-    best_model_K2Score = hc_K2Score.estimate(white_list=white_list)#, fixed_edges=fixed_list)
+    hc_K2Score = HillClimbSearch(data)
+    best_model_K2Score = hc_K2Score.estimate(white_list=white_list, scoring_method=K2Score(data)) # + fixed_edges=fixed_list
     structure = [list(x) for x in list(best_model_K2Score.edges())] 
     # for edge in structure:
     #     if (node_type[edge[0]] == 'cont') & (node_type[edge[1]] == 'disc'):
