@@ -547,7 +547,7 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                     node_data['Vdata'][node] = {"mean_base": list(model.intercept_), "mean_scal": list(model.coef_.reshape(1,-1)[0]),
                                                 "parents": parents, 'classes': list(model.classes_), "type": "logit",
                                                 "children": None}
-            #Logit Node
+            #Conditional Logit Node
             if (len(disc_parents) != 0) & (len(cont_parents) != 0):
                 hycprob = dict()
                 values = []
