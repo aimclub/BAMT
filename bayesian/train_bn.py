@@ -498,6 +498,8 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                 disc_parents.append(parent)
             else:
                 cont_parents.append(parent)
+
+        # Discrete Node
         if (node_type[node] == "disc") & (len(parents) == 0):
             numoutcomes = int(len(data[node].unique()))
             dist = DiscreteDistribution.from_samples(data[node].values)
@@ -510,7 +512,9 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                 node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": None, "vals": vals,
                                             "type": "discrete", "children": None}
 
+      
         if (node_type[node] == "disc") & (len(parents) != 0):
+            # Discrete Node
             if (len(disc_parents) != 0) & (len(cont_parents) == 0):
                 numoutcomes = int(len(data[node].unique()))
                 dist = DiscreteDistribution.from_samples(data[node].values)
@@ -530,7 +534,8 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                 else:
                     node_data['Vdata'][node] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
                                                 "vals": vals, "type": "discrete", "children": None}
-
+            #Logit Node
+  
             if (len(disc_parents) == 0):
                 model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
                 model.fit(data[parents].values, data[node].values)
@@ -542,7 +547,7 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                     node_data['Vdata'][node] = {"mean_base": list(model.intercept_), "mean_scal": list(model.coef_.reshape(1,-1)[0]),
                                                 "parents": parents, 'classes': list(model.classes_), "type": "logit",
                                                 "children": None}
-
+            #Logit Node
             if (len(disc_parents) != 0) & (len(cont_parents) != 0):
                 hycprob = dict()
                 values = []
@@ -586,7 +591,7 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                                                 "hybcprob": hycprob}
 
             
-
+        #Gaussian Node
         if (node_type[node] == "cont") & (len(parents) == 0):
             mean_base = np.mean(data[node].values)
             variance = np.var(data[node].values)
@@ -596,7 +601,10 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
             else:
                 node_data['Vdata'][node] = {"mean_base": mean_base, "mean_scal": [], "parents": None,
                                             "variance": variance, "type": "lg", "children": None}
+        
+        
         if (node_type[node] == "cont") & (len(parents) != 0):
+            #Gaussian Node
             if (len(disc_parents) == 0):
                 model = linear_model.LinearRegression()
                 predict = []
@@ -615,6 +623,7 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                     node_data['Vdata'][node] = {"mean_base": model.intercept_, "mean_scal": list(model.coef_),
                                                 "parents": parents, "variance": variance, "type": "lg",
                                                 "children": None}
+            #Conditional Gaussian Node
             if (len(disc_parents) != 0) & (len(cont_parents) != 0):
                 hycprob = dict()
                 values = []
@@ -654,6 +663,7 @@ def parameter_learning_simple(data: pd.DataFrame, node_type: dict, skeleton: dic
                 else:
                     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
                                                 "hybcprob": hycprob}
+            # Conditional Gaussian Node
             if (len(disc_parents) != 0) & (len(cont_parents) == 0):
                 hycprob = dict()
                 values = []
@@ -803,6 +813,9 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 else:
                     node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": None,
                                                 "hybcprob": hycprob}
+       
+       
+       #Mixture Gaussian Node
         if (node_type[node] == "cont") & (len(parents) == 0):
             n_comp = int((component(data, [node], 'aic') + component(data, [node], 'bic')) / 2)#component(data, [node], 'LRTS')#
             #n_comp = 3
@@ -821,6 +834,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
                                             "variance": cov, "type": "lg", "children": None}
         if (node_type[node] == "cont") & (len(parents) != 0):
+            #Mixture Gaussian Node
             if (len(disc_parents) == 0) & (len(cont_parents) != 0):
                 nodes = [node] + cont_parents
                 new_data = copy(data[nodes])
@@ -843,6 +857,7 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                     node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w,
                                                 "parents": parents, "variance": cov, "type": "lg",
                                                 "children": None}
+            # Conditional Mixture Gaussian Node
             if (len(disc_parents) != 0) & (len(cont_parents) != 0):
                 hycprob = dict()
                 values = []
@@ -892,6 +907,8 @@ def parameter_learning_mix(data: pd.DataFrame, node_type: dict, skeleton: dict) 
                 else:
                     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
                                                 "hybcprob": hycprob}
+            
+              # Conditional Mixture Gaussian Node
             if (len(disc_parents) != 0) & (len(cont_parents) == 0):
                 hycprob = dict()
                 values = []
