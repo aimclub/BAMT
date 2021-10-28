@@ -74,3 +74,11 @@ experiments/external
 experiments/fedot
 experiments/preprocess
 experiments/visualization
+experiments/2d_2comp.csv
+experiments/2d_3comp.csv
+experiments/2d_4comp.csv
+experiments/3d_2comp.csv
+experiments/3d_3comp.csv
+experiments/3d_4comp.csv
+experiments/real_data_results.csv
+experiments/results_socio.csv
