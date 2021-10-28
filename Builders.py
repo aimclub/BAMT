@@ -1,4 +1,6 @@
 import itertools
+from typing import Dict
+
 from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 import Nodes
@@ -32,21 +34,43 @@ class StructureBuilder(object):
             blacklist = blacklist + bl_add
         self.black_list = blacklist
 
+    # noinspection PyTypeChecker,PyUnresolvedReferences
+    def get_family(self):
+        assert self.skeleton['V'], "Vertex list is None"
+        assert self.skeleton['E'], "Edges list is None"
+        for node_instance in self.skeleton['V']:
+            node = node_instance.name
+            children = []
+            parents = []
+            for edge in self.skeleton['E']:
+                if node in edge:
+                    if edge.index(node) == 0:
+                        children.append(edge[1])
+                    if edge.index(node) == 1:
+                        parents.append(edge[0])
+
+            id = self.skeleton['V'].index(node_instance)
+            self.skeleton['V'][id].parents = parents
+            self.skeleton['V'][id].children = children
+
 
 class VerticesDefiner(StructureBuilder):
     def __init__(self, descriptor):
         super(VerticesDefiner, self).__init__(descriptor=descriptor)
-        self.vertices = {}
+        self.vertices = []
 
         # TODO: не регулируется!
         Node = None
         for vertice, type in self.descriptor['types'].items():
             if type in ['disc_num', 'disc']:
-                Node = Nodes.DiscreteNode(name=vertice, type='Discrete')
+                Node = Nodes.DiscreteNode(name=vertice,
+                                          type='Discrete')
             elif type == 'cont':
-                Node = Nodes.GaussianNode(name=vertice, type='Gaussian')
+                # TODO: Добавить знак
+                Node = Nodes.GaussianNode(name=vertice,
+                                          type='Gaussian')
 
-            self.vertices[vertice] = Node
+            self.vertices.append(Node)
 
 
 class EdgesDefiner(StructureBuilder):
@@ -104,6 +128,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
 
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton['E'] = structure
+
     # not worked
     def apply_group1(self, data, init_edges, remove_init_edges):
         # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
@@ -145,3 +170,5 @@ class HCStructureBuilder(HillClimbDefiner, StructureBuilder):
             self.apply_K2(data=data)
         elif self.scoring_function[0] in ['MI', 'LL', 'BIC', 'AIC']:
             self.apply_group1(data, None, True)
+
+        self.get_family()

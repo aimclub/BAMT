@@ -40,9 +40,10 @@ info = {"types": p.get_nodes_types(discretized_data),
 print(discretized_data.columns)
 print(info['types'])
 
-
+# Под капот!
 bn = Builders.HCStructureBuilder(data=discretized_data, scoring_function=('K2', K2Score),
                                  descriptor=info)
+# Вместо: bn = D BN(); dn.add_nodes(data); bn.build_edges(data)
 
 params = {'init_nodes': None,
           'bl_add': None,

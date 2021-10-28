@@ -1,3 +1,6 @@
+import warnings
+
+
 class BasePreprocessor(object):
     def __init__(self):
         self.nodes_signs = {}
@@ -64,6 +67,9 @@ class BasePreprocessor(object):
             """
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'disc']
         df = data.copy()  # INPUT DF. Debugging SettingWithCopyWarning
+        if columns == []:
+            warnings.warn("no one column is discrete")
+            return df, None
         data = df[columns]  # DATA TO CATEGORIZE
         encoder_dict = dict()
 
@@ -81,6 +87,9 @@ class BasePreprocessor(object):
         # Assuming for now that data is without NaNs
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
         df = data.copy()
+        if not columns:
+            warnings.warn("No one column is continuous")
+            return df, None
         data = df[columns]
 
         data_discrete = discretizer.fit_transform(data.values)
@@ -97,6 +106,9 @@ class Preprocessor(BasePreprocessor):
         super().__init__()
         self.pipeline = pipeline
         self.coder = {}
+
+    def get_info(self):
+        return {'types': self.nodes_types, 'signs': self.nodes_signs}
 
     def apply(self, data):
         self.nodes_types = self.get_nodes_types(data)
