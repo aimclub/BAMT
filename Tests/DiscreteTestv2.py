@@ -29,7 +29,8 @@ columns = [col for col in vk_data.columns.to_list() if nodes_type_mixed[col] in 
 discrete_data = vk_data[columns]
 
 discretized_data, est = p.apply(discrete_data)
-info = p.get_info()
+info = p.info
+
 
 info = {"types": p.get_nodes_types(discretized_data),
         "signs": info['signs']}
@@ -43,6 +44,10 @@ params = {'init_nodes': None,
           'cont_disc': None}
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params)
-bn.fit_parameters(data=discretized_data)
+t1 = time.time()
+bn.fit_parameters(data=vk_data)
+t2 = time.time()
+print(f'PL elaspsed: {t2-t1}')
 for node, d in bn.distributions.items():
     print(node,":", d)
+    break

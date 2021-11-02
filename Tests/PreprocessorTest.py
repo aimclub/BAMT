@@ -14,5 +14,5 @@ data, en = p.apply(vk_data)
 # for i, j in en.items():
 #     print(f"{i}:{j}")
 
-print(p.get_info())
+print(p.info)
 

@@ -1,5 +1,4 @@
 import itertools
-from typing import Dict
 
 from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
@@ -10,7 +9,18 @@ import Nodes
 
 
 class StructureBuilder(object):
+    """
+    Base Class for Structure Builder.
+    It can restrict nodes defined by RESTRICTIONS
+    """
     def __init__(self, descriptor):
+        """
+        :param descriptor: a dict with types and signs of nodes
+        Attributes:
+        Skeleton;
+        black_list: a list with restricted connections;
+        white_list: a list with allowed connections.
+        """
         self.skeleton = {'V': None,
                          'E': None}
         self.descriptor = descriptor
@@ -19,6 +29,12 @@ class StructureBuilder(object):
         self.white_list = None
 
     def restrict(self, data, init_nodes, cont_disc, bl_add):
+        """
+        :param data: data to deal with
+        :param init_nodes: nodes to begin with
+        :param cont_disc: allow continuous-discrete edges
+        :param bl_add: additional vertices
+        """
         node_type = self.descriptor['types']
         blacklist = []
         datacol = data.columns.to_list()
@@ -36,6 +52,10 @@ class StructureBuilder(object):
 
     # noinspection PyTypeChecker,PyUnresolvedReferences
     def get_family(self):
+        """
+        A function that update a skeleton
+        :return:
+        """
         assert self.skeleton['V'], "Vertex list is None"
         assert self.skeleton['E'], "Edges list is None"
         for node_instance in self.skeleton['V']:
@@ -55,7 +75,13 @@ class StructureBuilder(object):
 
 
 class VerticesDefiner(StructureBuilder):
+    """
+    Main class for defining vertices
+    """
     def __init__(self, descriptor):
+        """
+        Automatically creates a list of nodes
+        """
         super(VerticesDefiner, self).__init__(descriptor=descriptor)
         self.vertices = []
 
@@ -66,7 +92,6 @@ class VerticesDefiner(StructureBuilder):
                 Node = Nodes.DiscreteNode(name=vertice,
                                           type='Discrete')
             elif type == 'cont':
-                # TODO: Добавить знак
                 Node = Nodes.GaussianNode(name=vertice,
                                           type='Gaussian')
 
@@ -80,9 +105,11 @@ class EdgesDefiner(StructureBuilder):
 
 class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
     def __init__(self, data, descriptor,
-                 scoring_function):
-        # scoring_function = (Name, scor_func)
-        # assert Callable
+                 scoring_function: tuple):
+        """
+        :param scoring_function: a tuple with following format (Name, scoring_function)
+        """
+        assert callable(scoring_function[1]), "Cannot call scoring function"
         self.scoring_function = scoring_function
         self.optimizer = HillClimbSearch(data)
         self.params = {'init_edges': None,

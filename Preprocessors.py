@@ -1,4 +1,11 @@
-import warnings
+import logging.config
+
+from os import path
+
+log_file_path = path.join(path.dirname(path.abspath(__file__)), 'logging.conf')
+
+logging.config.fileConfig(log_file_path)
+logger = logging.getLogger('preprocessor')
 
 
 class BasePreprocessor(object):
@@ -22,7 +29,6 @@ class BasePreprocessor(object):
             disc = ['str', 'O', 'b']
             disc_numerical = ['int32', 'int64']
             cont = ['float32', 'float64']
-
             if data[c].dtypes in disc:
                 column_type[c] = 'disc'
             elif data[c].dtype in cont:
@@ -30,7 +36,7 @@ class BasePreprocessor(object):
             elif data[c].dtype in disc_numerical:
                 column_type[c] = 'disc_num'
             else:
-                raise TypeError(f'Unsupported data type. Dtype: {data[c].dtypes}')
+                logger.error(f'Unsupported data type. Dtype: {data[c].dtypes}')
 
         return column_type
 
@@ -67,15 +73,18 @@ class BasePreprocessor(object):
             """
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'disc']
         df = data.copy()  # INPUT DF. Debugging SettingWithCopyWarning
-        if columns == []:
-            warnings.warn("no one column is discrete")
+        if not columns:
+            logger.warning("No one column is discrete")
             return df, None
         data = df[columns]  # DATA TO CATEGORIZE
         encoder_dict = dict()
 
         for col_name, column in data.iteritems():
             # Iterate over (column name, Series) pairs.
-            df[col_name] = encoder.fit_transform(column.values)
+            try:
+                df[col_name] = encoder.fit_transform(column.values)
+            except TypeError as exc:
+                logger.error(f"Wrond data types on {col_name} ({df[col_name].dtypes}). Message: {exc}")
             try:
                 mapping = dict(zip(encoder.classes_, range(len(encoder.classes_))))
                 encoder_dict[col_name] = mapping
@@ -84,11 +93,10 @@ class BasePreprocessor(object):
         return df, encoder_dict
 
     def discretize(self, data, discretizer):
-        # Assuming for now that data is without NaNs
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
         df = data.copy()
         if not columns:
-            warnings.warn("No one column is continuous")
+            logger.warning("No one column is continuous")
             return df, None
         data = df[columns]
 
@@ -107,10 +115,14 @@ class Preprocessor(BasePreprocessor):
         self.pipeline = pipeline
         self.coder = {}
 
-    def get_info(self):
+    @property
+    def info(self):
         return {'types': self.nodes_types, 'signs': self.nodes_signs}
 
-    def apply(self, data):
+    def apply(self, data, dropna=True):
+        if dropna:
+            data = data.dropna()
+            data.reset_index(inplace=True, drop=True)
         self.nodes_types = self.get_nodes_types(data)
         self.nodes_signs = self.get_nodes_signs(data)
 
