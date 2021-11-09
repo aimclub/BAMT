@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn import preprocessing as pp
 import Networks
 from pgmpy.estimators import K2Score
+from Utils import GraphUtils as gru
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
@@ -23,18 +24,26 @@ discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform'
 
 p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
-nodes_type_mixed = p.get_nodes_types(vk_data)
-
-columns = [col for col in vk_data.columns.to_list() if nodes_type_mixed[col] in ['disc','disc_num']]
-discrete_data = vk_data[columns]
-
-discretized_data, est = p.apply(discrete_data)
+discretized_data, est = p.apply(vk_data)
 info = p.info
 
+bn = Networks.DiscreteBN()
+bn.add_nodes(descriptor=info) # error
+#
+params = {'init_nodes': None,
+          'bl_add': None,
+          'cont_disc': None}
 
-info = {"types": p.get_nodes_types(discretized_data),
-        "signs": info['signs']}
+bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params) # error
+#
+# # --------------------
 
+nodes_type_mixed = gru.nodes_types(vk_data)
+columns = [col for col in vk_data.columns.to_list() if nodes_type_mixed[col] in ['disc','disc_num']] # GET ONLY DISCRETE
+discrete_data = vk_data[columns]
+#
+discretized_data, est = p.apply(discrete_data) # warning
+info = p.info
 
 bn = Networks.DiscreteBN()
 bn.add_nodes(descriptor=info)

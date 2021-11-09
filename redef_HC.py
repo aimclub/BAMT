@@ -28,9 +28,8 @@ Strategies to improve Greedy Hill-Climbing:
 
 from external.pyBN.classes.bayesnet import BayesNet
 from external.pyBN.utils.graph import would_cause_cycle
-import matplotlib.pyplot as plt
-from bayesian.redef_info_scores import log_lik_local, BIC_local, AIC_local
-from bayesian.mi_entropy_gauss import mi_gauss
+from redef_info_scores import log_lik_local, BIC_local, AIC_local
+from mi_entropy_gauss import mi_gauss
 
 
 def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restriction=None,
