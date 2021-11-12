@@ -2,17 +2,10 @@ import itertools
 
 from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
-import Nodes
-import logging.config
-
-from os import path
-
-log_file_path = path.join(path.dirname(path.abspath(__file__)), 'logging.conf')
-
-logging.config.fileConfig(log_file_path)
-logger = logging.getLogger('builder')
-
 from redef_HC import hc as hc_method
+
+import Nodes
+from log import logger_builder
 
 
 class StructureBuilder(object):
@@ -50,9 +43,9 @@ class StructureBuilder(object):
         if not self.has_logit:
             RESTRICTIONS = [('cont', 'disc'), ('cont', 'disc_num')]
         else:
-            # TODO: есть ли тут запреты тогда?
             RESTRICTIONS = []
             self.black_list = []
+            # TODO: пользователь может вводить сам bl
             return None
         if init_nodes:
             blacklist = [(x, y) for x in datacol for y in init_nodes if x != y]
@@ -120,17 +113,14 @@ class VerticesDefiner(StructureBuilder):
                 Node = Nodes.GaussianNode(name=vertex)
             else:
                 msg = f"""First stage of automatic vertex detection failed on "{vertex}" due TypeError ({type}). Set vertex manually (by calling set_nodes()) or investigate the error."""
-                logger.error(msg)
+                logger_builder.error(msg)
                 continue
 
             self.vertices.append(Node)
 
-    # TODO: NAMING
-    def define_vertex(self, has_logit, use_mixture):
-        # TODO: Нарушение совместимости типов, придумать контсруктор условия
+    def overwrite_vertex(self, has_logit, use_mixture):
         for node_instance in self.vertices:
             if has_logit:
-                # Ideal: if node_instance.type in ['disc_num', 'disc']
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
                         if not node_instance.disc_parents:
@@ -139,7 +129,6 @@ class VerticesDefiner(StructureBuilder):
                             Node = Nodes.ConditionalLogitNode(name=node_instance.name)
 
             if use_mixture:
-                #Ideal: if node_instance.type in ['cont']
                 if 'Gaussian' in node_instance.type:
                     if not node_instance.disc_parents:
                         Node = Nodes.MixtureGaussianNode(name=node_instance.name)
@@ -184,7 +173,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
     def apply_K2(self, data, params=None):
         from Preprocessors import BasePreprocessor
         if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
-            logger.error(
+            logger_builder.error(
                 f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
             return None
         assert self.scoring_function[0] == 'K2'
@@ -235,7 +224,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                 init_edges.append((column_name_dict[pair[0]], column_name_dict[pair[1]]))
 
         bn = hc_method(data, metric=self.scoring_function[0], restriction=self.white_list, init_edges=init_edges,
-                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=False)
+                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=True)
         structure = []
         nodes = sorted(list(bn.nodes()))
         for rv in nodes:
@@ -263,4 +252,4 @@ class HCStructureBuilder(HillClimbDefiner, StructureBuilder):
         self.get_family()
         # 2 stage
         if self.has_logit or self.use_mixture:
-            self.define_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)
+            self.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)

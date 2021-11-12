@@ -28,7 +28,7 @@ info = {"types": p.get_nodes_types(discretized_data),
 
 # Make some errors
 info['types']['relation'] = 'unknown'
-info['types']['sex'] = 'third'
+info['types']['sex'] = 'helicopter'
 
 print(info['signs'])
 
@@ -52,8 +52,10 @@ bn.set_nodes(relation=MyNode)
 bn.set_nodes(relation=MixtureGaussianNode)
 print(bn.nodes[-5:])
 
+
 class CorrectNode(BaseNode):
     pass
+
 
 bn.set_nodes(sex=CorrectNode)
 

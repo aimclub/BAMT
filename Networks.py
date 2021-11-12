@@ -6,14 +6,8 @@ from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 # import numpy as np
 # import itertools
 # import sys
-import logging.config
 
-from os import path
-
-log_file_path = path.join(path.dirname(path.abspath(__file__)), 'logging.conf')
-
-logging.config.fileConfig(log_file_path)
-logger = logging.getLogger('network')
+from log import logger_network
 
 
 class BaseNetwork(object):
@@ -51,7 +45,7 @@ class BaseNetwork(object):
     def add_nodes(self, descriptor):
         self.descriptor = descriptor
         if not self.validate(descriptor=descriptor):
-            logger.error(
+            logger_network.error(
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return 'Error occurred during validation. Check logs.'
         elif ['Abstract'] in self._allowed_dtypes:
@@ -63,7 +57,7 @@ class BaseNetwork(object):
     def add_edges(self, data,
                   scoring_function, params, optimizer='HC'):
         if not self.validate(descriptor=self.descriptor):
-            logger.error(
+            logger_network.error(
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return
         if optimizer == 'HC':
@@ -86,10 +80,10 @@ class BaseNetwork(object):
             try:
                 assert issubclass(node, Nodes.BaseNode)
             except AssertionError:
-                logger.error(f"{node} is not an instance of {Nodes.BaseNode}")
+                logger_network.error(f"{node} is not an instance of {Nodes.BaseNode}")
                 continue
             except TypeError:
-                logger.error(f"Passed kwarg must be a class. Arg: {node}")
+                logger_network.error(f"Passed kwarg must be a class. Arg: {node}")
                 continue
 
             self.nodes.append(node(name=column_name))
@@ -109,15 +103,12 @@ class DiscreteBN(BaseNetwork):
     def fit_parameters(self, data):
         def worker(node):
             parents = node.disc_parents + node.cont_parents
+            numoutcomes = int(len(data[node.name].unique()))
+            dist = DiscreteDistribution.from_samples(data[node.name].values)
+            vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
             if len(parents) == 0:
-                numoutcomes = int(len(data[node.name].unique()))
-                dist = DiscreteDistribution.from_samples(data[node.name].values)
-                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
                 cprob = list(dict(sorted(dist.items())).values())
             if len(parents) != 0:
-                numoutcomes = int(len(data[node.name].unique()))
-                dist = DiscreteDistribution.from_samples(data[node.name].values)
-                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
                 dist = ConditionalProbabilityTable.from_samples(data[parents + [node.name]].values)
                 params = dist.parameters[0]
                 cprob = dict()
@@ -127,7 +118,7 @@ class DiscreteBN(BaseNetwork):
                         probs.append(params[j][-1])
                     combination = [str(x) for x in params[i][0:len(parents)]]
                     cprob[str(combination)] = probs
-            # TODO: точно ли нам нужен такой выход? в таблице только probas_matrix
+            # Parents
             return {"numoutcomes": numoutcomes, "cprob": cprob, "vals": vals}
 
         from concurrent.futures import ThreadPoolExecutor
