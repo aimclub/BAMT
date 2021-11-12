@@ -1,9 +1,8 @@
 import Builders, Nodes
-from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 # from Utils import GraphUtils as gru
 # import pickle
-# from sklearn import linear_model
-# import numpy as np
+from concurrent.futures import ThreadPoolExecutor
+import json
 # import itertools
 # import sys
 
@@ -45,12 +44,17 @@ class BaseNetwork(object):
     def add_nodes(self, descriptor):
         self.descriptor = descriptor
         if not self.validate(descriptor=descriptor):
-            logger_network.error(
-                f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
-            return 'Error occurred during validation. Check logs.'
+            if not self.type == 'Hybrid':
+                logger_network.error(
+                    f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
+                return
+            else:
+                logger_network.error(
+                    f"Hybrid BN is not supposed to work with only one type of data. Use DiscreteBN or Continuous BN instead.")
+                return
         elif ['Abstract'] in self._allowed_dtypes:
             return None
-        ### Stage 1 ###
+        # Stage 1
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
 
@@ -89,6 +93,18 @@ class BaseNetwork(object):
             self.nodes.append(node(name=column_name))
             self.update_descriptor()
 
+    def fit_parameters(self, data, dropna=True):
+        if dropna:
+            data = data.dropna()
+            data.reset_index(inplace=True, drop=True)
+
+        def worker(node):
+            return node.fit_parameters(data)
+        pool = ThreadPoolExecutor(3)
+        for node in self.nodes:
+            future = pool.submit(worker, node)
+            self.distributions[node.name] = future.result()
+
 
 class DiscreteBN(BaseNetwork):
     def __init__(self):
@@ -100,56 +116,6 @@ class DiscreteBN(BaseNetwork):
         self.use_mixture = None
         # self.distributions = {'probas_matrix': None}
 
-    def fit_parameters(self, data):
-        def worker(node):
-            parents = node.disc_parents + node.cont_parents
-            numoutcomes = int(len(data[node.name].unique()))
-            dist = DiscreteDistribution.from_samples(data[node.name].values)
-            vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
-            if len(parents) == 0:
-                cprob = list(dict(sorted(dist.items())).values())
-            if len(parents) != 0:
-                dist = ConditionalProbabilityTable.from_samples(data[parents + [node.name]].values)
-                params = dist.parameters[0]
-                cprob = dict()
-                for i in range(0, len(params), len(vals)):
-                    probs = []
-                    for j in range(i, (i + len(vals))):
-                        probs.append(params[j][-1])
-                    combination = [str(x) for x in params[i][0:len(parents)]]
-                    cprob[str(combination)] = probs
-            # Parents
-            return {"numoutcomes": numoutcomes, "cprob": cprob, "vals": vals}
-
-        from concurrent.futures import ThreadPoolExecutor
-        pool = ThreadPoolExecutor(3)
-        for node in self.nodes:
-            future = pool.submit(worker, node)
-            self.distributions[node.name] = future.result()
-
-    # def fit_parameters(self, data):
-    #     for node in self.nodes:
-    #         if len(node.parents) == 0:
-    #             numoutcomes = int(len(data[node.name].unique()))
-    #             dist = DiscreteDistribution.from_samples(data[node.name].values)
-    #             vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
-    #             cprob = list(dict(sorted(dist.items())).values())
-    #         if len(node.parents) != 0:
-    #             numoutcomes = int(len(data[node.name].unique()))
-    #             dist = DiscreteDistribution.from_samples(data[node.name].values)
-    #             vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
-    #             dist = ConditionalProbabilityTable.from_samples(data[node.parents + [node.name]].values)
-    #             params = dist.parameters[0]
-    #             cprob = dict()
-    #             for i in range(0, len(params), len(vals)):
-    #                 probs = []
-    #                 for j in range(i, (i + len(vals))):
-    #                     probs.append(params[j][-1])
-    #                 combination = [str(x) for x in params[i][0:len(node.parents)]]
-    #                 cprob[str(combination)] = probs
-    #         self.distributions[node.name] = {"numoutcomes": numoutcomes, "cprob": cprob, "parents": node.parents,
-    #                                          "vals": vals, "type": "discrete", "children": node.children}
-
 
 class ContinuousBN(BaseNetwork):
     def __init__(self, has_logit: bool = False, use_mixture: bool = False):
@@ -159,10 +125,7 @@ class ContinuousBN(BaseNetwork):
         self.has_logit = has_logit
         self.use_mixture = use_mixture
         self.scoring_function = ""
-        self.distributions = {'mean': 0.0, 'variance': 1.0, 'lr_coefs': []}
-
-    def fit_parameters(self):
-        pass
+        # self.distributions = {'mean': 0.0, 'variance': 1.0, 'lr_coefs': []}
 
 
 class HybridBN(BaseNetwork):
@@ -173,8 +136,7 @@ class HybridBN(BaseNetwork):
         self.has_logit = has_logit
         self.use_mixture = use_mixture
 
-    # TODO: Overwrite validation
-    # def validate(self, descriptor):
-    #     types = descriptor['types']
-    #     return True if  else False
-
+    def validate(self, descriptor):
+        types = descriptor['types']
+        s = set(types.values())
+        return True if {'cont', 'disc', 'cont'} == s else False

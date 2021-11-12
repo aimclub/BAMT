@@ -25,14 +25,6 @@ discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform'
 
 p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
-print("#"*1000)
-discretized_data, est = p.apply(h)
-info = p.info
-
-bn = Networks.ContinuousBN()
-
-bn.add_nodes(descriptor=info) # Error
-
 #-----------
 nodes_type_mixed = p.get_nodes_types(h)
 columns = [col for col in h.columns.to_list() if not nodes_type_mixed[col] in ['disc','disc_num']] # GET ONLY CONT
@@ -54,14 +46,14 @@ params = {'init_nodes': None,
           'cont_disc': None}
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+t1 = time.time()
+bn.fit_parameters(data=h)
+t2 = time.time()
+print(f'PL elaspsed: {t2-t1}')
+# Without async: 0.00699925422668457
+# With: 0.0019998550415039062
+print('Improvement: %.d' % (0.00699925422668457 // 0.0019998550415039062))
+# After rebuilding: 0.0
 
-print("-"*50)
-
-bn = Networks.ContinuousBN(use_mixture=True)
-
-bn.add_nodes(descriptor=info)
-
-for node in bn.nodes:
-    print(node.name, node.type)
-
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+for node, d in bn.distributions.items():
+    print(node,":", d)

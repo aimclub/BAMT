@@ -67,6 +67,7 @@ class BasePreprocessor(object):
 class Preprocessor(BasePreprocessor):
     def __init__(self, pipeline):
         super().__init__()
+        assert isinstance(pipeline, list)
         self.pipeline = pipeline
         self.coder = {}
 
@@ -78,9 +79,12 @@ class Preprocessor(BasePreprocessor):
         if dropna:
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)
+        df = data.copy()
         self.nodes_types = self.get_nodes_types(data)
         self.nodes_signs = self.get_nodes_signs(data)
-
-        coded_data, self.coder = self.code_categories(data=data, encoder=self.pipeline[0][1])
-        discrete_data, est = self.discretize(data=coded_data, discretizer=self.pipeline[1][1])
-        return discrete_data, self.coder
+        for name, instrument in self.pipeline:
+            if name == 'encoder':
+                df, self.coder = self.code_categories(data=data, encoder=instrument)
+            if name == 'discretizer':
+                df, est = self.discretize(data=df, discretizer=instrument)
+        return df, self.coder

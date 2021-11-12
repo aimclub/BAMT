@@ -1,4 +1,0 @@
-2021-11-12 13:12:11,484 | ERROR    | Networks.py-add_nodes-0054 | Discrete BN does not support continuous data
-2021-11-12 13:12:11,485 | ERROR    | Networks.py-add_edges-0066 | Discrete BN does not support continuous data
-2021-11-12 13:18:55,746 | ERROR    | Networks.py-add_nodes-0056 | Discrete BN does not support continuous data
-2021-11-12 13:18:55,746 | ERROR    | Networks.py-add_edges-0068 | Discrete BN does not support continuous data

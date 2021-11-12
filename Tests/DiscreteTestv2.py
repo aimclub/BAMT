@@ -29,7 +29,7 @@ info = p.info
 
 bn = Networks.DiscreteBN()
 bn.add_nodes(descriptor=info) # error
-#
+
 params = {'init_nodes': None,
           'bl_add': None,
           'cont_disc': None}
@@ -41,16 +41,12 @@ bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Sc
 nodes_type_mixed = gru.nodes_types(vk_data)
 columns = [col for col in vk_data.columns.to_list() if nodes_type_mixed[col] in ['disc','disc_num']] # GET ONLY DISCRETE
 discrete_data = vk_data[columns]
-#
+
 discretized_data, est = p.apply(discrete_data) # warning
 info = p.info
 
 bn = Networks.DiscreteBN()
 bn.add_nodes(descriptor=info)
-
-params = {'init_nodes': None,
-          'bl_add': None,
-          'cont_disc': None}
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params)
 t1 = time.time()

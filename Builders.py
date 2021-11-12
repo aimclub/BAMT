@@ -42,11 +42,12 @@ class StructureBuilder(object):
         datacol = data.columns.to_list()
         if not self.has_logit:
             RESTRICTIONS = [('cont', 'disc'), ('cont', 'disc_num')]
+        elif bl_add:
+            self.black_list = bl_add
+            return
         else:
-            RESTRICTIONS = []
             self.black_list = []
-            # TODO: пользователь может вводить сам bl
-            return None
+            return
         if init_nodes:
             blacklist = [(x, y) for x in datacol for y in init_nodes if x != y]
         if not cont_disc:
@@ -234,7 +235,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         self.skeleton['E'] = structure
 
 
-class HCStructureBuilder(HillClimbDefiner, StructureBuilder):
+class HCStructureBuilder(HillClimbDefiner):
     def __init__(self, data, descriptor, scoring_function, has_logit, use_mixture):
         self.use_mixture = use_mixture
         self.has_logit = has_logit
