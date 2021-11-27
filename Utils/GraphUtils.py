@@ -1,6 +1,6 @@
 # import matplotlib.pyplot as plt
 import networkx as nx
-from log import logger_preprocessor
+# from log import logger_preprocessor
 
 
 def nodes_types(data):
@@ -24,8 +24,8 @@ def nodes_types(data):
             column_type[c] = 'cont'
         elif data[c].dtype in disc_numerical:
             column_type[c] = 'disc_num'
-        else:
-            logger_preprocessor.error(f'Unsupported data type. Dtype: {data[c].dtypes}')
+        # else:
+            # logger_preprocessor.error(f'Unsupported data type. Dtype: {data[c].dtypes}')
 
     return column_type
 

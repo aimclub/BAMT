@@ -24,17 +24,17 @@ discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform'
 
 p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
-discretized_data, est = p.apply(vk_data)
-info = p.info
-
-bn = Networks.DiscreteBN()
-bn.add_nodes(descriptor=info) # error
+# discretized_data, est = p.apply(vk_data)
+# info = p.info
+#
+# bn = Networks.DiscreteBN()
+# bn.add_nodes(descriptor=info) # error
 
 params = {'init_nodes': None,
           'bl_add': None,
           'cont_disc': None}
 
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params) # error
+# bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params) # error
 #
 # # --------------------
 

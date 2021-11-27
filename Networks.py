@@ -7,7 +7,7 @@ from Utils import GraphUtils as gru
 # import itertools
 # import sys
 
-from log import logger_network
+# from log import logger_network
 
 
 class BaseNetwork(object):
@@ -44,27 +44,27 @@ class BaseNetwork(object):
 
     def add_nodes(self, descriptor):
         self.descriptor = descriptor
-        if not self.validate(descriptor=descriptor):
-            if not self.type == 'Hybrid':
-                logger_network.error(
-                    f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
-                return
-            else:
-                logger_network.error(
-                    f"Hybrid BN is not supposed to work with only one type of data. Use DiscreteBN or Continuous BN instead.")
-                return
-        elif ['Abstract'] in self._allowed_dtypes:
-            return None
+        # if not self.validate(descriptor=descriptor):
+        #     if not self.type == 'Hybrid':
+        #         logger_network.error(
+        #             f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
+        #         return
+        #     else:
+        #         logger_network.error(
+        #             f"Hybrid BN is not supposed to work with only one type of data. Use DiscreteBN or Continuous BN instead.")
+        #         return
+        # elif ['Abstract'] in self._allowed_dtypes:
+        #     return None
         # Stage 1
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
 
     def add_edges(self, data,
                   scoring_function, params, optimizer='HC'):
-        if not self.validate(descriptor=self.descriptor):
-            logger_network.error(
-                f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
-            return
+        # if not self.validate(descriptor=self.descriptor):
+        #     logger_network.error(
+        #         f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
+        #     return
         if optimizer == 'HC':
             worker = Builders.HCStructureBuilder(data=data,
                                                  descriptor=self.descriptor,
@@ -77,22 +77,22 @@ class BaseNetwork(object):
             self.nodes = worker.skeleton['V']  # update family
             self.edges = worker.skeleton['E']
 
-    def set_nodes(self, nodes=None, **kwargs):
-        if nodes is None:
-            nodes = dict()
-        nodes.update(kwargs)
-        for column_name, node in nodes.items():
-            try:
-                assert issubclass(node, Nodes.BaseNode)
-            except AssertionError:
-                logger_network.error(f"{node} is not an instance of {Nodes.BaseNode}")
-                continue
-            except TypeError:
-                logger_network.error(f"Passed kwarg must be a class. Arg: {node}")
-                continue
+    # def set_nodes(self, nodes=None, **kwargs):
+        # if nodes is None:
+        #     nodes = dict()
+        # nodes.update(kwargs)
+        # for column_name, node in nodes.items():
+        #     try:
+        #         assert issubclass(node, Nodes.BaseNode)
+            # except AssertionError:
+            #     logger_network.error(f"{node} is not an instance of {Nodes.BaseNode}")
+            #     continue
+            # except TypeError:
+            #     logger_network.error(f"Passed kwarg must be a class. Arg: {node}")
+            #     continue
 
-            self.nodes.append(node(name=column_name))
-            self.update_descriptor()
+            # self.nodes.append(node(name=column_name))
+            # self.update_descriptor()
 
     def fit_parameters(self, data, dropna=True):
         if dropna:

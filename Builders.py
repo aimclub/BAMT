@@ -5,7 +5,7 @@ from pgmpy.estimators import HillClimbSearch
 from redef_HC import hc as hc_method
 
 import Nodes
-from log import logger_builder
+# from log import logger_builder
 
 
 class StructureBuilder(object):
@@ -112,10 +112,10 @@ class VerticesDefiner(StructureBuilder):
                 Node = Nodes.DiscreteNode(name=vertex)
             elif type == 'cont':
                 Node = Nodes.GaussianNode(name=vertex)
-            else:
-                msg = f"""First stage of automatic vertex detection failed on "{vertex}" due TypeError ({type}). Set vertex manually (by calling set_nodes()) or investigate the error."""
-                logger_builder.error(msg)
-                continue
+            # else:
+                # msg = f"""First stage of automatic vertex detection failed on "{vertex}" due TypeError ({type}). Set vertex manually (by calling set_nodes()) or investigate the error."""
+                # logger_builder.error(msg)
+                # continue
 
             self.vertices.append(Node)
 
@@ -172,10 +172,10 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
 
     def apply_K2(self, data, params=None):
         from Preprocessors import BasePreprocessor
-        if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
-            logger_builder.error(
-                f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
-            return None
+        # if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
+        #     logger_builder.error(
+        #         f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
+        #     return None
         assert self.scoring_function[0] == 'K2'
         scoring_function = self.scoring_function[1]
         if params:
