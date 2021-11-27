@@ -170,7 +170,6 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                        'remove_init_edges': False}
         super(HillClimbDefiner, self).__init__(descriptor)
 
-    # TODO: Все доп параметры в kwargs
     def apply_K2(self, data, params=None):
         from Preprocessors import BasePreprocessor
         if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
@@ -179,7 +178,6 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
             return None
         assert self.scoring_function[0] == 'K2'
         scoring_function = self.scoring_function[1]
-        # TODO: Можно ли это исправить? Исправить передачу параметров
         if params:
             self.params = params
 

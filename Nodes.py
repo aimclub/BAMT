@@ -1,10 +1,12 @@
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
-import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 import itertools
 from sys import float_info
+from Utils.MathUtils import *
+from gmr import GMM
+import random
 
 
 class BaseNode(object):
@@ -29,12 +31,10 @@ class DiscreteNode(BaseNode):
         def worker(node):
             parents = node.disc_parents + node.cont_parents
             if not parents:
-                numoutcomes = int(len(data[node.name].unique()))
                 dist = DiscreteDistribution.from_samples(data[node.name].values)
-                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
                 cprob = list(dict(sorted(dist.items())).values())
+                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
             else:
-                numoutcomes = int(len(data[node.name].unique()))
                 dist = DiscreteDistribution.from_samples(data[node.name].values)
                 vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
                 dist = ConditionalProbabilityTable.from_samples(data[parents + [node.name]].values)
@@ -46,12 +46,31 @@ class DiscreteNode(BaseNode):
                         probs.append(params[j][-1])
                     combination = [str(x) for x in params[i][0:len(parents)]]
                     cprob[str(combination)] = probs
-            return {"numoutcomes": numoutcomes, "cprob": cprob, "parents": parents,
-                    "vals": vals, "type": "discrete", "children": node.children}
+            return {"cprob": cprob, 'vals': vals}
 
         pool = ThreadPoolExecutor(3)
         future = pool.submit(worker, self)
         return future.result()
+
+    def choose(self, node_info, pvals=None):
+        random.seed()
+        vals = node_info['vals']
+        if not pvals:
+            dist = node_info['cprob']
+        else:
+            dist = node_info['cprob'][str(pvals)]
+        lbound = 0
+        ubound = 0
+        rand = random.random()
+        for interval in range(len(dist)):
+            ubound += dist[interval]
+            if lbound <= rand < ubound:
+                rindex = interval
+                break
+            else:
+                lbound = ubound
+
+        return vals[rindex]
 
 
 class GaussianNode(BaseNode):
@@ -71,29 +90,15 @@ class GaussianNode(BaseNode):
                 model.fit(data[parents].values, data[self.name].values)
                 predict = model.predict(data[parents].values)
             variance = mse(data[self.name].values, predict)
-            # if (len(node.children) != 0):
-            #     node_data['Vdata'][node] = {"mean_base": model.intercept_, "mean_scal": list(model.coef_),
-            #                                 "parents": parents, "variance": variance, "type": "lg",
-            #                                 "children": children}
-            # else:
-            #     node_data['Vdata'][node] = {"mean_base": model.intercept_, "mean_scal": list(model.coef_),
-            #                                 "parents": parents, "variance": variance, "type": "lg",
-            #                                 "children": None}
-            return {"mean_base": model.intercept_, "mean_scal": list(model.coef_),
-                    "parents": parents, "variance": variance, "type": "lg",
-                    "children": self.children}
+            return {"mean_base": model.intercept_,
+                    "mean_scal": list(model.coef_),
+                    "variance": variance}
         else:
             mean_base = np.mean(data[self.name].values)
             variance = np.var(data[self.name].values)
-            # if (len(node.children) != 0):
-            #     node_data['Vdata'][node] = {"mean_base": mean_base, "mean_scal": [], "parents": None,
-            #                                 "variance": variance, "type": "lg", "children": children}
-            # else:
-            #     node_data['Vdata'][node] = {"mean_base": mean_base, "mean_scal": [], "parents": None,
-            #                                 "variance": variance, "type": "lg", "children": None}
-            return {"mean_base": mean_base, "mean_scal": [],
-                    "parents": parents, "variance": variance, "type": "lg",
-                    "children": self.children}
+            return {"mean_base": mean_base,
+                    "mean_scal": [],
+                    "variance": variance}
 
 
 class ConditionalGaussianNode(BaseNode):
@@ -136,13 +141,7 @@ class ConditionalGaussianNode(BaseNode):
                     scal = list(np.full(len(self.cont_parents), np.nan))
                     key_comb = [str(x) for x in comb]
                     hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': scal}
-            # if self.children:
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": self.children,
-            #                                 "hybcprob": hycprob}
-            # else:
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
-            #                                 "hybcprob": hycprob}
-            return {"parents": parents, "type": "lgandd", "children": self.children, "hybcprob": hycprob}
+            return {"hybcprob": hycprob}
             # Conditional Gaussian Node
         if self.disc_parents and not self.cont_parents:
             hycprob = dict()
@@ -167,17 +166,7 @@ class ConditionalGaussianNode(BaseNode):
                     variance = np.nan
                     key_comb = [str(x) for x in comb]
                     hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
-            # if (len(children) != 0):
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,
-            #                                 "hybcprob": hycprob}
-            # else:
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
-            #                                 "hybcprob": hycprob}
-            return {"parents": parents, "type": "lgandd", "children": self.children, "hybcprob": hycprob}
-
-
-from Utils.GraphUtils import *
-from gmr import GMM
+            return {"hybcprob": hycprob}
 
 
 class MixtureGaussianNode(BaseNode):
@@ -224,17 +213,9 @@ class MixtureGaussianNode(BaseNode):
                 w = gmm.priors.tolist()  # []
                 # for row in weigts:
                 #     w.append(np.mean(row))
-                # if (len(children) != 0):
-                #     node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w,
-                #                                 "parents": parents, "variance": cov, "type": "lg",
-                #                                 "children": children}
-                # else:
-                #     node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w,
-                #                                 "parents": parents, "variance": cov, "type": "lg",
-                #                                 "children": None}
-                return {"mean_base": means, "mean_scal": w,
-                        "parents": parents, "variance": cov, "type": "lg",
-                        "children": self.children}
+                return {"mean_base": means,
+                        "mean_scal": w,
+                        "variance": cov}
 
 
 class ConditionalMixtureGaussianNode(BaseNode):
@@ -242,7 +223,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
         self.type = 'ConditionalMixtureGaussian'
 
-    def fit_parameters(self,data):
+    def fit_parameters(self, data):
         parents = self.disc_parents + self.cont_parents
         if self.disc_parents and self.cont_parents:
             hycprob = dict()
@@ -287,16 +268,8 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                     else:
                         hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
+            return {"hybcprob": hycprob}
 
-            # if (len(children) != 0):
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,
-            #                                 "hybcprob": hycprob}
-            # else:
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
-            #                                 "hybcprob": hycprob}
-            return  {"parents": parents, "type": "lgandd", "children": self.children,"hybcprob": hycprob}
-
-            # Conditional Mixture Gaussian Node
         if self.disc_parents and not self.cont_parents:
             hycprob = dict()
             values = []
@@ -313,7 +286,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 key_comb = [str(x) for x in comb]
                 if new_data.shape[0] > 5:
                     n_comp = int((component(new_data, [self.name], 'aic') + component(new_data, [self.name],
-                                                                                 'bic')) / 2)  # component(new_data, [node], 'LRTS')#int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
+                                                                                      'bic')) / 2)  # component(new_data, [node], 'LRTS')#int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
                     # n_comp = 3
                     gmm = GMM(n_components=n_comp)
                     gmm.from_samples(np.transpose([new_data[self.name].values]))
@@ -338,14 +311,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                     else:
                         hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
-
-            # if (len(children) != 0):
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": children,
-            #                                 "hybcprob": hycprob}
-            # else:
-            #     node_data['Vdata'][node] = {"parents": parents, "type": "lgandd", "children": None,
-            #                                 "hybcprob": hycprob}
-            return {"parents": parents, "type": "lgandd", "children": self.children, "hybcprob": hycprob}
+            return {"hybcprob": hycprob}
 
 
 class LogitNode(DiscreteNode):
@@ -357,20 +323,8 @@ class LogitNode(DiscreteNode):
         parents = self.disc_parents + self.cont_parents
         model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
         model.fit(data[parents].values, data[self.name].values)
-        # if (len(self.children) != 0):
-        #     node_data['Vdata'][node] = {"mean_base": list(model.intercept_),
-        #                                 "mean_scal": list(model.coef_.reshape(1, -1)[0]),
-        #                                 "parents": parents, 'classes': list(model.classes_), "type": "logit",
-        #                                 "children": children}
-        # else:
-        #     node_data['Vdata'][node] = {"mean_base": list(model.intercept_),
-        #                                 "mean_scal": list(model.coef_.reshape(1, -1)[0]),
-        #                                 "parents": parents, 'classes': list(model.classes_), "type": "logit",
-        #                                 "children": None}
         return {"mean_base": list(model.intercept_),
-                "mean_scal": list(model.coef_.reshape(1, -1)[0]),
-                "parents": parents, 'classes': list(model.classes_), "type": "logit",
-                "children": self.children}
+                "mean_scal": list(model.coef_.reshape(1, -1)[0])}
 
 
 class ConditionalLogitNode(DiscreteNode):
@@ -414,10 +368,4 @@ class ConditionalLogitNode(DiscreteNode):
                 scal = list(np.full(len(self.cont_parents), np.nan))
                 key_comb = [str(x) for x in comb]
                 hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base), 'mean_scal': scal}
-        # if (len(self.children) != 0):
-        #     node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": children,
-        #                                 "hybcprob": hycprob}
-        # else:
-        #     node_data['Vdata'][node] = {"parents": parents, "type": "logitandd", "children": None,
-        #                                 "hybcprob": hycprob}
-        return {"parents": parents, "type": "logitandd", "children": self.children, "hybcprob": hycprob}
+        return {"hybcprob": hycprob}

@@ -2,7 +2,8 @@ import Builders, Nodes
 # from Utils import GraphUtils as gru
 # import pickle
 from concurrent.futures import ThreadPoolExecutor
-import json
+import random
+from Utils import GraphUtils as gru
 # import itertools
 # import sys
 
@@ -98,6 +99,12 @@ class BaseNetwork(object):
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)
 
+        # Topology sorting
+        ordered = gru.toporder(self.edges)
+        notOrdered = [node.name for node in self.nodes]
+        mask = [notOrdered.index(name) for name in ordered]
+        self.nodes = [self.nodes[i] for i in mask]
+
         def worker(node):
             return node.fit_parameters(data)
         pool = ThreadPoolExecutor(3)
@@ -114,7 +121,26 @@ class DiscreteBN(BaseNetwork):
         self._allowed_dtypes = ['disc', 'disc_num']
         self.has_logit = None
         self.use_mixture = None
-        # self.distributions = {'probas_matrix': None}
+
+    def sample(self, n, evidence=None):
+        output = {}
+        seq = []
+        random.seed()
+        for _ in range(n):
+            for node in self.nodes:
+                parents = node.cont_parents + node.disc_parents
+                if evidence:
+                    if node.name in evidence.keys():
+                        output[node.name] = evidence[node.name]
+                if not parents:
+                    output[node.name] = node.choose(self.distributions[node.name])
+                else:
+                    pvals = [str(output[t]) for t in parents]
+                    output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+            seq.append(output)
+
+        return seq
+
 
 
 class ContinuousBN(BaseNetwork):

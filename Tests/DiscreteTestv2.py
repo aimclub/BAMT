@@ -42,9 +42,11 @@ nodes_type_mixed = gru.nodes_types(vk_data)
 columns = [col for col in vk_data.columns.to_list() if nodes_type_mixed[col] in ['disc','disc_num']] # GET ONLY DISCRETE
 discrete_data = vk_data[columns]
 
-discretized_data, est = p.apply(discrete_data) # warning
+discretized_data, est = p.apply(discrete_data) # info
 info = p.info
 
+for name in discretized_data.columns.to_list():
+    print(name, discretized_data[name].unique())
 bn = Networks.DiscreteBN()
 bn.add_nodes(descriptor=info)
 
@@ -56,3 +58,6 @@ print(f'PL elaspsed: {t2-t1}')
 for node, d in bn.distributions.items():
     print(node,":", d)
     break
+
+for num, el in enumerate(bn.sample(20),1):
+    print(num, " ", el)
