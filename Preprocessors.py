@@ -1,5 +1,5 @@
 from Utils import GraphUtils as gru
-# from log import logger_preprocessor
+from log import logger_preprocessor
 
 
 class BasePreprocessor(object):
@@ -28,30 +28,30 @@ class BasePreprocessor(object):
             """
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'disc']
         df = data.copy()  # INPUT DF. Debugging SettingWithCopyWarning
-        # if not columns:
-        #     logger_preprocessor.info("No one column is discrete")
-        #     return df, None
+        if not columns:
+            logger_preprocessor.info("No one column is discrete")
+            return df, None
         data = df[columns]  # DATA TO CATEGORIZE
         encoder_dict = dict()
 
         for col_name, column in data.iteritems():
             # Iterate over (column name, Series) pairs.
-            # try:
+            try:
                 df[col_name] = encoder.fit_transform(column.values)
-            # except TypeError as exc:
-                # logger_preprocessor.error(f"Wrond data types on {col_name} ({df[col_name].dtypes}). Message: {exc}")
-            # try:
+            except TypeError as exc:
+                logger_preprocessor.error(f"Wrond data types on {col_name} ({df[col_name].dtypes}). Message: {exc}")
+            try:
                 mapping = dict(zip(encoder.classes_, range(len(encoder.classes_))))
                 encoder_dict[col_name] = mapping
-            # except:
-            #     pass
+            except:
+                pass
         return df, encoder_dict
 
     def discretize(self, data, discretizer):
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
         df = data.copy()
         if not columns:
-            # logger_preprocessor.info("No one column is continuous")
+            logger_preprocessor.info("No one column is continuous")
             return df, None
         data = df[columns]
 
