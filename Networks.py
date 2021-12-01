@@ -102,7 +102,6 @@ class BaseNetwork(object):
         if 'disc_num' in self.descriptor['types'].values():
             columns_names = [name for name, t in self.descriptor['types'].items() if t in ['disc_num']]
             data[columns_names] = data.loc[:, columns_names].astype('str')
-            print(data[columns_names].iloc[0, 0].__class__)
 
         # Topology sorting
         ordered = gru.toporder(self.edges)
@@ -128,10 +127,10 @@ class DiscreteBN(BaseNetwork):
         self.use_mixture = None
 
     def sample(self, n, evidence=None):
-        output = {}
         seq = []
         random.seed()
         for _ in range(n):
+            output = {}
             for node in self.nodes:
                 parents = node.cont_parents + node.disc_parents
                 if evidence:

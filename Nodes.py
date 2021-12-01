@@ -53,6 +53,7 @@ class DiscreteNode(BaseNode):
         return future.result()
 
     def choose(self, node_info, pvals=None):
+        rindex = 0
         random.seed()
         vals = node_info['vals']
         if not pvals:
