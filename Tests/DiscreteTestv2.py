@@ -21,7 +21,7 @@ p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
 vk_data = pd.read_csv(r"../Data/vk_data.csv")
-ROWS = 50
+ROWS = 150
 vk_data = vk_data.iloc[:ROWS, :]
 
 p2 = time.time()
@@ -69,4 +69,4 @@ for node, d in bn.distributions.items():
     break
 
 for num, el in enumerate(bn.sample(20), 1):
-    print(f"{num: <5}", [el[key] for key in ['twitter', 'instagram', 'about_topic', 'personal_alcohol']])
+    print(f"{num: <5}", [el[key] for key in list(bn.distributions.keys())[0:20]])

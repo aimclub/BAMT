@@ -1,9 +1,12 @@
-import Builders, Nodes
+import Builders
+import Nodes
+import numpy as np
 # from Utils import GraphUtils as gru
 # import pickle
 from concurrent.futures import ThreadPoolExecutor
 import random
 from Utils import GraphUtils as gru
+from gmr import GMM
 # import itertools
 # import sys
 
@@ -111,6 +114,7 @@ class BaseNetwork(object):
 
         def worker(node):
             return node.fit_parameters(data)
+
         pool = ThreadPoolExecutor(3)
         for node in self.nodes:
             future = pool.submit(worker, node)
@@ -137,14 +141,13 @@ class DiscreteBN(BaseNetwork):
                     if node.name in evidence.keys():
                         output[node.name] = evidence[node.name]
                 if not parents:
-                    output[node.name] = node.choose(self.distributions[node.name])
+                    pvals = None
                 else:
                     pvals = [str(output[t]) for t in parents]
-                    output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
             seq.append(output)
 
         return seq
-
 
 
 class ContinuousBN(BaseNetwork):
@@ -156,6 +159,41 @@ class ContinuousBN(BaseNetwork):
         self.use_mixture = use_mixture
         self.scoring_function = ""
         # self.distributions = {'mean': 0.0, 'variance': 1.0, 'lr_coefs': []}
+
+    # TODO: Обработка случая с неудачной топологической соритровкой
+    def sample(self, n, evidence=None):
+        seq = []
+        random.seed()
+        for _ in range(n):
+            output = {}
+            for node in self.nodes:
+                parents = node.disc_parents + node.cont_parents
+                if evidence:
+                    if node.name in evidence.keys():
+                        output[node.name] = evidence[node.name]
+
+                if not parents:
+                    pvalues = None
+                else:
+                    if self.use_mixture:
+                        pvalues = [output[p] for p in parents]
+                    else:
+                        pvalues = [output[p]['dist'][0] for p in parents]
+
+                if self.use_mixture:
+                    indexes = [i for i in range(1, len(parents) + 1)]
+                    n_comp = len(self.distributions[node.name]['mean_scal'])
+                    sample = node.choose(pvals=pvalues,
+                                         indexes=indexes,
+                                         n_comp=n_comp,
+                                         node_info=self.distributions[node.name])
+                    output[node.name] = sample
+                else:
+                    # choose returns [random point, [mean, variance]]
+                    pair = node.choose(self.distributions[node.name], pvals=pvalues)
+                    output = {**output, f"{node.name}": {"point": pair[0], "dist": pair[1]}}
+            seq.append(output)
+        return seq
 
 
 class HybridBN(BaseNetwork):
@@ -170,3 +208,36 @@ class HybridBN(BaseNetwork):
         types = descriptor['types']
         s = set(types.values())
         return True if {'cont', 'disc', 'cont'} == s else False
+
+    def sample(self, n, evidence=None):
+        seq = []
+        random.seed()
+        for _ in range(n):
+            output = {}
+            if not self.use_mixture:
+                for node in self.nodes:
+                    parents = node.disc_parents + node.cont_parents
+                    if evidence:
+                        if node.name in evidence.keys():
+                            output[node.name] = evidence[node.name]
+                    if not parents:
+                        pvalues = None
+                    else:
+                        pvalues = [output[p] for p in parents]
+                    sample = node.choose(self.distributions[node.name], pvals=pvalues)
+                    output[node.name] = sample
+                seq.append(output)
+            else:
+                for node in self.nodes:
+                    parents = node.disc_parents + node.cont_parents
+                    if evidence:
+                        if node.name in evidence.keys():
+                            output[node.name] = evidence[node.name]
+                    if not parents:
+                        pvalues = None
+                    else:
+                        pvalues = [output[p] for p in parents]
+                    sample = node.choose(self.distributions[node.name], pvals=pvalues)
+                    output[node.name] = sample
+                seq.append(output)
+        return seq

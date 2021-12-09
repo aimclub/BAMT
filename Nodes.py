@@ -52,7 +52,7 @@ class DiscreteNode(BaseNode):
         future = pool.submit(worker, self)
         return future.result()
 
-    def choose(self, node_info, pvals=None):
+    def choose(self, node_info, pvals):
         rindex = 0
         random.seed()
         vals = node_info['vals']
@@ -101,14 +101,24 @@ class GaussianNode(BaseNode):
                     "mean_scal": [],
                     "variance": variance}
 
+    def choose(self, node_info, pvals):
+        # Должен возвращать распределение
+        mean = node_info["mean_base"]
+        if pvals:
+            for m in pvals:
+                mean += m * node_info["mean_scal"][0]
+        variance = node_info["variance"]
+        distribution = [mean, variance]
+        return [random.gauss(mean, math.sqrt(variance)), distribution]
+
 
 class ConditionalGaussianNode(BaseNode):
     def __init__(self, name):
         super(ConditionalGaussianNode, self).__init__(name)
         self.type = 'ConditionalGaussian'
 
+    # should pass node_info, not entire dataframe
     def fit_parameters(self, data):
-        parents = self.disc_parents + self.cont_parents
         if self.disc_parents and self.cont_parents:
             hycprob = dict()
             values = []
@@ -124,7 +134,6 @@ class ConditionalGaussianNode(BaseNode):
                 new_data = data[mask]
                 mean_base = np.nan
                 variance = np.nan
-                predict = []
                 if new_data.shape[0] != 0:
                     model = linear_model.LinearRegression()
                     if len(self.cont_parents) == 1:
@@ -143,7 +152,7 @@ class ConditionalGaussianNode(BaseNode):
                     key_comb = [str(x) for x in comb]
                     hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': scal}
             return {"hybcprob": hycprob}
-            # Conditional Gaussian Node
+        # Conditional Gaussian Node
         if self.disc_parents and not self.cont_parents:
             hycprob = dict()
             values = []
@@ -169,6 +178,22 @@ class ConditionalGaussianNode(BaseNode):
                     hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
             return {"hybcprob": hycprob}
 
+    def choose(self, node_info, pvals):
+        dispvals = []
+        lgpvals = []
+        for pval in pvals:
+            if ((isinstance(pval, str)) | ((isinstance(pval, int)))):
+                dispvals.append(pval)
+            else:
+                lgpvals.append(pval)
+        lgdistribution = node_info["hybcprob"][str(dispvals)]
+        mean = lgdistribution["mean_base"]
+        if lgpvals:
+            for x in range(len(lgpvals)):
+                mean += lgpvals[x] * lgdistribution["mean_scal"][x]
+        variance = lgdistribution["variance"]
+        return random.gauss(mean, math.sqrt(variance))
+
 
 class MixtureGaussianNode(BaseNode):
     def __init__(self, name):
@@ -176,7 +201,7 @@ class MixtureGaussianNode(BaseNode):
         self.type = 'MixtureGaussian'
 
     def fit_parameters(self, data):
-        parents = self.disc_parents + self.disc_parents
+        parents = self.disc_parents + self.cont_parents
         if not parents:
             n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
                                                                           'bic')) / 2)  # component(data, [node], 'LRTS')#
@@ -189,19 +214,11 @@ class MixtureGaussianNode(BaseNode):
             w = gmm.priors.tolist()  # []
             # for row in weigts:
             #     w.append(np.mean(row))
-            # if self.children:
-            #     node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
-            #                                 "variance": cov, "type": "lg", "children": children}
-            # else:
-            #     node_data['Vdata'][node] = {"mean_base": means, "mean_scal": w, "parents": None,
-            #                                 "variance": cov, "type": "lg", "children": None}
-            return {"mean_base": means, "mean_scal": w, "parents": parents,
-                    "variance": cov, "type": "lg", "children": self.children}
+            return {"mean_base": means, "mean_scal": w, "variance": cov}
         if parents:
-            # Mixture Gaussian Node
             if not self.disc_parents and self.cont_parents:
                 nodes = [self.name] + self.cont_parents
-                new_data = data[nodes][:]
+                new_data = data[nodes]
                 new_data.reset_index(inplace=True, drop=True)
                 n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
                                                                             'bic')) / 2)  # component(new_data, nodes, 'LRTS')#
@@ -217,6 +234,24 @@ class MixtureGaussianNode(BaseNode):
                 return {"mean_base": means,
                         "mean_scal": w,
                         "variance": cov}
+
+    def choose(self, node_info, pvals, n_comp, indexes):
+        mean = node_info["mean_base"]
+        variance = node_info["variance"]
+        w = node_info["mean_scal"]
+        if n_comp != 0:
+            if pvals and indexes:
+                if not np.isnan(np.array(pvals)).all():
+                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                    sample = gmm.predict(indexes, [pvals])[0][0]
+                else:
+                    sample = np.nan
+            else:
+                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                sample = gmm.sample(1)[0][0]
+        else:
+            sample = np.nan
+        return sample
 
 
 class ConditionalMixtureGaussianNode(BaseNode):
@@ -314,6 +349,35 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
             return {"hybcprob": hycprob}
 
+    def choose(self, node_info, pvals):
+        dispvals = []
+        lgpvals = []
+        for pval in pvals:
+            if ((isinstance(pval, str)) | ((isinstance(pval, int)))):
+                dispvals.append(pval)
+            else:
+                lgpvals.append(pval)
+        lgdistribution = node_info["hybcprob"][str(dispvals)]
+        mean = lgdistribution["mean_base"]
+        variance = lgdistribution["variance"]
+        w = lgdistribution["mean_scal"]
+        if len(w) != 0:
+            if len(lgpvals) != 0:
+                indexes = [i for i in range(1, (len(lgpvals) + 1), 1)]
+                if not np.isnan(np.array(lgpvals)).all():
+                    n_comp = len(w)
+                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                    sample = gmm.predict(indexes, [lgpvals])[0][0]
+                else:
+                    sample = np.nan
+            else:
+                n_comp = len(w)
+                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
+                sample = gmm.sample(1)[0][0]
+        else:
+            sample = np.nan
+        return sample
+
 
 class LogitNode(DiscreteNode):
     def __init__(self, name):
@@ -327,6 +391,8 @@ class LogitNode(DiscreteNode):
         return {"mean_base": list(model.intercept_),
                 "mean_scal": list(model.coef_.reshape(1, -1)[0])}
 
+    def sample(self, node_info, pvals):
+        pass
 
 class ConditionalLogitNode(DiscreteNode):
     def __init__(self, name):

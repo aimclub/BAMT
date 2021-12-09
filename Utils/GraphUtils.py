@@ -13,9 +13,10 @@ def nodes_types(data):
         Returns:
             dict: output dictionary where 'key' - node name and 'value' - node type
         """
+
     column_type = dict()
     for c in data.columns.to_list():
-        disc = ['str', 'O', 'b']
+        disc = ['str', 'O', 'b', 'categorical']
         disc_numerical = ['int32', 'int64']
         cont = ['float32', 'float64']
         if data[c].dtypes in disc:
@@ -58,6 +59,6 @@ def get_descriptor(data):
 
 def toporder(edges):
     G = nx.from_edgelist(edges, create_using=nx.DiGraph)
-    # nx.draw(G, with_labels=True, font_weight='bold')
+    # nx.draw(G, with_labels=True)
     # plt.show()
     return list(nx.topological_sort(G))

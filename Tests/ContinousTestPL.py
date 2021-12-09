@@ -1,3 +1,10 @@
+# FIX IT
+import sys
+import os
+path = os.path.abspath(os.path.join(__file__, "../.."))
+sys.path.insert(0, path)
+#---------
+
 import time
 
 start = time.time()
@@ -14,8 +21,7 @@ h = pd.read_csv("../Data/hack_processed_with_rf.csv")
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross','Netpay','Porosity','Permeability', 'Depth']
 h = h[cols]
 
-# ROWS = 50
-# h = h.iloc[:ROWS, :]
+print(h.describe())
 
 p2 = time.time()
 print(f"Time elapsed for uploading data: {p2 - p1}")
@@ -32,14 +38,10 @@ discrete_data = h[columns]
 
 discretized_data, est = p.apply(discrete_data) # warning
 info = p.info
-print(info)
 
-bn = Networks.ContinuousBN()
+bn = Networks.ContinuousBN(use_mixture=False) # use_mixture = False as well
 
 bn.add_nodes(descriptor=info)
-
-for node in bn.nodes:
-    print(node.name, node.type)
 
 params = {'init_nodes': None,
           'bl_add': None,
@@ -55,5 +57,8 @@ print(f'PL elaspsed: {t2-t1}')
 print('Improvement: %.d' % (0.00699925422668457 // 0.0019998550415039062))
 # After rebuilding: 0.0
 
-for node, d in bn.distributions.items():
-    print(node,":", d)
+
+for num, el in enumerate(bn.sample(10), 1):
+    print('\n',num)
+    for name, val in el.items():
+        print(f"{name: <15}", val)

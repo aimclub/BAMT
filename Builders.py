@@ -121,6 +121,7 @@ class VerticesDefiner(StructureBuilder):
 
     def overwrite_vertex(self, has_logit, use_mixture):
         for node_instance in self.vertices:
+            Node = node_instance
             if has_logit:
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
@@ -138,10 +139,14 @@ class VerticesDefiner(StructureBuilder):
                     else:
                         continue
             else:
-                if node_instance.disc_parents:
-                    Node = Nodes.ConditionalGaussianNode(name=node_instance.name)
-                else:
-                    continue
+                if 'Gaussian' in node_instance.type:
+                    if node_instance.disc_parents:
+                        Node = Nodes.ConditionalGaussianNode(name=node_instance.name)
+                    else:
+                        continue
+
+            if node_instance == Node:
+                continue
 
             id = self.skeleton['V'].index(node_instance)
             Node.disc_parents = node_instance.disc_parents
@@ -223,7 +228,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                 init_edges.append((column_name_dict[pair[0]], column_name_dict[pair[1]]))
 
         bn = hc_method(data, metric=self.scoring_function[0], restriction=self.white_list, init_edges=init_edges,
-                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=True)
+                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=False)
         structure = []
         nodes = sorted(list(bn.nodes()))
         for rv in nodes:
@@ -250,5 +255,4 @@ class HCStructureBuilder(HillClimbDefiner):
 
         self.get_family()
         # 2 stage
-        if self.has_logit or self.use_mixture:
-            self.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)
+        self.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)

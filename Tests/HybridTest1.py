@@ -1,3 +1,10 @@
+# FIX IT
+import sys
+import os
+path = os.path.abspath(os.path.join(__file__, "../.."))
+sys.path.insert(0, path)
+#---------
+
 import time
 
 start = time.time()
