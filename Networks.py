@@ -181,15 +181,9 @@ class ContinuousBN(BaseNetwork):
                         pvalues = [output[p]['dist'][0] for p in parents]
 
                 if self.use_mixture:
-                    indexes = [i for i in range(1, len(parents) + 1)]
-                    n_comp = len(self.distributions[node.name]['mean_scal'])
-                    sample = node.choose(pvals=pvalues,
-                                         indexes=indexes,
-                                         n_comp=n_comp,
-                                         node_info=self.distributions[node.name])
+                    sample = node.choose(pvals=pvalues, node_info=self.distributions[node.name])
                     output[node.name] = sample
                 else:
-                    # choose returns [random point, [mean, variance]]
                     pair = node.choose(self.distributions[node.name], pvals=pvalues)
                     output = {**output, f"{node.name}": {"point": pair[0], "dist": pair[1]}}
             seq.append(output)
@@ -214,30 +208,17 @@ class HybridBN(BaseNetwork):
         random.seed()
         for _ in range(n):
             output = {}
-            if not self.use_mixture:
-                for node in self.nodes:
-                    parents = node.disc_parents + node.cont_parents
-                    if evidence:
-                        if node.name in evidence.keys():
-                            output[node.name] = evidence[node.name]
-                    if not parents:
-                        pvalues = None
-                    else:
-                        pvalues = [output[p] for p in parents]
-                    sample = node.choose(self.distributions[node.name], pvals=pvalues)
-                    output[node.name] = sample
-                seq.append(output)
-            else:
-                for node in self.nodes:
-                    parents = node.disc_parents + node.cont_parents
-                    if evidence:
-                        if node.name in evidence.keys():
-                            output[node.name] = evidence[node.name]
-                    if not parents:
-                        pvalues = None
-                    else:
-                        pvalues = [output[p] for p in parents]
-                    sample = node.choose(self.distributions[node.name], pvals=pvalues)
-                    output[node.name] = sample
-                seq.append(output)
+            for node in self.nodes:
+                parents = node.disc_parents + node.cont_parents
+                if evidence:
+                    if node.name in evidence.keys():
+                        output[node.name] = evidence[node.name]
+                if not parents:
+                    pvalues = None
+                else:
+                    pvalues = [output[p] for p in parents]
+                result = node.choose(self.distributions[node.name], pvals=pvalues)
+
+                output[node.name] = result
+            seq.append(output)
         return seq

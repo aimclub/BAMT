@@ -109,7 +109,8 @@ class GaussianNode(BaseNode):
                 mean += m * node_info["mean_scal"][0]
         variance = node_info["variance"]
         distribution = [mean, variance]
-        return [random.gauss(mean, math.sqrt(variance)), distribution]
+        # return [random.gauss(mean, math.sqrt(variance)), distribution]
+        return random.gauss(mean, math.sqrt(variance))
 
 
 class ConditionalGaussianNode(BaseNode):
@@ -117,7 +118,6 @@ class ConditionalGaussianNode(BaseNode):
         super(ConditionalGaussianNode, self).__init__(name)
         self.type = 'ConditionalGaussian'
 
-    # should pass node_info, not entire dataframe
     def fit_parameters(self, data):
         if self.disc_parents and self.cont_parents:
             hycprob = dict()
@@ -235,12 +235,14 @@ class MixtureGaussianNode(BaseNode):
                         "mean_scal": w,
                         "variance": cov}
 
-    def choose(self, node_info, pvals, n_comp, indexes):
+    def choose(self, node_info, pvals):
         mean = node_info["mean_base"]
         variance = node_info["variance"]
         w = node_info["mean_scal"]
+        n_comp = len(node_info['mean_scal'])
         if n_comp != 0:
-            if pvals and indexes:
+            if pvals:
+                indexes = [i for i in range(1, len(pvals) + 1)]
                 if not np.isnan(np.array(pvals)).all():
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=variance)
                     sample = gmm.predict(indexes, [pvals])[0][0]

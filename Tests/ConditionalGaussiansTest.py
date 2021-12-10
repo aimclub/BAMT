@@ -27,14 +27,15 @@ p2 = time.time()
 print(f"Time elapsed for preparing data: {p2 - p1}")
 
 encoder = pp.LabelEncoder()
+discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='quantile')
 
-p = Preprocessor([('encoder', encoder)])
+p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
 #-----------
 coded_data, est = p.apply(h)
 info = p.info
 
-bn = Networks.HybridBN(use_mixture=False) # use_mixture = <OPPOSITE> as well
+bn = Networks.HybridBN(use_mixture=True) # use_mixture = <OPPOSITE> as well
 bn.add_nodes(descriptor=info)
 
 params = {'init_nodes': None,
@@ -43,14 +44,14 @@ params = {'init_nodes': None,
 bn.add_edges(data=coded_data, optimizer='HC', scoring_function=('MI',), params=params)
 
 t1 = time.time()
-bn.fit_parameters(data=coded_data)
+bn.fit_parameters(data=h)
 t2 = time.time()
 print(f'PL elaspsed: {t2-t1}')
 
-# for num, el in enumerate(bn.sample(10), 1):
-#     print('\n',num)
-#     for name, val in el.items():
-#         print(f"{name: <15}", val)
+for num, el in enumerate(bn.sample(10), 1):
+    print('\n',num)
+    for name, val in el.items():
+        print(f"{name: <15}", val)
 
-for num, el in enumerate(bn.sample(100), 1):
-    print(f"{num: <5}", [el[key] for key in list(bn.distributions.keys())[0:20]])
+# for num, el in enumerate(bn.sample(100), 1):
+#     print(f"{num: <5}", [el[key] for key in list(bn.distributions.keys())[0:20]])
