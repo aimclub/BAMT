@@ -181,7 +181,7 @@ def calculate_acc(bn: HyBayesianNetwork, data: pd.DataFrame, columns: list, meth
                 rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False) / std, 3)
             elif normed == 'none':
                 rmse_dict[key] = round(mean_squared_error(real_param[n], pred_param[n], squared=False), 3)
-    return accuracy_dict, rmse_dict, real_param, pred_param, indexes
+    return accuracy_dict, rmse_dict, real_param, pred_param
 
 
 def LOO_validation(initial_data: pd.DataFrame, data_for_strucure_learning: pd.DataFrame, method: str, columns: list, search: str = 'HC', score: str = 'K2', normed: str = 'none') -> Tuple[dict, dict, list, list]:

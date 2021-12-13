@@ -63,7 +63,7 @@ def grouped_barplot(df, cat, subcat, val, err):
         u = [round(_, 1) for _ in u]
 
     plt.xticks(x, u, rotation=90)
-    plt.xticks([i for i in range (0,26,1)], [i for i in range (0,26,1)])
+    # plt.xticks([i for i in range (0,26,1)], [i for i in range (0,26,1)])
     plt.legend()
     plt.show()
 
