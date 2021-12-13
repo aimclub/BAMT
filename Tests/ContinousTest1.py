@@ -45,16 +45,12 @@ nodes_type_mixed = p.get_nodes_types(h)
 columns = [col for col in h.columns.to_list() if not nodes_type_mixed[col] in ['disc','disc_num']] # GET ONLY CONT
 discrete_data = h[columns]
 
-discretized_data, est = p.apply(discrete_data) # warning
+discretized_data, est = p.apply(discrete_data) # info
 info = p.info
-print(info)
 
 bn = Networks.ContinuousBN()
 
 bn.add_nodes(descriptor=info)
-
-for node in bn.nodes:
-    print(node.name, node.type)
 
 params = {'init_nodes': None,
           'bl_add': None,
@@ -62,13 +58,9 @@ params = {'init_nodes': None,
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
 
-print("-"*50)
-
 bn = Networks.ContinuousBN(use_mixture=True)
 
 bn.add_nodes(descriptor=info)
 
-for node in bn.nodes:
-    print(node.name, node.type)
-
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+bn.get_info()

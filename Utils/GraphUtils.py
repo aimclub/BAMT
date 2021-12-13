@@ -57,8 +57,10 @@ def get_descriptor(data):
             'signs': nodes_signs(nodes_types(data), data)}
 
 
-def toporder(edges):
-    G = nx.from_edgelist(edges, create_using=nx.DiGraph)
+def toporder(nodes, edges):
+    G = nx.DiGraph()
+    G.add_nodes_from([node.name for node in nodes])
+    G.add_edges_from(edges)
     # nx.draw(G, with_labels=True)
     # plt.show()
     return list(nx.topological_sort(G))

@@ -12,8 +12,7 @@ class BasePreprocessor(object):
         return gru.nodes_types(data=data)
 
     def get_nodes_signs(self, data):
-        return gru.nodes_signs(nodes_types=self.nodes_types,
-                               data=data)
+        return gru.nodes_signs(nodes_types=self.nodes_types, data=data)
 
     def code_categories(self, data, encoder):
         """Encoding categorical parameters
@@ -29,7 +28,6 @@ class BasePreprocessor(object):
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'disc']
         df = data.copy()  # INPUT DF. Debugging SettingWithCopyWarning
         if not columns:
-            logger_preprocessor.info("No one column is discrete")
             return df, None
         data = df[columns]  # DATA TO CATEGORIZE
         encoder_dict = dict()
@@ -51,7 +49,6 @@ class BasePreprocessor(object):
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
         df = data.copy()
         if not columns:
-            logger_preprocessor.info("No one column is continuous")
             return df, None
         data = df[columns]
 
@@ -75,6 +72,15 @@ class Preprocessor(BasePreprocessor):
     def info(self):
         return {'types': self.nodes_types, 'signs': self.nodes_signs}
 
+    def scan(self, data):
+        columns_cont = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
+        if not columns_cont:
+            logger_preprocessor.info("No one column is continuous")
+
+        columns_disc = [col for col in data.columns.to_list() if self.nodes_types[col] in ['disc', 'disc_num']]
+        if not columns_disc:
+            logger_preprocessor.info("No one column is discrete")
+
     def apply(self, data, dropna=True):
         if dropna:
             data = data.dropna()
@@ -82,6 +88,7 @@ class Preprocessor(BasePreprocessor):
         df = data.copy()
         self.nodes_types = self.get_nodes_types(data)
         self.nodes_signs = self.get_nodes_signs(data)
+        self.scan(df)
         for name, instrument in self.pipeline:
             if name == 'encoder':
                 df, self.coder = self.code_categories(data=data, encoder=instrument)

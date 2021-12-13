@@ -1,10 +1,9 @@
-# FIX IT
 import sys
 import os
+
 path = os.path.abspath(os.path.join(__file__, "../.."))
 sys.path.insert(0, path)
-#---------
-
+# ---------
 import time
 
 start = time.time()
@@ -18,7 +17,8 @@ p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
 h = pd.read_csv("../Data/hack_processed_with_rf.csv")
-cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross','Netpay','Porosity','Permeability', 'Depth']
+cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross', 'Netpay', 'Porosity', 'Permeability',
+        'Depth']
 h = h[cols]
 
 print(h.describe())
@@ -31,25 +31,27 @@ discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='quantile
 
 p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
-#-----------
-coded_data, est = p.apply(h)
+# -----------
+discrete_data, est = p.apply(h)
 info = p.info
 
-bn = Networks.HybridBN(use_mixture=True) # use_mixture = <OPPOSITE> as well
+bn = Networks.HybridBN(use_mixture=True, has_logit=True)  # all may vary
 bn.add_nodes(descriptor=info)
 
 params = {'init_nodes': None,
           'bl_add': None,
           'cont_disc': None}
-bn.add_edges(data=coded_data, optimizer='HC', scoring_function=('MI',), params=params)
 
+bn.add_edges(data=discrete_data, optimizer='HC', scoring_function=('MI',), params=params)
+
+bn.get_info()
 t1 = time.time()
 bn.fit_parameters(data=h)
 t2 = time.time()
-print(f'PL elaspsed: {t2-t1}')
+print(f'PL elaspsed: {t2 - t1}')
 
 for num, el in enumerate(bn.sample(10), 1):
-    print('\n',num)
+    print('\n', num)
     for name, val in el.items():
         print(f"{name: <15}", val)
 

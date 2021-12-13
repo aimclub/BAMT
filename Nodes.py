@@ -7,6 +7,7 @@ from sys import float_info
 from Utils.MathUtils import *
 from gmr import GMM
 import random
+import warnings
 
 
 class BaseNode(object):
@@ -119,22 +120,23 @@ class ConditionalGaussianNode(BaseNode):
         self.type = 'ConditionalGaussian'
 
     def fit_parameters(self, data):
-        if self.disc_parents and self.cont_parents:
-            hycprob = dict()
-            values = []
-            combinations = []
-            for d_p in self.disc_parents:
-                values.append(np.unique(data[d_p].values))
-            for xs in itertools.product(*values):
-                combinations.append(list(xs))
-            for comb in combinations:
-                mask = np.full(len(data), True)
-                for col, val in zip(self.disc_parents, comb):
-                    mask = (mask) & (data[col] == val)
-                new_data = data[mask]
-                mean_base = np.nan
-                variance = np.nan
-                if new_data.shape[0] != 0:
+        hycprob = dict()
+        values = []
+        combinations = []
+        for d_p in self.disc_parents:
+            values.append(np.unique(data[d_p].values))
+        for xs in itertools.product(*values):
+            combinations.append(list(xs))
+        for comb in combinations:
+            mask = np.full(len(data), True)
+            for col, val in zip(self.disc_parents, comb):
+                mask = (mask) & (data[col] == val)
+            new_data = data[mask]
+            mean_base = np.nan
+            variance = np.nan
+            key_comb = [str(x) for x in comb]
+            if new_data.shape[0] != 0:
+                if self.cont_parents:
                     model = linear_model.LinearRegression()
                     if len(self.cont_parents) == 1:
                         model.fit(np.transpose([new_data[self.cont_parents[0]].values]), new_data[self.name].values)
@@ -142,41 +144,23 @@ class ConditionalGaussianNode(BaseNode):
                     else:
                         model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
                         predict = model.predict(new_data[self.cont_parents].values)
-                    key_comb = [str(x) for x in comb]
                     mean_base = model.intercept_
                     variance = mse(new_data[self.name].values, predict)
                     hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base,
                                               'mean_scal': list(model.coef_)}
                 else:
-                    scal = list(np.full(len(self.cont_parents), np.nan))
-                    key_comb = [str(x) for x in comb]
-                    hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': scal}
-            return {"hybcprob": hycprob}
-        # Conditional Gaussian Node
-        if self.disc_parents and not self.cont_parents:
-            hycprob = dict()
-            values = []
-            combinations = []
-            for d_p in self.disc_parents:
-                values.append(np.unique(data[d_p].values))
-            for xs in itertools.product(*values):
-                combinations.append(list(xs))
-            for comb in combinations:
-                mask = np.full(len(data), True)
-                for col, val in zip(self.disc_parents, comb):
-                    mask = (mask) & (data[col] == val)
-                new_data = data[mask]
-                if new_data.shape[0] != 0:
                     mean_base = np.mean(new_data[self.name].values)
                     variance = np.var(new_data[self.name].values)
-                    key_comb = [str(x) for x in comb]
                     hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
+            else:
+                if self.cont_parents:
+                    scal = list(np.full(len(self.cont_parents), np.nan))
+                    hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': scal}
                 else:
-                    mean_base = np.nan
-                    variance = np.nan
-                    key_comb = [str(x) for x in comb]
+                    # mean_base = np.nan
+                    # variance = np.nan
                     hycprob[str(key_comb)] = {'variance': variance, 'mean_base': mean_base, 'mean_scal': []}
-            return {"hybcprob": hycprob}
+        return {"hybcprob": hycprob}
 
     def choose(self, node_info, pvals):
         dispvals = []
@@ -262,94 +246,61 @@ class ConditionalMixtureGaussianNode(BaseNode):
         self.type = 'ConditionalMixtureGaussian'
 
     def fit_parameters(self, data):
-        parents = self.disc_parents + self.cont_parents
-        if self.disc_parents and self.cont_parents:
-            hycprob = dict()
-            values = []
-            combinations = []
-            for d_p in self.disc_parents:
-                values.append(np.unique(data[d_p].values))
-            for xs in itertools.product(*values):
-                combinations.append(list(xs))
-            for comb in combinations:
-                mask = np.full(len(data), True)
-                for col, val in zip(self.disc_parents, comb):
-                    mask = (mask) & (data[col] == val)
-                new_data = data[mask]
-                new_data.reset_index(inplace=True, drop=True)
-                key_comb = [str(x) for x in comb]
-                nodes = [self.name] + self.cont_parents
-                if new_data.shape[0] > 5:
+        hycprob = dict()
+        values = []
+        combinations = []
+        for d_p in self.disc_parents:
+            values.append(np.unique(data[d_p].values))
+        for xs in itertools.product(*values):
+            combinations.append(list(xs))
+        for comb in combinations:
+            mask = np.full(len(data), True)
+            for col, val in zip(self.disc_parents, comb):
+                mask = (mask) & (data[col] == val)
+            new_data = data[mask]
+            new_data.reset_index(inplace=True, drop=True)
+            key_comb = [str(x) for x in comb]
+            nodes = [self.name] + self.cont_parents
+            if new_data.shape[0] > 5:
+                if self.cont_parents:
                     n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
                                                                                 'bic')) / 2)  # component(new_data, nodes, 'LRTS')#int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
                     # n_comp = 3
                     gmm = GMM(n_components=n_comp)
                     gmm.from_samples(new_data[nodes].values)
-                    means = gmm.means.tolist()
-                    cov = gmm.covariances.tolist()
-                    # weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
-                    w = gmm.priors.tolist()  # []
-                    # for row in weigts:
-                    #     w.append(np.mean(row))
-                    hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
                 else:
-                    if new_data.shape[0] != 0:
-                        n_comp = 1
-                        gmm = GMM(n_components=n_comp)
-                        gmm.from_samples(new_data[nodes].values)
-                        means = gmm.means.tolist()
-                        cov = gmm.covariances.tolist()
-                        # weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
-                        w = gmm.priors.tolist()
-                        # for row in weigts:
-                        #     w.append(np.mean(row))
-                        hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
-                    else:
-                        hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
-            return {"hybcprob": hycprob}
-
-        if self.disc_parents and not self.cont_parents:
-            hycprob = dict()
-            values = []
-            combinations = []
-            for d_p in self.disc_parents:
-                values.append(np.unique(data[d_p].values))
-            for xs in itertools.product(*values):
-                combinations.append(list(xs))
-            for comb in combinations:
-                mask = np.full(len(data), True)
-                for col, val in zip(self.disc_parents, comb):
-                    mask = (mask) & (data[col] == val)
-                new_data = data[mask]
-                key_comb = [str(x) for x in comb]
-                if new_data.shape[0] > 5:
                     n_comp = int((component(new_data, [self.name], 'aic') + component(new_data, [self.name],
                                                                                       'bic')) / 2)  # component(new_data, [node], 'LRTS')#int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
                     # n_comp = 3
                     gmm = GMM(n_components=n_comp)
                     gmm.from_samples(np.transpose([new_data[self.name].values]))
-                    means = gmm.means.tolist()
-                    cov = gmm.covariances.tolist()
-                    # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
-                    w = gmm.priors.tolist()  # []
-                    # for row in weigts:
-                    #     w.append(np.mean(row))
-                    hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
+                means = gmm.means.tolist()
+                cov = gmm.covariances.tolist()
+                # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
+                w = gmm.priors.tolist()  # []
+                # for row in weigts:
+                #     w.append(np.mean(row))
+                hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
+            elif new_data.shape[0] != 0:
+                n_comp = 1
+                gmm = GMM(n_components=n_comp)
+                if self.cont_parents:
+                    gmm.from_samples(new_data[nodes].values)
                 else:
-                    if new_data.shape[0] != 0:
-                        n_comp = 1
-                        gmm = GMM(n_components=n_comp)
-                        gmm.from_samples(np.transpose([new_data[self.name].values]))
-                        means = gmm.means.tolist()
-                        cov = gmm.covariances.tolist()
-                        # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
-                        w = gmm.priors.tolist()  # []
-                        # for row in weigts:
-                        #     w.append(np.mean(row))
-                        hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
-                    else:
-                        hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
-            return {"hybcprob": hycprob}
+                    gmm.from_samples(np.transpose([new_data[self.name].values]))
+                means = gmm.means.tolist()
+                cov = gmm.covariances.tolist()
+                # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
+                w = gmm.priors.tolist()  # []
+                # for row in weigts:
+                #     w.append(np.mean(row))
+                hycprob[str(key_comb)] = {'variance': cov, 'mean_base': means, 'mean_scal': w}
+            else:
+                if self.cont_parents:
+                    hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
+                else:
+                    hycprob[str(key_comb)] = {'variance': np.nan, 'mean_base': np.nan, 'mean_scal': []}
+        return {"hybcprob": hycprob}
 
     def choose(self, node_info, pvals):
         dispvals = []
@@ -391,10 +342,39 @@ class LogitNode(DiscreteNode):
         model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
         model.fit(data[parents].values, data[self.name].values)
         return {"mean_base": list(model.intercept_),
-                "mean_scal": list(model.coef_.reshape(1, -1)[0])}
+                "mean_scal": list(model.coef_.reshape(1, -1)[0]),
+                'classes': list(model.classes_)}
 
-    def sample(self, node_info, pvals):
-        pass
+    def choose(self, node_info, pvals):
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        # pvalues = [str(outcome[t]) for t in self.Vdataentry["parents"]]
+        pvals = [str(p) for p in pvals]
+
+        model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+
+        model.classes_ = np.array(node_info["classes"], dtype=str)
+        if len(node_info["classes"]) > 1:
+            model.coef_ = np.array(node_info["mean_scal"], dtype=float).reshape(-1,len(self.disc_parents + self.cont_parents))
+            model.intercept_ = np.array(node_info["mean_base"], dtype=float)
+            distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
+
+            # choose
+            rand = random.random()
+            lbound = 0
+            ubound = 0
+            for interval in range(len(node_info["classes"])):
+                ubound += distribution[interval]
+                if (lbound <= rand and rand < ubound):
+                    rindex = interval
+                    break
+                else:
+                    lbound = ubound
+
+            return str(node_info["classes"][rindex])
+
+        else:
+            return str(node_info["classes"][0])
+
 
 class ConditionalLogitNode(DiscreteNode):
     def __init__(self, name):
@@ -402,7 +382,6 @@ class ConditionalLogitNode(DiscreteNode):
         self.type = 'ConditionalLogit'
 
     def fit_parameters(self, data):
-        parents = self.disc_parents + self.cont_parents
         hycprob = dict()
         values = []
         combinations = []
@@ -417,6 +396,7 @@ class ConditionalLogitNode(DiscreteNode):
             new_data = data[mask]
             mean_base = [np.nan]
             classes = []
+            key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
                 model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
                 values = set(new_data[self.name])
@@ -429,12 +409,47 @@ class ConditionalLogitNode(DiscreteNode):
                     mean_base = np.array([0.0])
                     coef = np.array([float_info.max])
                     classes = list(values)
-
-                key_comb = [str(x) for x in comb]
                 hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base),
                                           'mean_scal': list(coef.reshape(1, -1)[0])}
             else:
                 scal = list(np.full(len(self.cont_parents), np.nan))
-                key_comb = [str(x) for x in comb]
                 hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base), 'mean_scal': scal}
         return {"hybcprob": hycprob}
+
+    def choose(self, node_info, pvals):
+        warnings.filterwarnings("ignore", category=FutureWarning)
+
+        dispvals = []
+        lgpvals = []
+        for pval in pvals:
+            if (isinstance(pval, str)):
+                dispvals.append(pval)
+            else:
+                lgpvals.append(pval)
+        # find correct Gaussian
+        lgdistribution = node_info["hybcprob"][str(dispvals)]
+
+        model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+        model.classes_ = np.array(lgdistribution["classes"], dtype=object)
+
+        if len(lgdistribution["classes"]) > 1:
+            model.coef_ = np.array(lgdistribution["mean_scal"], dtype=float).reshape(-1, len(lgpvals))
+            model.intercept_ = np.array(lgdistribution["mean_base"], dtype=float)
+            distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
+
+            # choose
+            rand = random.random()
+            lbound = 0
+            ubound = 0
+            for interval in range(len(lgdistribution["classes"])):
+                ubound += distribution[interval]
+                if (lbound <= rand and rand < ubound):
+                    rindex = interval
+                    break
+                else:
+                    lbound = ubound
+
+            return str(lgdistribution["classes"][rindex])
+
+        else:
+            return str(lgdistribution["classes"][0])

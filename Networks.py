@@ -107,7 +107,7 @@ class BaseNetwork(object):
             data[columns_names] = data.loc[:, columns_names].astype('str')
 
         # Topology sorting
-        ordered = gru.toporder(self.edges)
+        ordered = gru.toporder(self.nodes, self.edges)
         notOrdered = [node.name for node in self.nodes]
         mask = [notOrdered.index(name) for name in ordered]
         self.nodes = [self.nodes[i] for i in mask]
@@ -119,6 +119,11 @@ class BaseNetwork(object):
         for node in self.nodes:
             future = pool.submit(worker, node)
             self.distributions[node.name] = future.result()
+
+    def get_info(self):
+        for n in self.nodes:
+            print(
+                f"{n.name: <20} | {n.type: <30} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents])}")
 
 
 class DiscreteBN(BaseNetwork):
@@ -151,11 +156,11 @@ class DiscreteBN(BaseNetwork):
 
 
 class ContinuousBN(BaseNetwork):
-    def __init__(self, has_logit: bool = False, use_mixture: bool = False):
+    def __init__(self, use_mixture: bool = False):
         super(ContinuousBN, self).__init__()
         self.type = 'Continuous'
         self._allowed_dtypes = ['cont']
-        self.has_logit = has_logit
+        self.has_logit = None
         self.use_mixture = use_mixture
         self.scoring_function = ""
         # self.distributions = {'mean': 0.0, 'variance': 1.0, 'lr_coefs': []}
@@ -175,17 +180,10 @@ class ContinuousBN(BaseNetwork):
                 if not parents:
                     pvalues = None
                 else:
-                    if self.use_mixture:
-                        pvalues = [output[p] for p in parents]
-                    else:
-                        pvalues = [output[p]['dist'][0] for p in parents]
+                    pvalues = [output[p] for p in parents]
 
-                if self.use_mixture:
-                    sample = node.choose(pvals=pvalues, node_info=self.distributions[node.name])
-                    output[node.name] = sample
-                else:
-                    pair = node.choose(self.distributions[node.name], pvals=pvalues)
-                    output = {**output, f"{node.name}": {"point": pair[0], "dist": pair[1]}}
+                sample = node.choose(pvals=pvalues, node_info=self.distributions[node.name])
+                output[node.name] = sample
             seq.append(output)
         return seq
 
@@ -201,7 +199,7 @@ class HybridBN(BaseNetwork):
     def validate(self, descriptor):
         types = descriptor['types']
         s = set(types.values())
-        return True if {'cont', 'disc', 'cont'} == s else False
+        return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) else False
 
     def sample(self, n, evidence=None):
         seq = []

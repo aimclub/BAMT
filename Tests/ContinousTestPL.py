@@ -37,7 +37,7 @@ nodes_type_mixed = p.get_nodes_types(h)
 columns = [col for col in h.columns.to_list() if not nodes_type_mixed[col] in ['disc', 'disc_num']]  # GET ONLY CONT
 discrete_data = h[columns]
 
-discretized_data, est = p.apply(discrete_data)  # warning
+discretized_data, est = p.apply(discrete_data)  # info
 info = p.info
 
 bn = Networks.ContinuousBN(use_mixture=True)  # use_mixture = False as well
@@ -49,6 +49,7 @@ params = {'init_nodes': None,
           'cont_disc': None}
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+bn.get_info()
 t1 = time.time()
 bn.fit_parameters(data=h)
 t2 = time.time()
