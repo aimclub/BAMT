@@ -36,6 +36,9 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 import sys
 
+from warnings import simplefilter
+from sklearn.exceptions import ConvergenceWarning
+simplefilter("ignore", category=ConvergenceWarning)
 
 
 
