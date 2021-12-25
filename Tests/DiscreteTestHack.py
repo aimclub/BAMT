@@ -39,8 +39,7 @@ bn = Networks.DiscreteBN()
 bn.add_nodes(descriptor=info)
 
 params = {'init_nodes': None,
-          'bl_add': None,
-          'cont_disc': None}
+          'bl_add': None}
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params)
 bn.get_info()
 t1 = time.time()
@@ -51,7 +50,9 @@ print(f'PL elaspsed: {t2 - t1}')
 # for num, el in enumerate(bn.sample(20), 1):
 #     print(f"{num: <5}", [el[key] for key in list(bn.distributions.keys())[0:8]])
 
-for num, el in enumerate(bn.sample(10), 1):
-    print('\n', num)
-    for name, val in el.items():
-        print(f"{name: <15}", val)
+# for num, el in enumerate(bn.sample(10), 1):
+#     print('\n', num)
+#     for name, val in el.items():
+#         print(f"{name: <15}", val)
+
+bn.plot('Discrete')

@@ -39,8 +39,7 @@ bn = Networks.HybridBN(use_mixture=True, has_logit=True)  # all may vary
 bn.add_nodes(descriptor=info)
 
 params = {'init_nodes': None,
-          'bl_add': None,
-          'cont_disc': None}
+          'bl_add': None}
 
 bn.add_edges(data=discrete_data, optimizer='HC', scoring_function=('MI',), params=params)
 
@@ -50,10 +49,11 @@ bn.fit_parameters(data=h)
 t2 = time.time()
 print(f'PL elaspsed: {t2 - t1}')
 
-for num, el in enumerate(bn.sample(10), 1):
-    print('\n', num)
-    for name, val in el.items():
-        print(f"{name: <15}", val)
+bn.plot('Hybrid_hackp')
+# for num, el in enumerate(bn.sample(10), 1):
+#     print('\n', num)
+#     for name, val in el.items():
+#         print(f"{name: <15}", val)
 
 # for num, el in enumerate(bn.sample(100), 1):
 #     print(f"{num: <5}", [el[key] for key in list(bn.distributions.keys())[0:20]])

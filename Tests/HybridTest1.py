@@ -57,32 +57,21 @@ for node in bn.nodes:
 print("#"*1000)
 
 params = {'init_nodes': None,
-          'bl_add': None,
-          'cont_disc': None}
+          'bl_add': None}
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
-
-for node in bn.nodes:
-    print(f"{node.name}: {node.type}. Disc_parents: {len(node.disc_parents)}, cont_parents: {len(node.cont_parents)}") # only gaussian and discrete nodes
-print("#"*1000)
 # -----------------
 print("has_logit=True, use_mixture=False")
 bn = Networks.HybridBN(has_logit=True)
 bn.add_nodes(descriptor=info)
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
-for node in bn.nodes:
-    print(f"{node.name}: {node.type}. Disc_parents: {len(node.disc_parents)}, cont_parents: {len(node.cont_parents)}")
-print("#"*1000)
 # --------------------------
 print("has_logit=True, use_mixture=True")
 bn = Networks.HybridBN(has_logit=True, use_mixture=True)
 bn.add_nodes(descriptor=info)
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
-for node in bn.nodes:
-    print(f"{node.name}: {node.type}. Disc_parents: {len(node.disc_parents)}, cont_parents: {len(node.cont_parents)}")
-
 t1 = time.time()
 bn.fit_parameters(data=h)
 t2 = time.time()

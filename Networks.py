@@ -1,14 +1,19 @@
 import Builders
 import Nodes
-import numpy as np
+# import numpy as np
 # from Utils import GraphUtils as gru
 # import pickle
 from concurrent.futures import ThreadPoolExecutor
 import random
 from Utils import GraphUtils as gru
-from gmr import GMM
+# from gmr import GMM
 # import itertools
 # import sys
+import networkx as nx
+from pyvis.network import Network
+import matplotlib
+import matplotlib.pyplot as plt
+# from matplotlib import cm
 
 from log import logger_network
 
@@ -63,7 +68,7 @@ class BaseNetwork(object):
         self.nodes = worker_1.vertices
 
     def add_edges(self, data,
-                  scoring_function, params, optimizer='HC'):
+                  scoring_function, params=None, optimizer='HC'):
         if not self.validate(descriptor=self.descriptor):
             logger_network.error(
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
@@ -75,7 +80,7 @@ class BaseNetwork(object):
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
             self.sf_name = scoring_function[0]
-            worker.build(data=data, **params)
+            worker.build(data=data, params=params)
 
             self.nodes = worker.skeleton['V']  # update family
             self.edges = worker.skeleton['E']
@@ -123,7 +128,60 @@ class BaseNetwork(object):
     def get_info(self):
         for n in self.nodes:
             print(
-                f"{n.name: <20} | {n.type: <30} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents])}")
+                f"{n.name: <20} | {n.type: <30} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
+
+    def plot(self, output):
+        from numpy import array
+        G = nx.DiGraph()
+        nodes = [node.name for node in self.nodes]
+        G.add_nodes_from(nodes)
+        G.add_edges_from(self.edges)
+
+        network = Network(height="800px", width="100%", notebook=True, directed=nx.is_directed(G),
+                          layout='hierarchical')
+
+        nodes_sorted = array(list(nx.topological_generations(G)), dtype=object)
+
+        # Qualitative class of colormaps
+        q_classes = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1', 'Set2', 'Set3', 'tab10', 'tab20',
+                     'tab20b', 'tab20c']
+
+        hex_colors = []
+        for cls in q_classes:
+            rgb_colors = plt.get_cmap(cls).colors
+            hex_colors.extend(
+                [matplotlib.colors.rgb2hex(rgb_color) for rgb_color in rgb_colors])
+
+        hex_colors = array(hex_colors)
+
+        # Number_of_colors in matplotlib in Qualitative class = 144
+
+        class_number = len(
+            set([node.type for node in self.nodes])
+        )
+        hex_colors_indexes = [random.randint(0, len(hex_colors)-1) for _ in range(class_number)]
+        hex_colors_picked = hex_colors[hex_colors_indexes]
+        class2color = {cls: color for cls, color in zip(set([node.type for node in self.nodes]), hex_colors_picked)}
+        name2class = {node.name: node.type for node in self.nodes}
+
+        for level in range(len(nodes_sorted)):
+            for node_i in range(len(nodes_sorted[level])):
+                name = nodes_sorted[level][node_i]
+                cls = name2class[name]
+                color = class2color[cls]
+                network.add_node(name, label=name, color=color, size=45, level = level, font={'size': 36},
+                                 title=f'Узел байесовской сети {name} ({cls})')
+
+        for edge in G.edges:
+            network.add_edge(edge[0], edge[1])
+
+        network.hrepulsion(node_distance=300, central_gravity=0.5)
+
+        import os
+        if not (os.path.exists('../visualization_result')):
+            os.mkdir("../visualization_result")
+
+        return network.show(f'../visualization_result/' + output + '.html')
 
 
 class DiscreteBN(BaseNetwork):
@@ -163,7 +221,6 @@ class ContinuousBN(BaseNetwork):
         self.has_logit = None
         self.use_mixture = use_mixture
         self.scoring_function = ""
-        # self.distributions = {'mean': 0.0, 'variance': 1.0, 'lr_coefs': []}
 
     # TODO: Обработка случая с неудачной топологической соритровкой
     def sample(self, n, evidence=None):
