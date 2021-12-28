@@ -202,6 +202,9 @@ class BaseNetwork(object):
         in parent directory in folder visualization_result.
         output: str name of output file
         """
+        if not output.endswith('.html'):
+            logger_network.error("This version allows only html format.")
+            return None
         from numpy import array
         G = nx.DiGraph()
         nodes = [node.name for node in self.nodes]
@@ -249,10 +252,10 @@ class BaseNetwork(object):
         network.hrepulsion(node_distance=300, central_gravity=0.5)
 
         import os
-        if not (os.path.exists('../visualization_result')):
-            os.mkdir("../visualization_result")
+        if not (os.path.exists('visualization_result')):
+            os.mkdir("visualization_result")
 
-        return network.show(f'../visualization_result/' + output + '.html')
+        return network.show(f'visualization_result/' + output)
 
 
 class DiscreteBN(BaseNetwork):
