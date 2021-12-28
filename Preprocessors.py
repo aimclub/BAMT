@@ -73,6 +73,9 @@ class Preprocessor(BasePreprocessor):
         return {'types': self.nodes_types, 'signs': self.nodes_signs}
 
     def scan(self, data):
+        """
+        Function to scan data. If something is wrong, it will be send to log file
+        """
         columns_cont = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
         if not columns_cont:
             logger_preprocessor.info("No one column is continuous")
@@ -87,6 +90,9 @@ class Preprocessor(BasePreprocessor):
             data.reset_index(inplace=True, drop=True)
         df = data.copy()
         self.nodes_types = self.get_nodes_types(data)
+        if list(self.nodes_types.keys()) != data.columns.to_list():
+            logger_preprocessor.error("Nodes_types dictionary are not full.")
+            return None, None
         self.nodes_signs = self.get_nodes_signs(data)
         self.scan(df)
         for name, instrument in self.pipeline:

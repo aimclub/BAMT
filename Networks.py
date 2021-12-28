@@ -1,19 +1,12 @@
 import Builders
 import Nodes
-# import numpy as np
-# from Utils import GraphUtils as gru
-# import pickle
 from concurrent.futures import ThreadPoolExecutor
 import random
 from Utils import GraphUtils as gru
-# from gmr import GMM
-# import itertools
-# import sys
 import networkx as nx
 from pyvis.network import Network
 import matplotlib
 import matplotlib.pyplot as plt
-# from matplotlib import cm
 
 from log import logger_network
 
@@ -51,6 +44,10 @@ class BaseNetwork(object):
                                     node in new_nodes_names}
 
     def add_nodes(self, descriptor):
+        """
+        Function for initalizing nodes in Bayesian Network
+        descriptor: dict with types and signs of nodes
+        """
         self.descriptor = descriptor
         if not self.validate(descriptor=descriptor):
             if not self.type == 'Hybrid':
@@ -63,12 +60,20 @@ class BaseNetwork(object):
                 return
         elif ['Abstract'] in self._allowed_dtypes:
             return None
-        # Stage 1
+        # LEVEL 1
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
 
     def add_edges(self, data,
                   scoring_function, params=None, optimizer='HC'):
+        """
+        Base function for Structure learning
+        scoring_function: tuple with following format (NAME:str, scoring_function)
+        Params:
+        init_edges: list of tuples, a graph to start learning with
+        remove_init_edges: allows changes in model defined by user
+        white_list: list of allowed edges
+        """
         if not self.validate(descriptor=self.descriptor):
             logger_network.error(
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
@@ -82,10 +87,15 @@ class BaseNetwork(object):
             self.sf_name = scoring_function[0]
             worker.build(data=data, params=params)
 
-            self.nodes = worker.skeleton['V']  # update family
+            # update family
+            self.nodes = worker.skeleton['V']
             self.edges = worker.skeleton['E']
 
     def set_nodes(self, nodes=None, **kwargs):
+        """
+        additional function to set nodes manually. User should be awared that
+        nodes must be a subclass of BaseNode.
+        """
         if nodes is None:
             nodes = dict()
         nodes.update(kwargs)
@@ -103,10 +113,14 @@ class BaseNetwork(object):
             self.update_descriptor()
 
     def fit_parameters(self, data, dropna=True):
+        """
+        Base function for pararmeters learning
+        """
         if dropna:
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)
 
+        # Turn all discrete values to str for learning algorithm
         if 'disc_num' in self.descriptor['types'].values():
             columns_names = [name for name, t in self.descriptor['types'].items() if t in ['disc_num']]
             data[columns_names] = data.loc[:, columns_names].astype('str')
@@ -125,12 +139,69 @@ class BaseNetwork(object):
             future = pool.submit(worker, node)
             self.distributions[node.name] = future.result()
 
-    def get_info(self):
-        for n in self.nodes:
-            print(
-                f"{n.name: <20} | {n.type: <30} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
+    def get_info(self, as_df=True):
+        """Return a table with name, type, parents_type, parents_names"""
+        if as_df:
+            names = []
+            types_n = []
+            types_d = []
+            parents = []
+            parents_types = []
+            import pandas as pd
+            for n in self.nodes:
+                names.append(n)
+                types_n.append(n.type)
+                types_d.append(self.descriptor['types'][n.name])
+                parents.append([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents])
+                parents_types.append([name for name in n.cont_parents + n.disc_parents])
+            return pd.DataFrame({'name': names, 'node_type': types_n,
+                                 'data_type': types_d, 'parents': parents,
+                                 'parents_types': parents_types })
+        else:
+            for n in self.nodes:
+                print(
+                    f"{n.name: <20} | {n.type: <30} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
+
+    def sample(self, n, evidence=None, as_df=True):
+        """
+        Sampling from Bayesian Network
+        n: int number of samples
+        evidence: values for nodes from user
+        """
+        seq = []
+        random.seed()
+        if not self.distributions.items():
+            logger_network.error("Parameter learning wasn't done. Call fit_parameters method")
+            return
+        for n in range(n):
+            output = {}
+            for node in self.nodes:
+                parents = node.cont_parents + node.disc_parents
+                if evidence:
+                    if node.name in evidence.keys():
+                        output[node.name] = evidence[node.name]
+                if not parents:
+                    pvals = None
+                else:
+                    if self.type == 'Discrete':
+                        pvals = [str(output[t]) for t in parents]
+                    else:
+                        pvals = [output[t] for t in parents]
+                output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+            seq.append(output)
+
+        if as_df:
+            import pandas as pd
+            return pd.DataFrame.from_dict(seq, orient='columns')
+        else:
+            return seq
 
     def plot(self, output):
+        """
+        Visualize a Bayesian Network. Result will be saved
+        in parent directory in folder visualization_result.
+        output: str name of output file
+        """
         from numpy import array
         G = nx.DiGraph()
         nodes = [node.name for node in self.nodes]
@@ -193,25 +264,6 @@ class DiscreteBN(BaseNetwork):
         self.has_logit = None
         self.use_mixture = None
 
-    def sample(self, n, evidence=None):
-        seq = []
-        random.seed()
-        for _ in range(n):
-            output = {}
-            for node in self.nodes:
-                parents = node.cont_parents + node.disc_parents
-                if evidence:
-                    if node.name in evidence.keys():
-                        output[node.name] = evidence[node.name]
-                if not parents:
-                    pvals = None
-                else:
-                    pvals = [str(output[t]) for t in parents]
-                output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
-            seq.append(output)
-
-        return seq
-
 
 class ContinuousBN(BaseNetwork):
     def __init__(self, use_mixture: bool = False):
@@ -221,28 +273,6 @@ class ContinuousBN(BaseNetwork):
         self.has_logit = None
         self.use_mixture = use_mixture
         self.scoring_function = ""
-
-    # TODO: Обработка случая с неудачной топологической соритровкой
-    def sample(self, n, evidence=None):
-        seq = []
-        random.seed()
-        for _ in range(n):
-            output = {}
-            for node in self.nodes:
-                parents = node.disc_parents + node.cont_parents
-                if evidence:
-                    if node.name in evidence.keys():
-                        output[node.name] = evidence[node.name]
-
-                if not parents:
-                    pvalues = None
-                else:
-                    pvalues = [output[p] for p in parents]
-
-                sample = node.choose(pvals=pvalues, node_info=self.distributions[node.name])
-                output[node.name] = sample
-            seq.append(output)
-        return seq
 
 
 class HybridBN(BaseNetwork):
@@ -257,23 +287,3 @@ class HybridBN(BaseNetwork):
         types = descriptor['types']
         s = set(types.values())
         return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) else False
-
-    def sample(self, n, evidence=None):
-        seq = []
-        random.seed()
-        for _ in range(n):
-            output = {}
-            for node in self.nodes:
-                parents = node.disc_parents + node.cont_parents
-                if evidence:
-                    if node.name in evidence.keys():
-                        output[node.name] = evidence[node.name]
-                if not parents:
-                    pvalues = None
-                else:
-                    pvalues = [output[p] for p in parents]
-                result = node.choose(self.distributions[node.name], pvals=pvalues)
-
-                output[node.name] = result
-            seq.append(output)
-        return seq

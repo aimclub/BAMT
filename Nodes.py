@@ -54,6 +54,12 @@ class DiscreteNode(BaseNode):
         return future.result()
 
     def choose(self, node_info, pvals):
+        """
+        Return value from discrete node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
         rindex = 0
         random.seed()
         vals = node_info['vals']
@@ -103,14 +109,18 @@ class GaussianNode(BaseNode):
                     "variance": variance}
 
     def choose(self, node_info, pvals):
-        # Должен возвращать распределение
+        """
+        Return value from Gaussian node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
         mean = node_info["mean"]
         if pvals:
             for m in pvals:
                 mean += m * node_info["coef"][0]
         variance = node_info["variance"]
         distribution = [mean, variance]
-        # return [random.gauss(mean, math.sqrt(variance)), distribution]
         return random.gauss(mean, math.sqrt(variance))
 
 
@@ -163,6 +173,12 @@ class ConditionalGaussianNode(BaseNode):
         return {"hybcprob": hycprob}
 
     def choose(self, node_info, pvals):
+        """
+        Return value from ConditionalGaussian node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -220,6 +236,12 @@ class MixtureGaussianNode(BaseNode):
                         "covars": cov}
 
     def choose(self, node_info, pvals):
+        """
+        Return value from MixtureGaussian node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
         mean = node_info["mean"]
         covariance = node_info["covars"]
         w = node_info["coef"]
@@ -303,6 +325,12 @@ class ConditionalMixtureGaussianNode(BaseNode):
         return {"hybcprob": hycprob}
 
     def choose(self, node_info, pvals):
+        """
+        Return value from ConditionalMixtureGaussian node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -346,6 +374,12 @@ class LogitNode(DiscreteNode):
                 'classes': list(model.classes_)}
 
     def choose(self, node_info, pvals):
+        """
+        Return value from Logit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
         warnings.filterwarnings("ignore", category=FutureWarning)
         # pvalues = [str(outcome[t]) for t in self.Vdataentry["parents"]]
         pvals = [str(p) for p in pvals]
@@ -418,8 +452,12 @@ class ConditionalLogitNode(DiscreteNode):
         return {"hybcprob": hycprob}
 
     def choose(self, node_info, pvals):
-        warnings.filterwarnings("ignore", category=FutureWarning)
-
+        """
+        Return value from ConditionalLogit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -427,7 +465,6 @@ class ConditionalLogitNode(DiscreteNode):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
-        # find correct Gaussian
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
         model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
@@ -438,7 +475,6 @@ class ConditionalLogitNode(DiscreteNode):
             model.intercept_ = np.array(lgdistribution["mean_base"], dtype=float)
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
-            # choose
             rand = random.random()
             lbound = 0
             ubound = 0

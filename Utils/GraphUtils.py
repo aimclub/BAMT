@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import networkx as nx
 from log import logger_preprocessor
 
@@ -16,14 +15,14 @@ def nodes_types(data):
 
     column_type = dict()
     for c in data.columns.to_list():
-        disc = ['str', 'O', 'b', 'categorical']
+        disc = ['str', 'O', 'b', 'categorical', 'object']
         disc_numerical = ['int32', 'int64']
         cont = ['float32', 'float64']
-        if data[c].dtypes in disc:
+        if data[c].dtype.name in disc:
             column_type[c] = 'disc'
-        elif data[c].dtype in cont:
+        elif data[c].dtype.name in cont:
             column_type[c] = 'cont'
-        elif data[c].dtype in disc_numerical:
+        elif data[c].dtype.name in disc_numerical:
             column_type[c] = 'disc_num'
         else:
             logger_preprocessor.error(f'Unsupported data type. Dtype: {data[c].dtypes}')
@@ -42,6 +41,9 @@ def nodes_signs(nodes_types: dict, data):
         Returns:
             dict: output dictionary where 'key' - node name and 'value' - sign of data
         """
+    if list(nodes_types.keys()) != data.columns.to_list():
+        logger_preprocessor.error("Nodes_types dictionary are not full.")
+        return
     columns_sign = dict()
     for c in data.columns.to_list():
         if nodes_types[c] == 'cont':
@@ -61,6 +63,4 @@ def toporder(nodes, edges):
     G = nx.DiGraph()
     G.add_nodes_from([node.name for node in nodes])
     G.add_edges_from(edges)
-    # nx.draw(G, with_labels=True)
-    # plt.show()
     return list(nx.topological_sort(G))

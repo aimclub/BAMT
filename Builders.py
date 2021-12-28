@@ -19,7 +19,7 @@ class StructureBuilder(object):
         """
         :param descriptor: a dict with types and signs of nodes
         Attributes:
-        Skeleton;
+        Skeleton: dict;
         black_list: a list with restricted connections;
         white_list: a list with allowed connections.
         """
@@ -32,13 +32,14 @@ class StructureBuilder(object):
     def restrict(self, data, init_nodes, bl_add):
         """
         :param data: data to deal with
-        :param init_nodes: nodes to begin with
+        :param init_nodes: nodes to begin with (thus they have no parents)
         :param bl_add: additional vertices
         """
         node_type = self.descriptor['types']
         blacklist = []
         datacol = data.columns.to_list()
         if not self.has_logit:
+            # Has_logit flag allows BN building edges between cont and disc
             RESTRICTIONS = [('cont', 'disc'), ('cont', 'disc_num')]
             for x, y in itertools.product(datacol, repeat=2):
                 if x != y:
@@ -99,20 +100,23 @@ class VerticesDefiner(StructureBuilder):
         self.vertices = []
 
         Node = None
-        # LEVEL 1: Определение первичной структуры (без учета типа родителей)
+        # LEVEL 1: Define a general type of node: Discrete or Gaussian
         for vertex, type in self.descriptor['types'].items():
             if type in ['disc_num', 'disc']:
                 Node = Nodes.DiscreteNode(name=vertex)
             elif type == 'cont':
                 Node = Nodes.GaussianNode(name=vertex)
             else:
-                msg = f"""First stage of automatic vertex detection failed on "{vertex}" due TypeError ({type}). Set vertex manually (by calling set_nodes()) or investigate the error."""
+                msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}). Set vertex manually (by calling set_nodes()) or investigate the error."""
                 logger_builder.error(msg)
                 continue
 
             self.vertices.append(Node)
 
     def overwrite_vertex(self, has_logit, use_mixture):
+        """
+        Level 2: Redefined nodes according structure (parents)
+        """
         for node_instance in self.vertices:
             Node = node_instance
             if has_logit:
@@ -171,6 +175,12 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         super(HillClimbDefiner, self).__init__(descriptor)
 
     def apply_K2(self, data, init_edges, remove_init_edges, white_list):
+        """
+        Params:
+        init_edges: list of tuples, a graph to start learning with
+        remove_init_edges: allows changes in model defined by user
+        white_list: list of allowed edges
+        """
         from Preprocessors import BasePreprocessor
         if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
             logger_builder.error(
@@ -250,6 +260,6 @@ class HCStructureBuilder(HillClimbDefiner):
         elif self.scoring_function[0] in ['MI', 'LL', 'BIC', 'AIC']:
             self.apply_group1(data=data, **self.params)
 
+        # Level 2
         self.get_family()
-        # 2 stage
         self.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)
