@@ -6,6 +6,7 @@ from redef_HC import hc as hc_method
 
 import Nodes
 from log import logger_builder
+from pandas import DataFrame
 
 
 class StructureBuilder(object):
@@ -15,13 +16,12 @@ class StructureBuilder(object):
     """
     has_logit: bool
 
-    def __init__(self, descriptor):
+    def __init__(self, descriptor: dict):
         """
         :param descriptor: a dict with types and signs of nodes
         Attributes:
         Skeleton: dict;
         black_list: a list with restricted connections;
-        white_list: a list with allowed connections.
         """
         self.skeleton = {'V': None,
                          'E': None}
@@ -29,7 +29,7 @@ class StructureBuilder(object):
 
         self.black_list = None
 
-    def restrict(self, data, init_nodes, bl_add):
+    def restrict(self, data: DataFrame, init_nodes: list, bl_add: list):
         """
         :param data: data to deal with
         :param init_nodes: nodes to begin with (thus they have no parents)
@@ -92,11 +92,12 @@ class VerticesDefiner(StructureBuilder):
     Main class for defining vertices
     """
 
-    def __init__(self, descriptor):
+    def __init__(self, descriptor: dict):
         """
         Automatically creates a list of nodes
         """
         super(VerticesDefiner, self).__init__(descriptor=descriptor)
+        # Notice that vertices is functional variable, thus it's used only by Builders
         self.vertices = []
 
         Node = None
@@ -113,7 +114,7 @@ class VerticesDefiner(StructureBuilder):
 
             self.vertices.append(Node)
 
-    def overwrite_vertex(self, has_logit, use_mixture):
+    def overwrite_vertex(self, has_logit: bool, use_mixture: bool):
         """
         Level 2: Redefined nodes according structure (parents)
         """
@@ -153,12 +154,12 @@ class VerticesDefiner(StructureBuilder):
 
 
 class EdgesDefiner(StructureBuilder):
-    def __init__(self, descriptor):
+    def __init__(self, descriptor: dict):
         super(EdgesDefiner, self).__init__(descriptor)
 
 
 class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
-    def __init__(self, data, descriptor,
+    def __init__(self, data: DataFrame, descriptor: dict,
                  scoring_function: tuple):
         """
         :param scoring_function: a tuple with following format (Name, scoring_function)
@@ -174,7 +175,8 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                        'bl_add': None}
         super(HillClimbDefiner, self).__init__(descriptor)
 
-    def apply_K2(self, data, init_edges, remove_init_edges, white_list):
+    def apply_K2(self, data: DataFrame, init_edges: list,
+                 remove_init_edges: bool, white_list: list):
         """
         Params:
         init_edges: list of tuples, a graph to start learning with
@@ -209,7 +211,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton['E'] = structure
 
-    def apply_group1(self, data, init_edges, remove_init_edges, white_list):
+    def apply_group1(self, data: DataFrame, init_edges: list, remove_init_edges: bool, white_list: list):
         # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
         column_name_dict = dict([(n.name, i) for i, n in enumerate(self.vertices)])
         blacklist_new = []
@@ -238,13 +240,13 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
 
 
 class HCStructureBuilder(HillClimbDefiner):
-    def __init__(self, data, descriptor, scoring_function, has_logit, use_mixture):
+    def __init__(self, data: DataFrame, descriptor: dict, scoring_function: tuple, has_logit: bool, use_mixture: bool):
         self.use_mixture = use_mixture
         self.has_logit = has_logit
         super(HCStructureBuilder, self).__init__(descriptor=descriptor, data=data,
                                                  scoring_function=scoring_function)
 
-    def build(self, data, params):
+    def build(self, data: DataFrame, params: dict):
         if params:
             for param, value in params.items():
                 self.params[param] = value

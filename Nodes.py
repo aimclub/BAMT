@@ -2,12 +2,15 @@ from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
 from concurrent.futures import ThreadPoolExecutor
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
-import itertools
 from sys import float_info
 from Utils.MathUtils import *
 from gmr import GMM
+from pandas import DataFrame
+
+
+import itertools
 import random
-import warnings
+# import warnings
 
 
 class BaseNode(object):
@@ -28,7 +31,11 @@ class DiscreteNode(BaseNode):
         super(DiscreteNode, self).__init__(name)
         self.type = 'Discrete'
 
-    def fit_parameters(self, data):
+    def fit_parameters(self, data: DataFrame) -> dict:
+        """
+        Method returns probas dict with following format {[<combinations>: value]}
+        and vals, list of appeared values in combinations
+        """
         def worker(node):
             parents = node.disc_parents + node.cont_parents
             if not parents:
@@ -53,7 +60,7 @@ class DiscreteNode(BaseNode):
         future = pool.submit(worker, self)
         return future.result()
 
-    def choose(self, node_info, pvals):
+    def choose(self, node_info: dict, pvals: list) -> str:
         """
         Return value from discrete node
         params:
@@ -82,11 +89,13 @@ class DiscreteNode(BaseNode):
 
 
 class GaussianNode(BaseNode):
-    def __init__(self, name):
+    def __init__(self, name: str):
         super(GaussianNode, self).__init__(name)
         self.type = 'Gaussian'
 
-    def fit_parameters(self, data):
+    def fit_parameters(self, data: DataFrame) -> dict:
+        """
+        """
         parents = self.disc_parents + self.cont_parents
         if parents:
             model = linear_model.LinearRegression()
@@ -108,7 +117,7 @@ class GaussianNode(BaseNode):
                     "coef": [],
                     "variance": variance}
 
-    def choose(self, node_info, pvals):
+    def choose(self, node_info: dict, pvals: list) -> float:
         """
         Return value from Gaussian node
         params:
@@ -129,7 +138,7 @@ class ConditionalGaussianNode(BaseNode):
         super(ConditionalGaussianNode, self).__init__(name)
         self.type = 'ConditionalGaussian'
 
-    def fit_parameters(self, data):
+    def fit_parameters(self, data: DataFrame) -> dict:
         hycprob = dict()
         values = []
         combinations = []
@@ -172,7 +181,7 @@ class ConditionalGaussianNode(BaseNode):
                     hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': []}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info, pvals):
+    def choose(self, node_info: dict, pvals: list) -> float:
         """
         Return value from ConditionalGaussian node
         params:
@@ -200,7 +209,7 @@ class MixtureGaussianNode(BaseNode):
         super(MixtureGaussianNode, self).__init__(name)
         self.type = 'MixtureGaussian'
 
-    def fit_parameters(self, data):
+    def fit_parameters(self, data: DataFrame) -> dict:
         parents = self.disc_parents + self.cont_parents
         if not parents:
             n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
@@ -235,7 +244,7 @@ class MixtureGaussianNode(BaseNode):
                         "coef": w,
                         "covars": cov}
 
-    def choose(self, node_info, pvals):
+    def choose(self, node_info: dict, pvals: list):
         """
         Return value from MixtureGaussian node
         params:
@@ -267,7 +276,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
         self.type = 'ConditionalMixtureGaussian'
 
-    def fit_parameters(self, data):
+    def fit_parameters(self, data: DataFrame) -> dict:
         hycprob = dict()
         values = []
         combinations = []
@@ -324,7 +333,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
                     hycprob[str(key_comb)] = {'covars': np.nan, 'mean': np.nan, 'coef': []}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info, pvals):
+    def choose(self, node_info: dict, pvals: list) -> float:
         """
         Return value from ConditionalMixtureGaussian node
         params:
@@ -365,7 +374,7 @@ class LogitNode(DiscreteNode):
         super(LogitNode, self).__init__(name)
         self.type = 'Logit'
 
-    def fit_parameters(self, data):
+    def fit_parameters(self, data: DataFrame) -> dict:
         parents = self.disc_parents + self.cont_parents
         model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
         model.fit(data[parents].values, data[self.name].values)
@@ -373,14 +382,13 @@ class LogitNode(DiscreteNode):
                 "mean_scal": list(model.coef_.reshape(1, -1)[0]),
                 'classes': list(model.classes_)}
 
-    def choose(self, node_info, pvals):
+    def choose(self, node_info: dict, pvals: list) -> str:
         """
         Return value from Logit node
         params:
         node_info: nodes info from distributions
         pvals: parent values
         """
-        warnings.filterwarnings("ignore", category=FutureWarning)
         # pvalues = [str(outcome[t]) for t in self.Vdataentry["parents"]]
         pvals = [str(p) for p in pvals]
 
@@ -416,7 +424,7 @@ class ConditionalLogitNode(DiscreteNode):
         super(ConditionalLogitNode, self).__init__(name)
         self.type = 'ConditionalLogit'
 
-    def fit_parameters(self, data):
+    def fit_parameters(self, data: DataFrame) -> dict:
         hycprob = dict()
         values = []
         combinations = []
@@ -451,7 +459,7 @@ class ConditionalLogitNode(DiscreteNode):
                 hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base), 'mean_scal': scal}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info, pvals):
+    def choose(self, node_info: dict, pvals: list) -> str:
         """
         Return value from ConditionalLogit node
         params:

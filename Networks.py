@@ -1,13 +1,14 @@
 import Builders
 import Nodes
-from concurrent.futures import ThreadPoolExecutor
 import random
-from Utils import GraphUtils as gru
 import networkx as nx
-from pyvis.network import Network
 import matplotlib
 import matplotlib.pyplot as plt
 
+from concurrent.futures import ThreadPoolExecutor
+from Utils import GraphUtils as gru
+from pyvis.network import Network
+from pandas import DataFrame
 from log import logger_network
 
 
@@ -21,7 +22,7 @@ class BaseNetwork(object):
         Attributes:
             nodes: a list of nodes instances
             edges: a list of edges
-            distributions: a dict with "numoutcomes", "cprob","parents","type", "children"
+            distributions: dict
         """
         self.type = 'Abstract'
         self._allowed_dtypes = ['Abstract']
@@ -32,7 +33,7 @@ class BaseNetwork(object):
         self.has_logit = False
         self.use_mixture = False
 
-    def validate(self, descriptor):
+    def validate(self, descriptor: dict):
         types = descriptor['types']
         return True if all([a in self._allowed_dtypes for a in types.values()]) else False
 
@@ -43,7 +44,7 @@ class BaseNetwork(object):
         self.descriptor['signs'] = {node: sign for node, sign in self.descriptor['signs'].items() if
                                     node in new_nodes_names}
 
-    def add_nodes(self, descriptor):
+    def add_nodes(self, descriptor: dict):
         """
         Function for initalizing nodes in Bayesian Network
         descriptor: dict with types and signs of nodes
@@ -64,11 +65,11 @@ class BaseNetwork(object):
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
 
-    def add_edges(self, data,
-                  scoring_function, params=None, optimizer='HC'):
+    def add_edges(self, data: DataFrame,scoring_function: tuple,
+                  params = None, optimizer: str = 'HC'):
         """
         Base function for Structure learning
-        scoring_function: tuple with following format (NAME:str, scoring_function)
+        scoring_function: tuple with following format (NAME, scoring_function)
         Params:
         init_edges: list of tuples, a graph to start learning with
         remove_init_edges: allows changes in model defined by user
@@ -91,7 +92,7 @@ class BaseNetwork(object):
             self.nodes = worker.skeleton['V']
             self.edges = worker.skeleton['E']
 
-    def set_nodes(self, nodes=None, **kwargs):
+    def set_nodes(self, nodes: dict = None, **kwargs):
         """
         additional function to set nodes manually. User should be awared that
         nodes must be a subclass of BaseNode.
@@ -112,7 +113,7 @@ class BaseNetwork(object):
             self.nodes.append(node(name=column_name))
             self.update_descriptor()
 
-    def fit_parameters(self, data, dropna=True):
+    def fit_parameters(self, data, dropna: bool = True):
         """
         Base function for pararmeters learning
         """
@@ -139,7 +140,7 @@ class BaseNetwork(object):
             future = pool.submit(worker, node)
             self.distributions[node.name] = future.result()
 
-    def get_info(self, as_df=True):
+    def get_info(self, as_df:bool=True):
         """Return a table with name, type, parents_type, parents_names"""
         if as_df:
             names = []
@@ -152,8 +153,8 @@ class BaseNetwork(object):
                 names.append(n)
                 types_n.append(n.type)
                 types_d.append(self.descriptor['types'][n.name])
-                parents.append([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents])
-                parents_types.append([name for name in n.cont_parents + n.disc_parents])
+                parents_types.append([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents])
+                parents.append([name for name in n.cont_parents + n.disc_parents])
             return pd.DataFrame({'name': names, 'node_type': types_n,
                                  'data_type': types_d, 'parents': parents,
                                  'parents_types': parents_types })
@@ -162,7 +163,7 @@ class BaseNetwork(object):
                 print(
                     f"{n.name: <20} | {n.type: <30} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
-    def sample(self, n, evidence=None, as_df=True):
+    def sample(self, n: int, evidence = None, as_df:bool=True) -> list:
         """
         Sampling from Bayesian Network
         n: int number of samples
@@ -196,7 +197,7 @@ class BaseNetwork(object):
         else:
             return seq
 
-    def plot(self, output):
+    def plot(self, output: str):
         """
         Visualize a Bayesian Network. Result will be saved
         in parent directory in folder visualization_result.
@@ -259,6 +260,9 @@ class BaseNetwork(object):
 
 
 class DiscreteBN(BaseNetwork):
+    """
+    Bayesian Network with Discrete Types of Nodes
+    """
     def __init__(self):
         super(DiscreteBN, self).__init__()
         self.type = 'Discrete'
@@ -269,6 +273,9 @@ class DiscreteBN(BaseNetwork):
 
 
 class ContinuousBN(BaseNetwork):
+    """
+    Bayesian Network with Continuous Types of Nodes
+    """
     def __init__(self, use_mixture: bool = False):
         super(ContinuousBN, self).__init__()
         self.type = 'Continuous'
@@ -279,6 +286,9 @@ class ContinuousBN(BaseNetwork):
 
 
 class HybridBN(BaseNetwork):
+    """
+    Bayesian Network with Mixed Types of Nodes
+    """
     def __init__(self, has_logit: bool = False, use_mixture: bool = False):
         super(HybridBN, self).__init__()
         self._allowed_dtypes = ['cont', 'disc', 'disc_num']
@@ -286,7 +296,7 @@ class HybridBN(BaseNetwork):
         self.has_logit = has_logit
         self.use_mixture = use_mixture
 
-    def validate(self, descriptor):
+    def validate(self, descriptor: dict) -> bool:
         types = descriptor['types']
         s = set(types.values())
         return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) else False

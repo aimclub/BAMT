@@ -1,17 +1,20 @@
 import networkx as nx
 from log import logger_preprocessor
+from pandas import DataFrame
+from typing import TypedDict, List
 
 
-def nodes_types(data):
-    """Function to define the type of the node
+def nodes_types(data: DataFrame):
+    """
+    Function to define the type of the node
            disc - discrete node
            cont - continuous
         Args:
-            data (pd.DataFrame): input dataset
+            data: input dataset
 
         Returns:
             dict: output dictionary where 'key' - node name and 'value' - node type
-        """
+    """
 
     column_type = dict()
     for c in data.columns.to_list():
@@ -30,7 +33,7 @@ def nodes_types(data):
     return column_type
 
 
-def nodes_signs(nodes_types: dict, data):
+def nodes_signs(nodes_types: dict, data: DataFrame):
     """Function to define sign of the node
            neg - if node has negative values
            pos - if node has only positive values
@@ -42,7 +45,7 @@ def nodes_signs(nodes_types: dict, data):
             dict: output dictionary where 'key' - node name and 'value' - sign of data
         """
     if list(nodes_types.keys()) != data.columns.to_list():
-        logger_preprocessor.error("Nodes_types dictionary are not full.")
+        logger_preprocessor.error("Nodes_types dictionary is not full.")
         return
     columns_sign = dict()
     for c in data.columns.to_list():
@@ -59,7 +62,7 @@ def get_descriptor(data):
             'signs': nodes_signs(nodes_types(data), data)}
 
 
-def toporder(nodes, edges):
+def toporder(nodes: list, edges: list) -> list:
     G = nx.DiGraph()
     G.add_nodes_from([node.name for node in nodes])
     G.add_edges_from(edges)

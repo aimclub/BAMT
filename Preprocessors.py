@@ -1,5 +1,6 @@
 from Utils import GraphUtils as gru
 from log import logger_preprocessor
+from pandas import DataFrame
 
 
 class BasePreprocessor(object):
@@ -14,11 +15,11 @@ class BasePreprocessor(object):
     def get_nodes_signs(self, data):
         return gru.nodes_signs(nodes_types=self.nodes_types, data=data)
 
-    def code_categories(self, data, encoder):
+    def code_categories(self, data: DataFrame, encoder) -> tuple:
         """Encoding categorical parameters
 
             Args:
-                data (pd.DataFrame): input dataset
+                data (DataFrame): input dataset
                 encoder: any object with fit_transform method
 
             Returns:
@@ -45,7 +46,7 @@ class BasePreprocessor(object):
                 pass
         return df, encoder_dict
 
-    def discretize(self, data, discretizer):
+    def discretize(self, data: DataFrame, discretizer) -> tuple:
         columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
         df = data.copy()
         if not columns:
@@ -62,17 +63,17 @@ class BasePreprocessor(object):
 
 
 class Preprocessor(BasePreprocessor):
-    def __init__(self, pipeline):
+    def __init__(self, pipeline: list):
         super().__init__()
         assert isinstance(pipeline, list)
         self.pipeline = pipeline
-        self.coder = {}
+        self.coder = None
 
     @property
     def info(self):
         return {'types': self.nodes_types, 'signs': self.nodes_signs}
 
-    def scan(self, data):
+    def scan(self, data: DataFrame):
         """
         Function to scan data. If something is wrong, it will be send to log file
         """
@@ -84,7 +85,7 @@ class Preprocessor(BasePreprocessor):
         if not columns_disc:
             logger_preprocessor.info("No one column is discrete")
 
-    def apply(self, data, dropna=True):
+    def apply(self, data: DataFrame, dropna:bool=True) -> tuple:
         if dropna:
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)
