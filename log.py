@@ -7,6 +7,7 @@ logging.config.fileConfig(log_file_path)
 logger_builder = logging.getLogger('builder')
 logger_network = logging.getLogger('network')
 logger_preprocessor = logging.getLogger('preprocessor')
+logger_metrics = logging.getLogger('metrics')
 
 logging.captureWarnings(True)
 logger_warnings = logging.getLogger('py.warnings')

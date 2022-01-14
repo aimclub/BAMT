@@ -370,17 +370,17 @@ class ConditionalMixtureGaussianNode(BaseNode):
 
 
 class LogitNode(DiscreteNode):
-    def __init__(self, name):
+    def __init__(self, name,
+                 classifier=linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)):
         super(LogitNode, self).__init__(name)
-        self.type = 'Logit'
+        self.classifier = classifier
+        self.type = 'Logit' + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> dict:
         parents = self.disc_parents + self.cont_parents
-        model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
-        model.fit(data[parents].values, data[self.name].values)
-        return {"mean_base": list(model.intercept_),
-                "mean_scal": list(model.coef_.reshape(1, -1)[0]),
-                'classes': list(model.classes_)}
+        model = self.classifier.fit(data[parents].values, data[self.name].values)
+        
+        return {'classes': list(model.classes_)}
 
     def choose(self, node_info: dict, pvals: list) -> str:
         """
@@ -389,16 +389,11 @@ class LogitNode(DiscreteNode):
         node_info: nodes info from distributions
         pvals: parent values
         """
-        # pvalues = [str(outcome[t]) for t in self.Vdataentry["parents"]]
         pvals = [str(p) for p in pvals]
 
-        model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+        model = self.classifier
 
-        model.classes_ = np.array(node_info["classes"], dtype=str)
         if len(node_info["classes"]) > 1:
-            model.coef_ = np.array(node_info["mean_scal"], dtype=float).reshape(-1, len(
-                self.disc_parents + self.cont_parents))
-            model.intercept_ = np.array(node_info["mean_base"], dtype=float)
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose
@@ -420,9 +415,11 @@ class LogitNode(DiscreteNode):
 
 
 class ConditionalLogitNode(DiscreteNode):
-    def __init__(self, name):
+    def __init__(self, name,
+                 classifier=linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)):
         super(ConditionalLogitNode, self).__init__(name)
-        self.type = 'ConditionalLogit'
+        self.classifier = classifier
+        self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> dict:
         hycprob = dict()
@@ -441,22 +438,17 @@ class ConditionalLogitNode(DiscreteNode):
             classes = []
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
-                model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+                model = self.classifier
                 values = set(new_data[self.name])
                 if len(values) > 1:
                     model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
-                    mean_base = model.intercept_
                     classes = model.classes_
-                    coef = model.coef_
                 else:
-                    mean_base = np.array([0.0])
-                    coef = np.array([float_info.max])
                     classes = list(values)
-                hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base),
-                                          'mean_scal': list(coef.reshape(1, -1)[0])}
+                hycprob[str(key_comb)] = {'classes': list(classes)}
             else:
                 scal = list(np.full(len(self.cont_parents), np.nan))
-                hycprob[str(key_comb)] = {'classes': list(classes), 'mean_base': list(mean_base), 'mean_scal': scal}
+                hycprob[str(key_comb)] = {'classes': list(classes)}
         return {"hybcprob": hycprob}
 
     def choose(self, node_info: dict, pvals: list) -> str:
@@ -475,15 +467,13 @@ class ConditionalLogitNode(DiscreteNode):
                 lgpvals.append(pval)
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
-        model = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
-        model.classes_ = np.array(lgdistribution["classes"], dtype=object)
+        model = self.classifier
 
         if len(lgdistribution["classes"]) > 1:
-            model.coef_ = np.array(lgdistribution["mean_scal"], dtype=float).reshape(-1, len(lgpvals))
-            model.intercept_ = np.array(lgdistribution["mean_base"], dtype=float)
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
             rand = random.random()
+            rindex=0
             lbound = 0
             ubound = 0
             for interval in range(len(lgdistribution["classes"])):
@@ -493,7 +483,6 @@ class ConditionalLogitNode(DiscreteNode):
                     break
                 else:
                     lbound = ubound
-
             return str(lgdistribution["classes"][rindex])
 
         else:

@@ -114,19 +114,28 @@ class VerticesDefiner(StructureBuilder):
 
             self.vertices.append(Node)
 
-    def overwrite_vertex(self, has_logit: bool, use_mixture: bool):
+    def overwrite_vertex(self, classifiers: dict, has_logit: bool, use_mixture: bool):
         """
         Level 2: Redefined nodes according structure (parents)
         """
+        if not has_logit and classifiers:
+            logger_builder.error("Classifiers dict will be ignored since logit nodes are forbidden.")
         for node_instance in self.vertices:
             Node = node_instance
             if has_logit:
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
                         if not node_instance.disc_parents:
-                            Node = Nodes.LogitNode(name=node_instance.name)
+                            if node_instance.name in classifiers.keys():
+                                Node = Nodes.LogitNode(name=node_instance.name, classifier=classifiers[node_instance.name])
+                            else:
+                                Node = Nodes.LogitNode(name=node_instance.name)
+
                         elif node_instance.disc_parents:
-                            Node = Nodes.ConditionalLogitNode(name=node_instance.name)
+                            if node_instance.name in classifiers.keys():
+                                Node = Nodes.ConditionalLogitNode(name=node_instance.name, classifier=classifiers[node_instance.name])
+                            else:
+                                Node = Nodes.ConditionalLogitNode(name=node_instance.name)
 
             if use_mixture:
                 if 'Gaussian' in node_instance.type:
@@ -240,13 +249,14 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
 
 
 class HCStructureBuilder(HillClimbDefiner):
-    def __init__(self, data: DataFrame, descriptor: dict, scoring_function: tuple, has_logit: bool, use_mixture: bool):
+    def __init__(self, data: DataFrame, descriptor: dict, scoring_function: tuple,
+                 has_logit: bool, use_mixture: bool):
         self.use_mixture = use_mixture
         self.has_logit = has_logit
         super(HCStructureBuilder, self).__init__(descriptor=descriptor, data=data,
                                                  scoring_function=scoring_function)
 
-    def build(self, data: DataFrame, params: dict):
+    def build(self, data: DataFrame, params: dict, classifiers: dict):
         if params:
             for param, value in params.items():
                 self.params[param] = value
@@ -264,4 +274,6 @@ class HCStructureBuilder(HillClimbDefiner):
 
         # Level 2
         self.get_family()
-        self.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)
+        self.overwrite_vertex(has_logit=self.has_logit,
+                              use_mixture=self.use_mixture,
+                              classifiers=classifiers)

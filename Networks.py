@@ -1,6 +1,7 @@
 import Builders
 import Nodes
 import random
+import re
 import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
@@ -65,7 +66,7 @@ class BaseNetwork(object):
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
 
-    def add_edges(self, data: DataFrame,scoring_function: tuple,
+    def add_edges(self, data: DataFrame,scoring_function: tuple, classifiers: dict = {},
                   params = None, optimizer: str = 'HC'):
         """
         Base function for Structure learning
@@ -86,7 +87,7 @@ class BaseNetwork(object):
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
             self.sf_name = scoring_function[0]
-            worker.build(data=data, params=params)
+            worker.build(data=data, params=params, classifiers=classifiers)
 
             # update family
             self.nodes = worker.skeleton['V']
@@ -161,7 +162,7 @@ class BaseNetwork(object):
         else:
             for n in self.nodes:
                 print(
-                    f"{n.name: <20} | {n.type: <30} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
+                    f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
     def sample(self, n: int, evidence = None, as_df:bool=True) -> list:
         """
@@ -196,6 +197,19 @@ class BaseNetwork(object):
             return pd.DataFrame.from_dict(seq, orient='columns')
         else:
             return seq
+
+    def set_classifiers(self, classifiers: dict):
+        if not self.has_logit:
+            logger_network.error("Logit nodes are forbidden.")
+            return None
+
+        for node in self.nodes:
+            if "Logit" in node.type:
+                if node.name in classifiers.keys():
+                    node.classifier = classifiers[node.name]
+                    node.type = re.sub(r'\([\s\S]*\)', f'({type(node.classifier).__name__})', node.type)
+                else:
+                    continue
 
     def plot(self, output: str):
         """
