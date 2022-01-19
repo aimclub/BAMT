@@ -2,7 +2,6 @@ from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
 from concurrent.futures import ThreadPoolExecutor
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
-from sys import float_info
 from Utils.MathUtils import *
 from gmr import GMM
 from pandas import DataFrame
@@ -10,11 +9,20 @@ from pandas import DataFrame
 
 import itertools
 import random
-# import warnings
 
 
 class BaseNode(object):
+    """
+    Base class for nodes.
+    """
     def __init__(self, name):
+        """
+        :param name: name for node (taken from column name)
+        type: node type
+        disc_parents: list with discrete parents
+        cont_parents: list with continuous parents
+        children: node's children
+        """
         self.name = name
         self.type = 'abstract'
 
@@ -89,8 +97,9 @@ class DiscreteNode(BaseNode):
 
 
 class GaussianNode(BaseNode):
-    def __init__(self, name: str):
+    def __init__(self, name: str, model=linear_model.LinearRegression()):
         super(GaussianNode, self).__init__(name)
+        self.model = model
         self.type = 'Gaussian'
 
     def fit_parameters(self, data: DataFrame) -> dict:
@@ -98,38 +107,41 @@ class GaussianNode(BaseNode):
         """
         parents = self.disc_parents + self.cont_parents
         if parents:
-            model = linear_model.LinearRegression()
+            # model = self.model
             predict = []
             if len(parents) == 1:
-                model.fit(np.transpose([data[parents[0]].values]), data[self.name].values)
-                predict = model.predict(np.transpose([data[parents[0]].values]))
+                self.model.fit(np.transpose([data[parents[0]].values]), data[self.name].values)
+                predict = self.model.predict(np.transpose([data[parents[0]].values]))
             else:
-                model.fit(data[parents].values, data[self.name].values)
-                predict = model.predict(data[parents].values)
+                self.model.fit(data[parents].values, data[self.name].values)
+                predict = self.model.predict(data[parents].values)
             variance = mse(data[self.name].values, predict)
-            return {"mean": model.intercept_,
-                    "coef": list(model.coef_),
+            return {"mean": self.model.intercept_,
+                    "coef": list(self.model.coef_),
                     "variance": variance}
         else:
             mean_base = np.mean(data[self.name].values)
+            self.model.intercept_ = mean_base
+            self.model.coef_ = np.array([])
             variance = np.var(data[self.name].values)
             return {"mean": mean_base,
                     "coef": [],
                     "variance": variance}
 
-    def choose(self, node_info: dict, pvals: list) -> float:
+    def choose(self, node_info, pvals: list) -> float:
         """
         Return value from Gaussian node
         params:
-        node_info: nodes info from distributions
+        node: node
         pvals: parent values
         """
-        mean = node_info["mean"]
+        # mean = node_info["mean"]
+        mean = self.model.intercept_
         if pvals:
             for m in pvals:
-                mean += m * node_info["coef"][0]
-        variance = node_info["variance"]
-        distribution = [mean, variance]
+                mean += m * self.model.coef_[0]
+        variance = node_info['variance']
+        # distribution = [mean, variance]
         return random.gauss(mean, math.sqrt(variance))
 
 
@@ -370,17 +382,20 @@ class ConditionalMixtureGaussianNode(BaseNode):
 
 
 class LogitNode(DiscreteNode):
-    def __init__(self, name,
-                 classifier=linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)):
+    def __init__(self, name, classifier=None):
         super(LogitNode, self).__init__(name)
+        if classifier is None:
+            classifier = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
         self.classifier = classifier
         self.type = 'Logit' + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> dict:
         parents = self.disc_parents + self.cont_parents
         model = self.classifier.fit(data[parents].values, data[self.name].values)
-        
-        return {'classes': list(model.classes_)}
+
+        return {'classes': list(model.classes_),
+                'classifier_ojb': None,
+                'classifier': type(self.classifier).__name__}
 
     def choose(self, node_info: dict, pvals: list) -> str:
         """
@@ -415,9 +430,10 @@ class LogitNode(DiscreteNode):
 
 
 class ConditionalLogitNode(DiscreteNode):
-    def __init__(self, name,
-                 classifier=linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)):
+    def __init__(self, name, classifier=None):
         super(ConditionalLogitNode, self).__init__(name)
+        if classifier is None:
+            classifier = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
         self.classifier = classifier
         self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
 

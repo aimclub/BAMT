@@ -5,11 +5,13 @@ import re
 import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 
 from concurrent.futures import ThreadPoolExecutor
 from Utils import GraphUtils as gru
 from pyvis.network import Network
-from pandas import DataFrame
+
 from log import logger_network
 
 
@@ -33,6 +35,14 @@ class BaseNetwork(object):
         self.distributions = {}
         self.has_logit = False
         self.use_mixture = False
+
+    @property
+    def nodes_names(self):
+        return [node.name for node in self.nodes]
+
+    def __getitem__(self, node_name):
+        index = self.nodes_names.index(node_name)
+        return self.nodes[index]
 
     def validate(self, descriptor: dict):
         types = descriptor['types']
@@ -66,8 +76,8 @@ class BaseNetwork(object):
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
 
-    def add_edges(self, data: DataFrame,scoring_function: tuple, classifiers: dict = {},
-                  params = None, optimizer: str = 'HC'):
+    def add_edges(self, data: pd.DataFrame, scoring_function: tuple, classifier=None,
+                  params=None, optimizer: str = 'HC'):
         """
         Base function for Structure learning
         scoring_function: tuple with following format (NAME, scoring_function)
@@ -87,7 +97,7 @@ class BaseNetwork(object):
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
             self.sf_name = scoring_function[0]
-            worker.build(data=data, params=params, classifiers=classifiers)
+            worker.build(data=data, params=params, classifier=classifier)
 
             # update family
             self.nodes = worker.skeleton['V']
@@ -141,7 +151,7 @@ class BaseNetwork(object):
             future = pool.submit(worker, node)
             self.distributions[node.name] = future.result()
 
-    def get_info(self, as_df:bool=True):
+    def get_info(self, as_df: bool = True):
         """Return a table with name, type, parents_type, parents_names"""
         if as_df:
             names = []
@@ -158,13 +168,13 @@ class BaseNetwork(object):
                 parents.append([name for name in n.cont_parents + n.disc_parents])
             return pd.DataFrame({'name': names, 'node_type': types_n,
                                  'data_type': types_d, 'parents': parents,
-                                 'parents_types': parents_types })
+                                 'parents_types': parents_types})
         else:
             for n in self.nodes:
                 print(
                     f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
-    def sample(self, n: int, evidence = None, as_df:bool=True) -> list:
+    def sample(self, n: int, evidence=None, as_df: bool = True):
         """
         Sampling from Bayesian Network
         n: int number of samples
@@ -198,6 +208,71 @@ class BaseNetwork(object):
         else:
             return seq
 
+    def predict(self, test, parall_count: int = 1) -> dict:
+        from joblib import Parallel, delayed
+        """
+        Function to predict columns from given data. 
+        Note that train data and test data must have different columns.
+        Both train and test datasets must be cleaned from NaNs.
+
+        Args:
+            test (pd.DataFrame): test dataset
+            parall_count (int, optional):number of threads. Defaults to 1.
+
+        Returns:
+            predicted data (dict): dict with column as key and predicted data as value
+        """
+
+        def wrapper(bn: HybridBN, test: pd.DataFrame, columns):
+            preds = {column_name: list() for column_name in columns}
+
+            if len(test) == 1:
+                for i in range(test.shape[0]):
+                    print(i)
+                    test_row = dict(test.iloc[i, :])
+                    for n, key in enumerate(columns):
+                        try:
+                            if bn[key].type.startswith(('Discrete', 'Logit', 'ConditionalLogit',)):
+                                sample = self.sample(2000, evidence=test_row)
+                                count_stats = sample[key].value_counts()
+                                preds[key].append(count_stats.index[0])
+                            else:
+                                sample = bn.sample(2000, evidence=test_row)
+                                if self.descriptor['signs'][key] == 'pos':
+                                    sample = sample.loc[sample[key] >= 0]
+                                if sample.shape[0] == 0:
+                                    preds[key].append(np.nan)
+                                else:
+                                    pred = np.mean(sample[key].values)
+                                    preds[key].append(pred)
+                        except Exception as ex:
+                            logger_network.error(ex)
+                            preds[key].append(np.nan)
+                return preds
+            else:
+                logger_network.error('Wrapper for one row from pandas.DataFrame')
+                return {}
+
+        columns = list(set(self.nodes_names) - set(test.columns.to_list()))
+        if not columns:
+            logger_network.error("Test data is the same as train.")
+            return {}
+
+        preds = {column_name: list() for column_name in columns}
+
+        processed_list = Parallel(n_jobs=parall_count)(
+            delayed(wrapper)(self, test.loc[[i]], columns) for i in test.index)
+
+        for i in range(test.shape[0]):
+            curr_pred = processed_list[i]
+            for n, key in enumerate(columns):
+                preds[key].append(curr_pred[key][0])
+
+        for column in columns:
+            preds[column] = [k for k in preds[column] if not pd.isna(k)]
+
+        return preds
+
     def set_classifiers(self, classifiers: dict):
         if not self.has_logit:
             logger_network.error("Logit nodes are forbidden.")
@@ -207,7 +282,7 @@ class BaseNetwork(object):
             if "Logit" in node.type:
                 if node.name in classifiers.keys():
                     node.classifier = classifiers[node.name]
-                    node.type = re.sub(r'\([\s\S]*\)', f'({type(node.classifier).__name__})', node.type)
+                    node.type = re.sub(r"\([\s\S]*\)", f"({type(node.classifier).__name__})", node.type)
                 else:
                     continue
 
@@ -248,7 +323,7 @@ class BaseNetwork(object):
         class_number = len(
             set([node.type for node in self.nodes])
         )
-        hex_colors_indexes = [random.randint(0, len(hex_colors)-1) for _ in range(class_number)]
+        hex_colors_indexes = [random.randint(0, len(hex_colors) - 1) for _ in range(class_number)]
         hex_colors_picked = hex_colors[hex_colors_indexes]
         class2color = {cls: color for cls, color in zip(set([node.type for node in self.nodes]), hex_colors_picked)}
         name2class = {node.name: node.type for node in self.nodes}
@@ -258,7 +333,7 @@ class BaseNetwork(object):
                 name = nodes_sorted[level][node_i]
                 cls = name2class[name]
                 color = class2color[cls]
-                network.add_node(name, label=name, color=color, size=45, level = level, font={'size': 36},
+                network.add_node(name, label=name, color=color, size=45, level=level, font={'size': 36},
                                  title=f'Узел байесовской сети {name} ({cls})')
 
         for edge in G.edges:
@@ -277,6 +352,7 @@ class DiscreteBN(BaseNetwork):
     """
     Bayesian Network with Discrete Types of Nodes
     """
+
     def __init__(self):
         super(DiscreteBN, self).__init__()
         self.type = 'Discrete'
@@ -290,6 +366,7 @@ class ContinuousBN(BaseNetwork):
     """
     Bayesian Network with Continuous Types of Nodes
     """
+
     def __init__(self, use_mixture: bool = False):
         super(ContinuousBN, self).__init__()
         self.type = 'Continuous'
@@ -303,6 +380,7 @@ class HybridBN(BaseNetwork):
     """
     Bayesian Network with Mixed Types of Nodes
     """
+
     def __init__(self, has_logit: bool = False, use_mixture: bool = False):
         super(HybridBN, self).__init__()
         self._allowed_dtypes = ['cont', 'disc', 'disc_num']

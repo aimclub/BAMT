@@ -108,17 +108,18 @@ class VerticesDefiner(StructureBuilder):
             elif type == 'cont':
                 Node = Nodes.GaussianNode(name=vertex)
             else:
-                msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}). Set vertex manually (by calling set_nodes()) or investigate the error."""
+                msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}). 
+                Set vertex manually (by calling set_nodes()) or investigate the error."""
                 logger_builder.error(msg)
                 continue
 
             self.vertices.append(Node)
 
-    def overwrite_vertex(self, classifiers: dict, has_logit: bool, use_mixture: bool):
+    def overwrite_vertex(self, classifier, has_logit: bool, use_mixture: bool):
         """
         Level 2: Redefined nodes according structure (parents)
         """
-        if not has_logit and classifiers:
+        if not has_logit and classifier:
             logger_builder.error("Classifiers dict will be ignored since logit nodes are forbidden.")
         for node_instance in self.vertices:
             Node = node_instance
@@ -126,16 +127,10 @@ class VerticesDefiner(StructureBuilder):
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
                         if not node_instance.disc_parents:
-                            if node_instance.name in classifiers.keys():
-                                Node = Nodes.LogitNode(name=node_instance.name, classifier=classifiers[node_instance.name])
-                            else:
-                                Node = Nodes.LogitNode(name=node_instance.name)
+                            Node = Nodes.LogitNode(name=node_instance.name, classifier=classifier)
 
                         elif node_instance.disc_parents:
-                            if node_instance.name in classifiers.keys():
-                                Node = Nodes.ConditionalLogitNode(name=node_instance.name, classifier=classifiers[node_instance.name])
-                            else:
-                                Node = Nodes.ConditionalLogitNode(name=node_instance.name)
+                            Node = Nodes.ConditionalLogitNode(name=node_instance.name, classifier=classifier)
 
             if use_mixture:
                 if 'Gaussian' in node_instance.type:
@@ -256,13 +251,12 @@ class HCStructureBuilder(HillClimbDefiner):
         super(HCStructureBuilder, self).__init__(descriptor=descriptor, data=data,
                                                  scoring_function=scoring_function)
 
-    def build(self, data: DataFrame, params: dict, classifiers: dict):
+    def build(self, data: DataFrame, params: dict, classifier):
         if params:
             for param, value in params.items():
                 self.params[param] = value
         init_nodes = self.params.pop('init_nodes')
         bl_add = self.params.pop('bl_add')
-
 
         self.skeleton['V'] = self.vertices
 
@@ -276,4 +270,4 @@ class HCStructureBuilder(HillClimbDefiner):
         self.get_family()
         self.overwrite_vertex(has_logit=self.has_logit,
                               use_mixture=self.use_mixture,
-                              classifiers=classifiers)
+                              classifier=classifier)
