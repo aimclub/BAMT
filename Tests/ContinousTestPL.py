@@ -44,12 +44,8 @@ bn = Networks.ContinuousBN(use_mixture=True)  # use_mixture = False as well
 
 bn.add_nodes(descriptor=info)
 
-params = {'init_nodes': None,
-          'bl_add': None,
-          'cont_disc': None}
-
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
-bn.get_info()
+bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',))
+bn.get_info(as_df=False)
 t1 = time.time()
 bn.fit_parameters(data=h)
 t2 = time.time()
@@ -60,7 +56,7 @@ print('Improvement: %.d' % (0.00699925422668457 // 0.0019998550415039062))
 # After rebuilding: 0.0
 
 
-for num, el in enumerate(bn.sample(10), 1):
+for num, el in enumerate(bn.sample(10, as_df=False), 1):
     print('\n', num)
     for name, val in el.items():
         print(f"{name: <15}", val)

@@ -12,6 +12,9 @@ from concurrent.futures import ThreadPoolExecutor
 from Utils import GraphUtils as gru
 from pyvis.network import Network
 
+from typing import Dict, Tuple, List, Callable, Optional, Type, Union
+from Builders import ParamDict
+
 from log import logger_network
 
 
@@ -37,14 +40,14 @@ class BaseNetwork(object):
         self.use_mixture = False
 
     @property
-    def nodes_names(self):
+    def nodes_names(self) -> List[str]:
         return [node.name for node in self.nodes]
 
-    def __getitem__(self, node_name):
+    def __getitem__(self, node_name: str) -> Type[Nodes.BaseNode]:
         index = self.nodes_names.index(node_name)
         return self.nodes[index]
 
-    def validate(self, descriptor: dict):
+    def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
         types = descriptor['types']
         return True if all([a in self._allowed_dtypes for a in types.values()]) else False
 
@@ -55,9 +58,9 @@ class BaseNetwork(object):
         self.descriptor['signs'] = {node: sign for node, sign in self.descriptor['signs'].items() if
                                     node in new_nodes_names}
 
-    def add_nodes(self, descriptor: dict):
+    def add_nodes(self, descriptor: Dict[str, Dict[str, str]]):
         """
-        Function for initalizing nodes in Bayesian Network
+        Function for initializing nodes in Bayesian Network
         descriptor: dict with types and signs of nodes
         """
         self.descriptor = descriptor
@@ -76,20 +79,25 @@ class BaseNetwork(object):
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
 
-    def add_edges(self, data: pd.DataFrame, scoring_function: tuple, classifier=None,
-                  params=None, optimizer: str = 'HC'):
+    def add_edges(self, data: pd.DataFrame, scoring_function: Union[Tuple[str, Callable], Tuple[str]],
+                  classifier: object = None,
+                  params: Optional[ParamDict] = None, optimizer: str = 'HC'):
         """
         Base function for Structure learning
-        scoring_function: tuple with following format (NAME, scoring_function)
+        scoring_function: tuple with following format (NAME, scoring_function) or (NAME,)
         Params:
         init_edges: list of tuples, a graph to start learning with
         remove_init_edges: allows changes in model defined by user
         white_list: list of allowed edges
         """
+        if not self.has_logit:
+            logger_network.error("Classifiers dict will be ignored since logit nodes are forbidden.")
+            return None
+
         if not self.validate(descriptor=self.descriptor):
             logger_network.error(
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
-            return
+            return None
         if optimizer == 'HC':
             worker = Builders.HCStructureBuilder(data=data,
                                                  descriptor=self.descriptor,
@@ -103,10 +111,11 @@ class BaseNetwork(object):
             self.nodes = worker.skeleton['V']
             self.edges = worker.skeleton['E']
 
-    def set_nodes(self, nodes: dict = None, **kwargs):
+    def set_nodes(self, nodes: Optional[Dict[str, Type[Nodes.BaseNode]]] = None, **kwargs):
         """
-        additional function to set nodes manually. User should be awared that
+        additional function to set nodes manually. User should be aware that
         nodes must be a subclass of BaseNode.
+        :param nodes dict with name and node (if a lot of nodes should be added)
         """
         if nodes is None:
             nodes = dict()
@@ -124,9 +133,9 @@ class BaseNetwork(object):
             self.nodes.append(node(name=column_name))
             self.update_descriptor()
 
-    def fit_parameters(self, data, dropna: bool = True):
+    def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
-        Base function for pararmeters learning
+        Base function for parameters learning
         """
         if dropna:
             data = data.dropna()
@@ -151,7 +160,7 @@ class BaseNetwork(object):
             future = pool.submit(worker, node)
             self.distributions[node.name] = future.result()
 
-    def get_info(self, as_df: bool = True):
+    def get_info(self, as_df: bool = True) -> Optional[pd.DataFrame]:
         """Return a table with name, type, parents_type, parents_names"""
         if as_df:
             names = []
@@ -174,7 +183,8 @@ class BaseNetwork(object):
                 print(
                     f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
-    def sample(self, n: int, evidence=None, as_df: bool = True):
+    def sample(self, n: int, evidence: Optional[Dict[str, Union[str, int, float]]] = None,
+               as_df: bool = True) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
@@ -184,7 +194,7 @@ class BaseNetwork(object):
         random.seed()
         if not self.distributions.items():
             logger_network.error("Parameter learning wasn't done. Call fit_parameters method")
-            return
+            return None
         for n in range(n):
             output = {}
             for node in self.nodes:
@@ -208,7 +218,7 @@ class BaseNetwork(object):
         else:
             return seq
 
-    def predict(self, test, parall_count: int = 1) -> dict:
+    def predict(self, test: pd.DataFrame, parall_count: int = 1) -> Dict[str, Union[List[str], List[int], List[float]]]:
         from joblib import Parallel, delayed
         """
         Function to predict columns from given data. 
@@ -223,7 +233,7 @@ class BaseNetwork(object):
             predicted data (dict): dict with column as key and predicted data as value
         """
 
-        def wrapper(bn: HybridBN, test: pd.DataFrame, columns):
+        def wrapper(bn: HybridBN, test: pd.DataFrame, columns: List[str]):
             preds = {column_name: list() for column_name in columns}
 
             if len(test) == 1:
@@ -273,7 +283,7 @@ class BaseNetwork(object):
 
         return preds
 
-    def set_classifiers(self, classifiers: dict):
+    def set_classifiers(self, classifiers: Dict[str, Callable]):
         if not self.has_logit:
             logger_network.error("Logit nodes are forbidden.")
             return None
@@ -388,7 +398,7 @@ class HybridBN(BaseNetwork):
         self.has_logit = has_logit
         self.use_mixture = use_mixture
 
-    def validate(self, descriptor: dict) -> bool:
+    def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
         types = descriptor['types']
         s = set(types.values())
         return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) else False

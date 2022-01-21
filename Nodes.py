@@ -6,16 +6,24 @@ from Utils.MathUtils import *
 from gmr import GMM
 from pandas import DataFrame
 
+from typing import Dict, List, Any, Union, TypedDict, Type, SupportsFloat, Optional, Callable
 
 import itertools
 import random
+import pickle
+
+
+class DiscreteParams(TypedDict):
+    cprob: Union[List[Union[list, Any]], Dict[str, list]]
+    vals: List[str]
 
 
 class BaseNode(object):
     """
     Base class for nodes.
     """
-    def __init__(self, name):
+
+    def __init__(self, name: str):
         """
         :param name: name for node (taken from column name)
         type: node type
@@ -26,9 +34,9 @@ class BaseNode(object):
         self.name = name
         self.type = 'abstract'
 
-        self.disc_parents = None
-        self.cont_parents = None
-        self.children = None
+        self.disc_parents = []
+        self.cont_parents = []
+        self.children = []
 
     def __repr__(self):
         return f"{self.name}"
@@ -39,12 +47,13 @@ class DiscreteNode(BaseNode):
         super(DiscreteNode, self).__init__(name)
         self.type = 'Discrete'
 
-    def fit_parameters(self, data: DataFrame) -> dict:
+    def fit_parameters(self, data: DataFrame):
         """
         Method returns probas dict with following format {[<combinations>: value]}
         and vals, list of appeared values in combinations
         """
-        def worker(node):
+
+        def worker(node: Type[BaseNode]) -> DiscreteParams:
             parents = node.disc_parents + node.cont_parents
             if not parents:
                 dist = DiscreteDistribution.from_samples(data[node.name].values)
@@ -68,7 +77,8 @@ class DiscreteNode(BaseNode):
         future = pool.submit(worker, self)
         return future.result()
 
-    def choose(self, node_info: dict, pvals: list) -> str:
+    @staticmethod
+    def choose(node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
         """
         Return value from discrete node
         params:
@@ -81,6 +91,7 @@ class DiscreteNode(BaseNode):
         if not pvals:
             dist = node_info['cprob']
         else:
+            # noinspection PyTypeChecker
             dist = node_info['cprob'][str(pvals)]
         lbound = 0
         ubound = 0
@@ -96,14 +107,21 @@ class DiscreteNode(BaseNode):
         return vals[rindex]
 
 
+class GaussianParams(TypedDict):
+    mean: float
+    coef: List[float]
+    variance: float
+
+
 class GaussianNode(BaseNode):
     def __init__(self, name: str, model=linear_model.LinearRegression()):
         super(GaussianNode, self).__init__(name)
         self.model = model
         self.type = 'Gaussian'
 
-    def fit_parameters(self, data: DataFrame) -> dict:
+    def fit_parameters(self, data: DataFrame) -> GaussianParams:
         """
+        Function for training parameters on gaussian node
         """
         parents = self.disc_parents + self.cont_parents
         if parents:
@@ -128,21 +146,28 @@ class GaussianNode(BaseNode):
                     "coef": [],
                     "variance": variance}
 
-    def choose(self, node_info, pvals: list) -> float:
+    @staticmethod
+    def choose(node_info: Dict[str, Union[float, List[float]]],
+               pvals: List[float]) -> float:
         """
         Return value from Gaussian node
         params:
-        node: node
+        node_info: information about node
         pvals: parent values
         """
-        # mean = node_info["mean"]
-        mean = self.model.intercept_
+        mean = node_info["mean"]
         if pvals:
             for m in pvals:
-                mean += m * self.model.coef_[0]
+                mean += m * node_info['coef'][0]
         variance = node_info['variance']
         # distribution = [mean, variance]
         return random.gauss(mean, math.sqrt(variance))
+
+
+class CondGaussParams(TypedDict):
+    variance: Optional[float]
+    mean: Optional[List[float]]
+    coef: List[float]
 
 
 class ConditionalGaussianNode(BaseNode):
@@ -150,7 +175,7 @@ class ConditionalGaussianNode(BaseNode):
         super(ConditionalGaussianNode, self).__init__(name)
         self.type = 'ConditionalGaussian'
 
-    def fit_parameters(self, data: DataFrame) -> dict:
+    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
         hycprob = dict()
         values = []
         combinations = []
@@ -163,8 +188,8 @@ class ConditionalGaussianNode(BaseNode):
             for col, val in zip(self.disc_parents, comb):
                 mask = (mask) & (data[col] == val)
             new_data = data[mask]
-            mean_base = np.nan
-            variance = np.nan
+            mean_base = None
+            variance = None
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
                 if self.cont_parents:
@@ -185,7 +210,7 @@ class ConditionalGaussianNode(BaseNode):
                     hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': []}
             else:
                 if self.cont_parents:
-                    scal = list(np.full(len(self.cont_parents), np.nan))
+                    scal = list(np.full(len(self.cont_parents), None))
                     hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': scal}
                 else:
                     # mean_base = np.nan
@@ -193,7 +218,8 @@ class ConditionalGaussianNode(BaseNode):
                     hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': []}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info: dict, pvals: list) -> float:
+    @staticmethod
+    def choose(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
         """
         Return value from ConditionalGaussian node
         params:
@@ -203,7 +229,7 @@ class ConditionalGaussianNode(BaseNode):
         dispvals = []
         lgpvals = []
         for pval in pvals:
-            if ((isinstance(pval, str)) | ((isinstance(pval, int)))):
+            if (isinstance(pval, str)) | (isinstance(pval, int)):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
@@ -216,12 +242,18 @@ class ConditionalGaussianNode(BaseNode):
         return random.gauss(mean, math.sqrt(variance))
 
 
+class MixtureGaussianParams(TypedDict):
+    mean: List[float]
+    coef: List[float]
+    covars: List[float]
+
+
 class MixtureGaussianNode(BaseNode):
     def __init__(self, name):
         super(MixtureGaussianNode, self).__init__(name)
         self.type = 'MixtureGaussian'
 
-    def fit_parameters(self, data: DataFrame) -> dict:
+    def fit_parameters(self, data: DataFrame) -> MixtureGaussianParams:
         parents = self.disc_parents + self.cont_parents
         if not parents:
             n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
@@ -256,7 +288,8 @@ class MixtureGaussianNode(BaseNode):
                         "coef": w,
                         "covars": cov}
 
-    def choose(self, node_info: dict, pvals: list):
+    @staticmethod
+    def choose(node_info: MixtureGaussianParams, pvals: List[Union[str, float]]) -> Optional[float]:
         """
         Return value from MixtureGaussian node
         params:
@@ -274,13 +307,19 @@ class MixtureGaussianNode(BaseNode):
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                     sample = gmm.predict(indexes, [pvals])[0][0]
                 else:
-                    sample = np.nan
+                    sample = None
             else:
                 gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                 sample = gmm.sample(1)[0][0]
         else:
-            sample = np.nan
+            sample = None
         return sample
+
+
+class CondMixtureGaussParams(TypedDict):
+    mean: Optional[List[float]]
+    coef: List[float]
+    covars: Optional[List[float]]
 
 
 class ConditionalMixtureGaussianNode(BaseNode):
@@ -288,7 +327,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
         self.type = 'ConditionalMixtureGaussian'
 
-    def fit_parameters(self, data: DataFrame) -> dict:
+    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondMixtureGaussParams]]:
         hycprob = dict()
         values = []
         combinations = []
@@ -340,12 +379,14 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 hycprob[str(key_comb)] = {'covars': cov, 'mean': means, 'coef': w}
             else:
                 if self.cont_parents:
-                    hycprob[str(key_comb)] = {'covars': np.nan, 'mean': np.nan, 'coef': []}
+                    hycprob[str(key_comb)] = {'covars': None, 'mean': None, 'coef': []}
                 else:
-                    hycprob[str(key_comb)] = {'covars': np.nan, 'mean': np.nan, 'coef': []}
+                    hycprob[str(key_comb)] = {'covars': None, 'mean': None, 'coef': []}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info: dict, pvals: list) -> float:
+    @staticmethod
+    def choose(node_info: Dict[str, Dict[str, CondMixtureGaussParams]],
+               pvals: List[Union[str, float]]) -> Optional[float]:
         """
         Return value from ConditionalMixtureGaussian node
         params:
@@ -371,33 +412,44 @@ class ConditionalMixtureGaussianNode(BaseNode):
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                     sample = gmm.predict(indexes, [lgpvals])[0][0]
                 else:
-                    sample = np.nan
+                    sample = None
             else:
                 n_comp = len(w)
                 gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                 sample = gmm.sample(1)[0][0]
         else:
-            sample = np.nan
+            sample = None
         return sample
 
 
+class LogitParams(TypedDict):
+    classes: List[int]
+    classifier: str
+    classifier_obj: str
+
+
 class LogitNode(DiscreteNode):
-    def __init__(self, name, classifier=None):
+    def __init__(self, name, classifier: Optional[object] = None):
         super(LogitNode, self).__init__(name)
         if classifier is None:
             classifier = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
         self.classifier = classifier
         self.type = 'Logit' + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> dict:
+    def fit_parameters(self, data: DataFrame) -> LogitParams:
         parents = self.disc_parents + self.cont_parents
         model = self.classifier.fit(data[parents].values, data[self.name].values)
 
+        # Saving model
+        # ex_b = pickle.dumps(model, protocol=4)
+        # model_ser = ex_b.decode('latin1').replace('\'', '\"')
+        self.model = model
+
         return {'classes': list(model.classes_),
-                'classifier_ojb': None,
+                'classifier_obj': 'model_ser',
                 'classifier': type(self.classifier).__name__}
 
-    def choose(self, node_info: dict, pvals: list) -> str:
+    def choose(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
         """
         Return value from Logit node
         params:
@@ -406,9 +458,15 @@ class LogitNode(DiscreteNode):
         """
         pvals = [str(p) for p in pvals]
 
-        model = self.classifier
-
+        rindex = 0
         if len(node_info["classes"]) > 1:
+            # classifier_body = node_info['classifier_obj']
+            # a = classifier_body.replace('\"', '\'').encode('latin1')
+            # classifier_body = pickle.loads(a)
+            # model = classifier_body
+            model = self.model
+
+            # model = self.model
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose
@@ -430,14 +488,14 @@ class LogitNode(DiscreteNode):
 
 
 class ConditionalLogitNode(DiscreteNode):
-    def __init__(self, name, classifier=None):
+    def __init__(self, name: str, classifier: Optional[object] = None):
         super(ConditionalLogitNode, self).__init__(name)
         if classifier is None:
             classifier = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
         self.classifier = classifier
         self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> dict:
+    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
         hycprob = dict()
         values = []
         combinations = []
@@ -450,7 +508,7 @@ class ConditionalLogitNode(DiscreteNode):
             for col, val in zip(self.disc_parents, comb):
                 mask = (mask) & (data[col] == val)
             new_data = data[mask]
-            mean_base = [np.nan]
+            # mean_base = [np.nan]
             classes = []
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
@@ -461,13 +519,20 @@ class ConditionalLogitNode(DiscreteNode):
                     classes = model.classes_
                 else:
                     classes = list(values)
-                hycprob[str(key_comb)] = {'classes': list(classes)}
+                # Saving model
+                # ex_b = pickle.dumps(model, protocol=4)
+                # model_ser = ex_b.decode('latin1').replace('\'', '\"')
+                self.model = model
+                hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(self.classifier).__name__,
+                                          'classifier_obj': 'model_ser'}
             else:
-                scal = list(np.full(len(self.cont_parents), np.nan))
-                hycprob[str(key_comb)] = {'classes': list(classes)}
+                # scal = list(np.full(len(self.cont_parents), np.nan))
+                self.model = self.classifier
+                hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(self.classifier).__name__,
+                                          'classifier_obj': ''}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info: dict, pvals: list) -> str:
+    def choose(self, node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]) -> str:
         """
         Return value from ConditionalLogit node
         params:
@@ -483,13 +548,17 @@ class ConditionalLogitNode(DiscreteNode):
                 lgpvals.append(pval)
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
-        model = self.classifier
+        # model = self.classifier
+        # classifier_body = lgdistribution['classifier_obj']
+        # classifier_body = pickle.loads(classifier_body.replace('\"', '\'').encode('latin1'))
+        # model = classifier_body
+        model = self.model
 
         if len(lgdistribution["classes"]) > 1:
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
             rand = random.random()
-            rindex=0
+            rindex = 0
             lbound = 0
             ubound = 0
             for interval in range(len(lgdistribution["classes"])):

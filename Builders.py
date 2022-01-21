@@ -8,15 +8,24 @@ import Nodes
 from log import logger_builder
 from pandas import DataFrame
 
+from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union
+
+
+class ParamDict(TypedDict):
+    init_edges: Optional[Tuple[str, str]]
+    init_nodes: Optional[List[str]]
+    remove_init_edges: bool
+    white_list: Optional[Tuple[str, str]]
+    bl_add: Optional[List[str]]
+
 
 class StructureBuilder(object):
     """
     Base Class for Structure Builder.
     It can restrict nodes defined by RESTRICTIONS
     """
-    has_logit: bool
 
-    def __init__(self, descriptor: dict):
+    def __init__(self, descriptor: Dict[str, Dict[str, str]]):
         """
         :param descriptor: a dict with types and signs of nodes
         Attributes:
@@ -27,9 +36,13 @@ class StructureBuilder(object):
                          'E': None}
         self.descriptor = descriptor
 
+        self.has_logit = bool
+
         self.black_list = None
 
-    def restrict(self, data: DataFrame, init_nodes: list, bl_add: list):
+    def restrict(self, data: DataFrame,
+                 init_nodes: Optional[List[str]],
+                 bl_add: Optional[List[str]]):
         """
         :param data: data to deal with
         :param init_nodes: nodes to begin with (thus they have no parents)
@@ -57,11 +70,13 @@ class StructureBuilder(object):
     def get_family(self):
         """
         A function that update a skeleton;
-        Represenent the second level of defining vertices according their parents
-        :return:
         """
-        assert self.skeleton['V'], "Vertex list is None"
-        assert self.skeleton['E'], "Edges list is None"
+        if not self.skeleton['V']:
+            logger_builder.error("Vertex list is None")
+            return None
+        if not self.skeleton['E']:
+            logger_builder.error("Edges list is None")
+            return None
         for node_instance in self.skeleton['V']:
             node = node_instance.name
             children = []
@@ -92,12 +107,12 @@ class VerticesDefiner(StructureBuilder):
     Main class for defining vertices
     """
 
-    def __init__(self, descriptor: dict):
+    def __init__(self, descriptor: Dict[str, Dict[str, str]]):
         """
         Automatically creates a list of nodes
         """
         super(VerticesDefiner, self).__init__(descriptor=descriptor)
-        # Notice that vertices is functional variable, thus it's used only by Builders
+        # Notice that vertices is used only by Builders
         self.vertices = []
 
         Node = None
@@ -108,19 +123,20 @@ class VerticesDefiner(StructureBuilder):
             elif type == 'cont':
                 Node = Nodes.GaussianNode(name=vertex)
             else:
-                msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}). 
+                msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
                 logger_builder.error(msg)
                 continue
 
             self.vertices.append(Node)
 
-    def overwrite_vertex(self, classifier, has_logit: bool, use_mixture: bool):
+    def overwrite_vertex(self, has_logit: bool, use_mixture: bool, classifier: Optional[Callable] = None):
         """
         Level 2: Redefined nodes according structure (parents)
+        :param classifier: an object to pass into logit, condLogit nodes
+        :param has_logit allows edges from cont to disc nodes
+        :param use_mixture allows using Mixture
         """
-        if not has_logit and classifier:
-            logger_builder.error("Classifiers dict will be ignored since logit nodes are forbidden.")
         for node_instance in self.vertices:
             Node = node_instance
             if has_logit:
@@ -158,18 +174,21 @@ class VerticesDefiner(StructureBuilder):
 
 
 class EdgesDefiner(StructureBuilder):
-    def __init__(self, descriptor: dict):
+    def __init__(self, descriptor: Dict[str, Dict[str, str]]):
         super(EdgesDefiner, self).__init__(descriptor)
 
 
 class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
-    def __init__(self, data: DataFrame, descriptor: dict,
-                 scoring_function: tuple):
+    def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
+                 scoring_function: Union[Tuple[str, Callable], Tuple[str]]):
         """
+        Object to define structure and pass it into skeleton
         :param scoring_function: a tuple with following format (Name, scoring_function)
         """
         if len(scoring_function) == 2:
-            assert callable(scoring_function[1]), "Cannot call scoring function"
+            if callable(scoring_function[1]):
+                logger_builder.error("Cannot call scoring function")
+
         self.scoring_function = scoring_function
         self.optimizer = HillClimbSearch(data)
         self.params = {'init_edges': None,
@@ -179,20 +198,19 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                        'bl_add': None}
         super(HillClimbDefiner, self).__init__(descriptor)
 
-    def apply_K2(self, data: DataFrame, init_edges: list,
-                 remove_init_edges: bool, white_list: list):
+    def apply_K2(self, data: DataFrame, init_edges: Optional[List[Tuple[str, str]]],
+                 remove_init_edges: bool, white_list: Optional[List[Tuple[str, str]]]):
         """
-        Params:
-        init_edges: list of tuples, a graph to start learning with
-        remove_init_edges: allows changes in model defined by user
-        white_list: list of allowed edges
+        :param init_edges: list of tuples, a graph to start learning with
+        :param remove_init_edges: allows changes in model defined by user
+        :param white_list: list of allowed edges
         """
         from Preprocessors import BasePreprocessor
         if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
             logger_builder.error(
                 f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
             return None
-        assert self.scoring_function[0] == 'K2'
+        # TODO: assert self.scoring_function[0] == 'K2'
         scoring_function = self.scoring_function[1]
 
         if not init_edges:
@@ -215,7 +233,8 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton['E'] = structure
 
-    def apply_group1(self, data: DataFrame, init_edges: list, remove_init_edges: bool, white_list: list):
+    def apply_group1(self, data: DataFrame, init_edges: List[Tuple[str, str]],
+                     remove_init_edges: bool, white_list: List[Tuple[str, str]]):
         # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
         column_name_dict = dict([(n.name, i) for i, n in enumerate(self.vertices)])
         blacklist_new = []
@@ -244,20 +263,34 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
 
 
 class HCStructureBuilder(HillClimbDefiner):
-    def __init__(self, data: DataFrame, descriptor: dict, scoring_function: tuple,
+    """
+    Final object with build method
+    """
+
+    def __init__(self, data: DataFrame,
+                 descriptor: Dict[str, Dict[str, str]],
+                 scoring_function: Tuple[str, Callable],
                  has_logit: bool, use_mixture: bool):
+        """
+        :param data: train data
+        :param descriptor: map for data
+        """
         self.use_mixture = use_mixture
         self.has_logit = has_logit
         super(HCStructureBuilder, self).__init__(descriptor=descriptor, data=data,
                                                  scoring_function=scoring_function)
 
-    def build(self, data: DataFrame, params: dict, classifier):
+    def build(self, data: DataFrame,
+              classifier: Optional[object],
+              params: Optional[ParamDict] = None):
         if params:
             for param, value in params.items():
                 self.params[param] = value
+
         init_nodes = self.params.pop('init_nodes')
         bl_add = self.params.pop('bl_add')
 
+        # Level 1
         self.skeleton['V'] = self.vertices
 
         self.restrict(data, init_nodes, bl_add)
