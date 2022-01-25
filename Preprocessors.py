@@ -2,8 +2,13 @@ from Utils import GraphUtils as gru
 from log import logger_preprocessor
 from pandas import DataFrame
 
+from typing import Tuple, Dict
+
 
 class BasePreprocessor(object):
+    """
+    Base for Preprocessor
+    """
     def __init__(self):
         self.nodes_signs = {}
         self.nodes_types = {}
@@ -15,7 +20,7 @@ class BasePreprocessor(object):
     def get_nodes_signs(self, data):
         return gru.nodes_signs(nodes_types=self.nodes_types, data=data)
 
-    def code_categories(self, data: DataFrame, encoder) -> tuple:
+    def code_categories(self, data: DataFrame, encoder) -> Tuple[DataFrame, Dict[str, Dict]]:
         """Encoding categorical parameters
 
             Args:
@@ -65,7 +70,7 @@ class BasePreprocessor(object):
 class Preprocessor(BasePreprocessor):
     def __init__(self, pipeline: list):
         super().__init__()
-        assert isinstance(pipeline, list)
+        assert isinstance(pipeline, list), "pipeline must be list"
         self.pipeline = pipeline
         self.coder = None
 
@@ -85,7 +90,12 @@ class Preprocessor(BasePreprocessor):
         if not columns_disc:
             logger_preprocessor.info("No one column is discrete")
 
-    def apply(self, data: DataFrame, dropna:bool=True) -> tuple:
+    def apply(self, data: DataFrame, dropna:bool = True) -> Tuple[DataFrame, Dict]:
+        """
+        Apply pipeline
+        data: data to apply on
+        dropna: drop NaNs with pandas dropna
+        """
         if dropna:
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)

@@ -66,7 +66,6 @@ class StructureBuilder(object):
             blacklist = blacklist + bl_add
         self.black_list = blacklist
 
-    # noinspection PyTypeChecker,PyUnresolvedReferences
     def get_family(self):
         """
         A function that update a skeleton;
@@ -179,15 +178,17 @@ class EdgesDefiner(StructureBuilder):
 
 
 class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
+    """
+    Object to define structure and pass it into skeleton
+    """
     def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
                  scoring_function: Union[Tuple[str, Callable], Tuple[str]]):
         """
-        Object to define structure and pass it into skeleton
         :param scoring_function: a tuple with following format (Name, scoring_function)
         """
-        if len(scoring_function) == 2:
-            if callable(scoring_function[1]):
-                logger_builder.error("Cannot call scoring function")
+        # if len(scoring_function) == 2:
+        #     if callable(scoring_function[1]):
+        #         logger_builder.error("Cannot call scoring function")
 
         self.scoring_function = scoring_function
         self.optimizer = HillClimbSearch(data)

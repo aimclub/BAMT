@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import json
 
 from concurrent.futures import ThreadPoolExecutor
 from Utils import GraphUtils as gru
@@ -133,6 +134,12 @@ class BaseNetwork(object):
             self.nodes.append(node(name=column_name))
             self.update_descriptor()
 
+    def get_params_tree(self, std):
+        if not std.endswith('.json'):
+            return None
+        with open(f"{std}", 'w+') as out:
+            json.dump(self.distributions, out)
+
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
         Base function for parameters learning
@@ -221,7 +228,7 @@ class BaseNetwork(object):
     def predict(self, test: pd.DataFrame, parall_count: int = 1) -> Dict[str, Union[List[str], List[int], List[float]]]:
         from joblib import Parallel, delayed
         """
-        Function to predict columns from given data. 
+        Function to predict columns from given data.
         Note that train data and test data must have different columns.
         Both train and test datasets must be cleaned from NaNs.
 
@@ -283,7 +290,11 @@ class BaseNetwork(object):
 
         return preds
 
-    def set_classifiers(self, classifiers: Dict[str, Callable]):
+    def set_classifiers(self, classifiers: Dict[str, object]):
+        """
+        Set classifiers for logit nodes.
+        classifiers: dict with node_name and Classifier
+        """
         if not self.has_logit:
             logger_network.error("Logit nodes are forbidden.")
             return None
@@ -305,7 +316,7 @@ class BaseNetwork(object):
         if not output.endswith('.html'):
             logger_network.error("This version allows only html format.")
             return None
-        from numpy import array
+
         G = nx.DiGraph()
         nodes = [node.name for node in self.nodes]
         G.add_nodes_from(nodes)
@@ -314,7 +325,7 @@ class BaseNetwork(object):
         network = Network(height="800px", width="100%", notebook=True, directed=nx.is_directed(G),
                           layout='hierarchical')
 
-        nodes_sorted = array(list(nx.topological_generations(G)), dtype=object)
+        nodes_sorted = np.array(list(nx.topological_generations(G)), dtype=object)
 
         # Qualitative class of colormaps
         q_classes = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1', 'Set2', 'Set3', 'tab10', 'tab20',
@@ -326,7 +337,7 @@ class BaseNetwork(object):
             hex_colors.extend(
                 [matplotlib.colors.rgb2hex(rgb_color) for rgb_color in rgb_colors])
 
-        hex_colors = array(hex_colors)
+        hex_colors = np.array(hex_colors)
 
         # Number_of_colors in matplotlib in Qualitative class = 144
 

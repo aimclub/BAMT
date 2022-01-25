@@ -31,8 +31,8 @@ from sklearn.ensemble import RandomForestClassifier
 classifier_list = [
     None,
     KNeighborsClassifier(n_neighbors=2),
-    DecisionTreeClassifier(),
-    RandomForestClassifier()]
+    RandomForestClassifier(),
+    DecisionTreeClassifier()]
 
 successful = {}
 failed = {}
@@ -40,7 +40,7 @@ for i in range(6):
     successful[i] = []
     failed[i] = []
     for classifier in classifier_list:
-        try:
+        # try:
             bn = Networks.HybridBN(use_mixture=False, has_logit=True)  # all may vary
             bn.add_nodes(descriptor=info)
             bn.add_edges(data=discrete_data, optimizer='HC', scoring_function=('MI',), classifier=classifier)
@@ -48,9 +48,9 @@ for i in range(6):
 
             bn.sample(10, as_df=False)
             successful[i].append(classifier)
-        except Exception as ex:
-            print(classifier, ex)
-            failed[i].append(classifier)
+        # except Exception as ex:
+            # print(classifier, ex)
+            # failed[i].append(classifier)
 for i, result in successful.items():
     print(i, result)
 for i, result in failed.items():

@@ -12,6 +12,7 @@ import itertools
 import random
 import pickle
 
+from log import logger_nodes
 
 class DiscreteParams(TypedDict):
     cprob: Union[List[Union[list, Any]], Dict[str, list]]
@@ -43,12 +44,18 @@ class BaseNode(object):
 
 
 class DiscreteNode(BaseNode):
+    """
+    Main class of Discrete Node
+    """
     def __init__(self, name):
         super(DiscreteNode, self).__init__(name)
         self.type = 'Discrete'
 
-    def fit_parameters(self, data: DataFrame):
+    def fit_parameters(self, data: DataFrame, num_workers:int = 1):
         """
+        Train params for Discrete Node
+        data: DataFrame to train on
+        num_workers: number of Parallel Workers
         Method returns probas dict with following format {[<combinations>: value]}
         and vals, list of appeared values in combinations
         """
@@ -73,7 +80,7 @@ class DiscreteNode(BaseNode):
                     cprob[str(combination)] = probs
             return {"cprob": cprob, 'vals': vals}
 
-        pool = ThreadPoolExecutor(3)
+        pool = ThreadPoolExecutor(num_workers)
         future = pool.submit(worker, self)
         return future.result()
 
@@ -114,6 +121,9 @@ class GaussianParams(TypedDict):
 
 
 class GaussianNode(BaseNode):
+    """
+    Main class for Gaussian Node
+    """
     def __init__(self, name: str, model=linear_model.LinearRegression()):
         super(GaussianNode, self).__init__(name)
         self.model = model
@@ -121,7 +131,7 @@ class GaussianNode(BaseNode):
 
     def fit_parameters(self, data: DataFrame) -> GaussianParams:
         """
-        Function for training parameters on gaussian node
+        Function for training parameters for gaussian node
         """
         parents = self.disc_parents + self.cont_parents
         if parents:
@@ -171,11 +181,19 @@ class CondGaussParams(TypedDict):
 
 
 class ConditionalGaussianNode(BaseNode):
+    """
+    Main class for Conditional Gaussian Node
+    """
     def __init__(self, name):
         super(ConditionalGaussianNode, self).__init__(name)
         self.type = 'ConditionalGaussian'
 
     def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
+        """
+        Train params for Conditional Gaussian Node.
+        Return:
+        {"hybcprob": {<combination of outputs from discrete parents> : CondGaussParams}}
+        """
         hycprob = dict()
         values = []
         combinations = []
@@ -222,7 +240,6 @@ class ConditionalGaussianNode(BaseNode):
     def choose(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
         """
         Return value from ConditionalGaussian node
-        params:
         node_info: nodes info from distributions
         pvals: parent values
         """
@@ -249,11 +266,17 @@ class MixtureGaussianParams(TypedDict):
 
 
 class MixtureGaussianNode(BaseNode):
+    """
+    Main class for Mixture Gaussian Node
+    """
     def __init__(self, name):
         super(MixtureGaussianNode, self).__init__(name)
         self.type = 'MixtureGaussian'
 
     def fit_parameters(self, data: DataFrame) -> MixtureGaussianParams:
+        """
+        Train params for Mixture Gaussian Node
+        """
         parents = self.disc_parents + self.cont_parents
         if not parents:
             n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
@@ -291,10 +314,10 @@ class MixtureGaussianNode(BaseNode):
     @staticmethod
     def choose(node_info: MixtureGaussianParams, pvals: List[Union[str, float]]) -> Optional[float]:
         """
-        Return value from MixtureGaussian node
-        params:
+        Func to get value from current node
         node_info: nodes info from distributions
         pvals: parent values
+        Return value from MixtureGaussian node
         """
         mean = node_info["mean"]
         covariance = node_info["covars"]
@@ -307,12 +330,12 @@ class MixtureGaussianNode(BaseNode):
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                     sample = gmm.predict(indexes, [pvals])[0][0]
                 else:
-                    sample = None
+                    sample = np.nan
             else:
                 gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                 sample = gmm.sample(1)[0][0]
         else:
-            sample = None
+            sample = np.nan
         return sample
 
 
@@ -323,11 +346,19 @@ class CondMixtureGaussParams(TypedDict):
 
 
 class ConditionalMixtureGaussianNode(BaseNode):
+    """
+    Main class for Conditional Mixture Gaussian Node
+    """
     def __init__(self, name):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
         self.type = 'ConditionalMixtureGaussian'
 
     def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondMixtureGaussParams]]:
+        """
+        Train params for Conditional Mixture Gaussian Node.
+        Return:
+        {"hybcprob": {<combination of outputs from discrete parents> : CondMixtureGaussParams}}
+        """
         hycprob = dict()
         values = []
         combinations = []
@@ -379,16 +410,16 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 hycprob[str(key_comb)] = {'covars': cov, 'mean': means, 'coef': w}
             else:
                 if self.cont_parents:
-                    hycprob[str(key_comb)] = {'covars': None, 'mean': None, 'coef': []}
+                    hycprob[str(key_comb)] = {'covars': np.nan, 'mean': np.nan, 'coef': []}
                 else:
-                    hycprob[str(key_comb)] = {'covars': None, 'mean': None, 'coef': []}
+                    hycprob[str(key_comb)] = {'covars': np.nan, 'mean': np.nan, 'coef': []}
         return {"hybcprob": hycprob}
 
     @staticmethod
     def choose(node_info: Dict[str, Dict[str, CondMixtureGaussParams]],
                pvals: List[Union[str, float]]) -> Optional[float]:
         """
-        Return value from ConditionalMixtureGaussian node
+        Function to get value from ConditionalMixtureGaussian node
         params:
         node_info: nodes info from distributions
         pvals: parent values
@@ -412,13 +443,13 @@ class ConditionalMixtureGaussianNode(BaseNode):
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                     sample = gmm.predict(indexes, [lgpvals])[0][0]
                 else:
-                    sample = None
+                    sample = np.nan
             else:
                 n_comp = len(w)
                 gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                 sample = gmm.sample(1)[0][0]
         else:
-            sample = None
+            sample = np.nan
         return sample
 
 
@@ -427,8 +458,10 @@ class LogitParams(TypedDict):
     classifier: str
     classifier_obj: str
 
-
 class LogitNode(DiscreteNode):
+    """
+    Main class for logit node
+    """
     def __init__(self, name, classifier: Optional[object] = None):
         super(LogitNode, self).__init__(name)
         if classifier is None:
@@ -438,16 +471,27 @@ class LogitNode(DiscreteNode):
 
     def fit_parameters(self, data: DataFrame) -> LogitParams:
         parents = self.disc_parents + self.cont_parents
-        model = self.classifier.fit(data[parents].values, data[self.name].values)
+        self.classifier.fit(data[parents].values, data[self.name].values)
+        # Saving model by serializing it with Pickle module
+        model_ser = None
+        try:
+            ex_b = pickle.dumps(self.classifier, protocol=4)
+            model_ser = ex_b.decode('latin1').replace('\'', '\"')
+            a = model_ser.replace('\"', '\'').encode('latin1')
+            classifier_body = pickle.loads(a)
+            # If serialization wasn't failed - clear memory
+            self.classifier = None
+        except Exception as ex:
+            logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will save entire model as python object." + ex.args[0])
 
-        # Saving model
-        # ex_b = pickle.dumps(model, protocol=4)
-        # model_ser = ex_b.decode('latin1').replace('\'', '\"')
-        self.model = model
-
-        return {'classes': list(model.classes_),
-                'classifier_obj': 'model_ser',
-                'classifier': type(self.classifier).__name__}
+        if self.classifier:
+            return {'classes': list(self.classifier.classes_),
+                    'classifier_obj': model_ser,
+                    'classifier': type(self.classifier).__name__}
+        else:
+            return {'classes': list(classifier_body.classes_),
+                    'classifier_obj': model_ser,
+                    'classifier': type(classifier_body).__name__}
 
     def choose(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
         """
@@ -460,13 +504,14 @@ class LogitNode(DiscreteNode):
 
         rindex = 0
         if len(node_info["classes"]) > 1:
-            # classifier_body = node_info['classifier_obj']
-            # a = classifier_body.replace('\"', '\'').encode('latin1')
-            # classifier_body = pickle.loads(a)
-            # model = classifier_body
-            model = self.model
+            if node_info["classifier_obj"]:
+                classifier_body = node_info['classifier_obj']
+                a = classifier_body.replace('\"', '\'').encode('latin1')
+                classifier_body = pickle.loads(a)
+                model = classifier_body
+            else:
+                model = self.classifier
 
-            # model = self.model
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose
@@ -488,6 +533,9 @@ class LogitNode(DiscreteNode):
 
 
 class ConditionalLogitNode(DiscreteNode):
+    """
+    Main class for Conditional Logit Node
+    """
     def __init__(self, name: str, classifier: Optional[object] = None):
         super(ConditionalLogitNode, self).__init__(name)
         if classifier is None:
@@ -496,6 +544,11 @@ class ConditionalLogitNode(DiscreteNode):
         self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
+        """
+        Train params on data
+        Return:
+        {"hybcprob": {<combination of outputs from discrete parents> : LogitParams}}
+        """
         hycprob = dict()
         values = []
         combinations = []
@@ -513,23 +566,33 @@ class ConditionalLogitNode(DiscreteNode):
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
                 model = self.classifier
+                model_ser = None
                 values = set(new_data[self.name])
                 if len(values) > 1:
                     model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
                     classes = model.classes_
+                    # Saving model by serializing it with Pickle module
+                    try:
+                        ex_b = pickle.dumps(model, protocol=4)
+                        model_ser = ex_b.decode('latin1').replace('\'', '\"')
+                        a = model_ser.replace('\"', '\'').encode('latin1')
+                        classifier_body = pickle.loads(a)
+                        model = None # clear memory
+                    except Exception as ex:
+                        model_ser = False
+                        logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will save entire model as python object. | " + ex.args[0])
                 else:
                     classes = list(values)
-                # Saving model
-                # ex_b = pickle.dumps(model, protocol=4)
-                # model_ser = ex_b.decode('latin1').replace('\'', '\"')
-                self.model = model
-                hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(self.classifier).__name__,
-                                          'classifier_obj': 'model_ser'}
+
+                if model_ser:
+                    hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(classifier_body).__name__,
+                                              'classifier_obj': model_ser}
+                else:
+                    hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(model).__name__,
+                                              'classifier_obj': model_ser}
             else:
-                # scal = list(np.full(len(self.cont_parents), np.nan))
-                self.model = self.classifier
                 hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(self.classifier).__name__,
-                                          'classifier_obj': ''}
+                                          'classifier_obj': None}
         return {"hybcprob": hycprob}
 
     def choose(self, node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]) -> str:
@@ -546,13 +609,16 @@ class ConditionalLogitNode(DiscreteNode):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
+
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
-        # model = self.classifier
-        # classifier_body = lgdistribution['classifier_obj']
-        # classifier_body = pickle.loads(classifier_body.replace('\"', '\'').encode('latin1'))
-        # model = classifier_body
-        model = self.model
+        if lgdistribution["classifier_obj"]:
+            classifier_body = lgdistribution['classifier_obj']
+            a = classifier_body.replace('\"', '\'').encode('latin1')
+            classifier_body = pickle.loads(a)
+            model = classifier_body
+        else:
+            model = self.classifier
 
         if len(lgdistribution["classes"]) > 1:
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
