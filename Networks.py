@@ -134,10 +134,14 @@ class BaseNetwork(object):
             self.nodes.append(node(name=column_name))
             self.update_descriptor()
 
-    def get_params_tree(self, std):
-        if not std.endswith('.json'):
+    def get_params_tree(self, outdir: str):
+        """
+        Function to save BN params to json file
+        outdir: output directory
+        """
+        if not outdir.endswith('.json'):
             return None
-        with open(f"{std}", 'w+') as out:
+        with open(outdir, 'w+') as out:
             json.dump(self.distributions, out)
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
@@ -220,7 +224,6 @@ class BaseNetwork(object):
             seq.append(output)
 
         if as_df:
-            import pandas as pd
             return pd.DataFrame.from_dict(seq, orient='columns')
         else:
             return seq

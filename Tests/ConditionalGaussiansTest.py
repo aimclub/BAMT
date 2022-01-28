@@ -12,6 +12,7 @@ from Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
 # from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 import Networks
 
 p1 = time.time()

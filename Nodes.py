@@ -6,13 +6,15 @@ from Utils.MathUtils import *
 from gmr import GMM
 from pandas import DataFrame
 
-from typing import Dict, List, Any, Union, TypedDict, Type, SupportsFloat, Optional, Callable
+from typing import Dict, List, Any, Union, TypedDict, Type, Optional
 
 import itertools
 import random
-import pickle
+import joblib
+import os
 
 from log import logger_nodes
+
 
 class DiscreteParams(TypedDict):
     cprob: Union[List[Union[list, Any]], Dict[str, list]]
@@ -47,11 +49,12 @@ class DiscreteNode(BaseNode):
     """
     Main class of Discrete Node
     """
+
     def __init__(self, name):
         super(DiscreteNode, self).__init__(name)
         self.type = 'Discrete'
 
-    def fit_parameters(self, data: DataFrame, num_workers:int = 1):
+    def fit_parameters(self, data: DataFrame, num_workers: int = 1):
         """
         Train params for Discrete Node
         data: DataFrame to train on
@@ -124,6 +127,7 @@ class GaussianNode(BaseNode):
     """
     Main class for Gaussian Node
     """
+
     def __init__(self, name: str, model=linear_model.LinearRegression()):
         super(GaussianNode, self).__init__(name)
         self.model = model
@@ -184,6 +188,7 @@ class ConditionalGaussianNode(BaseNode):
     """
     Main class for Conditional Gaussian Node
     """
+
     def __init__(self, name):
         super(ConditionalGaussianNode, self).__init__(name)
         self.type = 'ConditionalGaussian'
@@ -206,8 +211,8 @@ class ConditionalGaussianNode(BaseNode):
             for col, val in zip(self.disc_parents, comb):
                 mask = (mask) & (data[col] == val)
             new_data = data[mask]
-            mean_base = None
-            variance = None
+            mean_base = np.nan
+            variance = np.nan
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
                 if self.cont_parents:
@@ -228,7 +233,7 @@ class ConditionalGaussianNode(BaseNode):
                     hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': []}
             else:
                 if self.cont_parents:
-                    scal = list(np.full(len(self.cont_parents), None))
+                    scal = list(np.full(len(self.cont_parents), np.nan))
                     hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': scal}
                 else:
                     # mean_base = np.nan
@@ -269,6 +274,7 @@ class MixtureGaussianNode(BaseNode):
     """
     Main class for Mixture Gaussian Node
     """
+
     def __init__(self, name):
         super(MixtureGaussianNode, self).__init__(name)
         self.type = 'MixtureGaussian'
@@ -349,6 +355,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
     """
     Main class for Conditional Mixture Gaussian Node
     """
+
     def __init__(self, name):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
         self.type = 'ConditionalMixtureGaussian'
@@ -456,12 +463,14 @@ class ConditionalMixtureGaussianNode(BaseNode):
 class LogitParams(TypedDict):
     classes: List[int]
     classifier: str
-    classifier_obj: str
+    classifier_obj: Optional[Union[str, bool, object]]
 
-class LogitNode(DiscreteNode):
+
+class LogitNode(BaseNode):
     """
     Main class for logit node
     """
+
     def __init__(self, name, classifier: Optional[object] = None):
         super(LogitNode, self).__init__(name)
         if classifier is None:
@@ -470,28 +479,28 @@ class LogitNode(DiscreteNode):
         self.type = 'Logit' + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> LogitParams:
+        if not os.path.isdir(f"{self.name.replace(' ', '_')}"):
+            os.mkdir(f"{self.name.replace(' ', '_')}")
         parents = self.disc_parents + self.cont_parents
         self.classifier.fit(data[parents].values, data[self.name].values)
-        # Saving model by serializing it with Pickle module
-        model_ser = None
+        # Saving model by serializing it with Joblib module
         try:
-            ex_b = pickle.dumps(self.classifier, protocol=4)
-            model_ser = ex_b.decode('latin1').replace('\'', '\"')
-            a = model_ser.replace('\"', '\'').encode('latin1')
-            classifier_body = pickle.loads(a)
-            # If serialization wasn't failed - clear memory
-            self.classifier = None
+            path = os.path.abspath(f"{self.name.replace(' ', '_')}/{self.name.replace(' ', '_')}.joblib.compressed")
+            joblib.dump(self.classifier, path, compress=True, protocol=4)
+            model_ser = joblib.load(path)
         except Exception as ex:
-            logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will save entire model as python object." + ex.args[0])
+            path = False
+            logger_nodes.warning(
+                f"{self.name}::Joblib failed. BAMT will save entire model as python object. | " + ex.args[0])
 
-        if self.classifier:
+        if path:
             return {'classes': list(self.classifier.classes_),
-                    'classifier_obj': model_ser,
+                    'classifier_obj': path,
                     'classifier': type(self.classifier).__name__}
         else:
-            return {'classes': list(classifier_body.classes_),
-                    'classifier_obj': model_ser,
-                    'classifier': type(classifier_body).__name__}
+            return {'classes': list(self.classifier.classes_),
+                    'classifier_obj': self.classifier,
+                    'classifier': type(self.classifier).__name__}
 
     def choose(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
         """
@@ -503,14 +512,12 @@ class LogitNode(DiscreteNode):
         pvals = [str(p) for p in pvals]
 
         rindex = 0
+        # JOBLIB
         if len(node_info["classes"]) > 1:
-            if node_info["classifier_obj"]:
-                classifier_body = node_info['classifier_obj']
-                a = classifier_body.replace('\"', '\'').encode('latin1')
-                classifier_body = pickle.loads(a)
-                model = classifier_body
+            if isinstance(node_info["classifier_obj"], str):
+                model = joblib.load(node_info["classifier_obj"])
             else:
-                model = self.classifier
+                model = node_info["classifier_obj"]
 
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
@@ -532,10 +539,11 @@ class LogitNode(DiscreteNode):
             return str(node_info["classes"][0])
 
 
-class ConditionalLogitNode(DiscreteNode):
+class ConditionalLogitNode(BaseNode):
     """
     Main class for Conditional Logit Node
     """
+
     def __init__(self, name: str, classifier: Optional[object] = None):
         super(ConditionalLogitNode, self).__init__(name)
         if classifier is None:
@@ -549,6 +557,8 @@ class ConditionalLogitNode(DiscreteNode):
         Return:
         {"hybcprob": {<combination of outputs from discrete parents> : LogitParams}}
         """
+        if not os.path.isdir(f"{self.name.replace(' ', '_')}"):
+            os.mkdir(f"{self.name.replace(' ', '_')}")
         hycprob = dict()
         values = []
         combinations = []
@@ -566,30 +576,45 @@ class ConditionalLogitNode(DiscreteNode):
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
                 model = self.classifier
-                model_ser = None
                 values = set(new_data[self.name])
                 if len(values) > 1:
+                    if self.name == 'Period' or comb in [['BACKARC', 'LIMESTONE'], ['BACKARC', 'LOW-RESISTIVITY SANDSTONE']]:
+                        # print('BP')
+                        pass
                     model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
                     classes = model.classes_
                     # Saving model by serializing it with Pickle module
+                    # try:
+                    #     ex_b = pickle.dumps(model, protocol=4)
+                    #     model_ser = ex_b.decode('latin1').replace('\'', '\"')
+                    #     a = model_ser.replace('\"', '\'').encode('latin1')
+                    #     classifier_body = pickle.loads(a)
+                    #     model = None  # clear memory
+                    # except Exception as ex:
+                    #     model_ser = False
+                    #     logger_nodes.warning(
+                    #         f"{self.name} {comb}::Pickle failed. BAMT will save entire model as python object. | " +
+                    #         ex.args[
+                    #             0])
                     try:
-                        ex_b = pickle.dumps(model, protocol=4)
-                        model_ser = ex_b.decode('latin1').replace('\'', '\"')
-                        a = model_ser.replace('\"', '\'').encode('latin1')
-                        classifier_body = pickle.loads(a)
-                        model = None # clear memory
+                        path = os.path.abspath(f"{self.name.replace(' ', '_')}/{str(key_comb)}.joblib.compressed")
+                        joblib.dump(self.classifier, path, compress=True, protocol=4)
+                        model_ser = joblib.load(path)
                     except Exception as ex:
-                        model_ser = False
-                        logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will save entire model as python object. | " + ex.args[0])
+                        path = False
+                        logger_nodes.warning(
+                            f"{self.name} {comb}::Joblib failed. BAMT will save entire model as python object. | " +
+                            ex.args[0])
                 else:
+                    path = 'unknown'
                     classes = list(values)
 
-                if model_ser:
-                    hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(classifier_body).__name__,
-                                              'classifier_obj': model_ser}
+                if not path:
+                    hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(model).__name__,
+                                              'classifier_obj': model}
                 else:
                     hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(model).__name__,
-                                              'classifier_obj': model_ser}
+                                              'classifier_obj': path}
             else:
                 hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(self.classifier).__name__,
                                           'classifier_obj': None}
@@ -602,6 +627,7 @@ class ConditionalLogitNode(DiscreteNode):
         node_info: nodes info from distributions
         pvals: parent values
         """
+
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -612,15 +638,14 @@ class ConditionalLogitNode(DiscreteNode):
 
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
-        if lgdistribution["classifier_obj"]:
-            classifier_body = lgdistribution['classifier_obj']
-            a = classifier_body.replace('\"', '\'').encode('latin1')
-            classifier_body = pickle.loads(a)
-            model = classifier_body
-        else:
-            model = self.classifier
-
+        # JOBLIB
         if len(lgdistribution["classes"]) > 1:
+            if isinstance(lgdistribution["classifier_obj"], str):
+                model = joblib.load(lgdistribution["classifier_obj"])
+            else:
+                model = lgdistribution["classifier_obj"]
+
+
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
             rand = random.random()
