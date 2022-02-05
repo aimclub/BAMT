@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import json
+import os
 
+from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from Utils import GraphUtils as gru
 from pyvis.network import Network
@@ -17,7 +19,9 @@ from typing import Dict, Tuple, List, Callable, Optional, Type, Union
 from Builders import ParamDict
 
 from log import logger_network
+from config import config
 
+STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
 
 class BaseNetwork(object):
     """
@@ -39,6 +43,7 @@ class BaseNetwork(object):
         self.distributions = {}
         self.has_logit = False
         self.use_mixture = False
+
 
     @property
     def nodes_names(self) -> List[str]:
@@ -81,7 +86,7 @@ class BaseNetwork(object):
         self.nodes = worker_1.vertices
 
     def add_edges(self, data: pd.DataFrame, scoring_function: Union[Tuple[str, Callable], Tuple[str]],
-                  classifier: object = None,
+                  classifier: Optional[object] = None,
                   params: Optional[ParamDict] = None, optimizer: str = 'HC'):
         """
         Base function for Structure learning
@@ -91,7 +96,7 @@ class BaseNetwork(object):
         remove_init_edges: allows changes in model defined by user
         white_list: list of allowed edges
         """
-        if not self.has_logit:
+        if not self.has_logit and classifier:
             logger_network.error("Classifiers dict will be ignored since logit nodes are forbidden.")
             return None
 
@@ -143,6 +148,7 @@ class BaseNetwork(object):
             return None
         with open(outdir, 'w+') as out:
             json.dump(self.distributions, out)
+        return True
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
@@ -151,6 +157,16 @@ class BaseNetwork(object):
         if dropna:
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)
+
+        if self.has_logit:
+            if any(['Logit' in node.type for node in self.nodes]):
+                if not os.path.isdir(STORAGE):
+                    os.makedirs(os.path.join(STORAGE, "0"))
+                elif os.listdir(STORAGE):
+                    index = sorted(
+                    [int(id) for id in os.listdir(STORAGE)]
+                    )[-1] + 1
+                    os.makedirs(os.path.join(STORAGE, str(index)))
 
         # Turn all discrete values to str for learning algorithm
         if 'disc_num' in self.descriptor['types'].values():
@@ -179,7 +195,6 @@ class BaseNetwork(object):
             types_d = []
             parents = []
             parents_types = []
-            import pandas as pd
             for n in self.nodes:
                 names.append(n)
                 types_n.append(n.type)
@@ -229,7 +244,6 @@ class BaseNetwork(object):
             return seq
 
     def predict(self, test: pd.DataFrame, parall_count: int = 1) -> Dict[str, Union[List[str], List[int], List[float]]]:
-        from joblib import Parallel, delayed
         """
         Function to predict columns from given data.
         Note that train data and test data must have different columns.
@@ -242,23 +256,22 @@ class BaseNetwork(object):
         Returns:
             predicted data (dict): dict with column as key and predicted data as value
         """
+        from joblib import Parallel, delayed
 
         def wrapper(bn: HybridBN, test: pd.DataFrame, columns: List[str]):
             preds = {column_name: list() for column_name in columns}
 
             if len(test) == 1:
                 for i in range(test.shape[0]):
-                    print(i)
                     test_row = dict(test.iloc[i, :])
                     for n, key in enumerate(columns):
                         try:
+                            sample = bn.sample(2000, evidence=test_row)
                             if bn[key].type.startswith(('Discrete', 'Logit', 'ConditionalLogit',)):
-                                sample = self.sample(2000, evidence=test_row)
                                 count_stats = sample[key].value_counts()
                                 preds[key].append(count_stats.index[0])
                             else:
-                                sample = bn.sample(2000, evidence=test_row)
-                                if self.descriptor['signs'][key] == 'pos':
+                                if bn.descriptor['signs'][key] == 'pos':
                                     sample = sample.loc[sample[key] >= 0]
                                 if sample.shape[0] == 0:
                                     preds[key].append(np.nan)
@@ -281,7 +294,7 @@ class BaseNetwork(object):
         preds = {column_name: list() for column_name in columns}
 
         processed_list = Parallel(n_jobs=parall_count)(
-            delayed(wrapper)(self, test.loc[[i]], columns) for i in test.index)
+            delayed(wrapper)(self, test.loc[[i]], columns) for i in tqdm(test.index, position=0, leave=True))
 
         for i in range(test.shape[0]):
             curr_pred = processed_list[i]

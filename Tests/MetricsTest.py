@@ -13,8 +13,6 @@ import pandas as pd
 from sklearn import preprocessing as pp
 import Networks
 
-# import Metrics
-
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
@@ -47,7 +45,7 @@ bn.fit_parameters(data=h)
 t2 = time.time()
 print(f'PL elapsed: {t2 - t1}')
 
-columns = ['Tectonic regime', 'Period', 'Gross']
+columns = ['Lithology', 'Structural setting', 'Porosity', 'Depth']
 validY = h[columns].dropna()
 validX = h.drop(columns, axis=1).dropna()
 
@@ -55,24 +53,3 @@ time_1 = time.time()
 pred_param = bn.predict(validX.iloc[0:20, :], parall_count=3)
 time_2 = time.time()
 print(f'Predict elapsed: {time_2 - time_1}')
-
-# sync
-# with matrix: 102.74379372596741
-# with dict: 80.4413230419159, 82.58527779579163
-
-# async
-# Threads = 1
-# Test for nan checker
-# with for loop for columns: 88.78174304962158, 85.52139496803284
-# with no for loop for columns: 94.38896083831787
-# Threads = 2
-# 55.83470320701599
-# Threads = 3
-# 53.80153179168701, 49.15917134284973
-
-from sklearn.metrics import accuracy_score, mean_squared_error
-
-for column in ['Tectonic regime', 'Period']:
-    print(column, round(accuracy_score(validY[column][0:20], pred_param[column]), 5))
-
-print('Gross', round(mean_squared_error(validY['Gross'][0:20], pred_param['Gross'], squared=False), 5))

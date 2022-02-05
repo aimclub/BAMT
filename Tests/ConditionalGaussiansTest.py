@@ -47,6 +47,8 @@ bn.fit_parameters(data=h)
 t2 = time.time()
 print(f'PL elaspsed: {t2 - t1}')
 
+bn.get_params_tree("final.json")
+
 # # bn.plot('Hybrid_hackp')
 # for num, el in enumerate(bn.sample(10, as_df=False), 1):
 #     print('\n', num)

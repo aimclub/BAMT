@@ -50,6 +50,8 @@ print('fp finished')
 predictions_mi = bn.sample(514, as_df=True)
 
 bn.get_params_tree('final.json')
+print('finished')
+
 # successful = {}
 # failed = {}
 # for i in range(6):

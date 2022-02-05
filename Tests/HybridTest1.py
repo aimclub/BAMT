@@ -78,7 +78,3 @@ t2 = time.time()
 print(f'PL elaspsed: {t2-t1}')
 # for node, d in bn.distributions.items():
 #     print(node,":", d)
-
-import json
-with open("../test_hybrid_out.json", 'w+') as out:
-    json.dump(bn.distributions, out)
