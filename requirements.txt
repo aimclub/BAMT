@@ -8,7 +8,7 @@ future==0.18.2
 gmr==1.6.1
 hyperopt==0.2.5
 imageio==2.9.0
-ipython==7.28.0
+ipython==7.31.1
 jedi==0.18.0
 Jinja2==3.0.2
 joblib==1.0.1
