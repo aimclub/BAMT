@@ -228,14 +228,24 @@ class BaseNetwork(object):
                 if evidence:
                     if node.name in evidence.keys():
                         output[node.name] = evidence[node.name]
-                if not parents:
-                    pvals = None
-                else:
-                    if self.type == 'Discrete':
-                        pvals = [str(output[t]) for t in parents]
                     else:
-                        pvals = [output[t] for t in parents]
-                output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                        if not parents:
+                            pvals = None
+                        else:
+                            if self.type == 'Discrete':
+                                pvals = [str(output[t]) for t in parents]
+                            else:
+                                pvals = [output[t] for t in parents]
+                        output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                else:
+                    if not parents:
+                        pvals = None
+                    else:
+                        if self.type == 'Discrete':
+                            pvals = [str(output[t]) for t in parents]
+                        else:
+                            pvals = [output[t] for t in parents]
+                    output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
             seq.append(output)
 
         if as_df:
@@ -428,4 +438,4 @@ class HybridBN(BaseNetwork):
     def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
         types = descriptor['types']
         s = set(types.values())
-        return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) else False
+        return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) or ({'cont', 'disc_num'} == s) else False
