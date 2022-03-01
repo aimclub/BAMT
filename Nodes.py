@@ -349,7 +349,8 @@ class MixtureGaussianNode(BaseNode):
                 indexes = [i for i in range(1, len(pvals) + 1)]
                 if not np.isnan(np.array(pvals)).all():
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
-                    sample = gmm.predict(indexes, [pvals])[0][0]
+                    cond_gmm = gmm.condition(indexes, [pvals])
+                    sample = cond_gmm.sample(1)[0][0]
                 else:
                     sample = np.nan
             else:
@@ -463,7 +464,8 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 if not np.isnan(np.array(lgpvals)).all():
                     n_comp = len(w)
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
-                    sample = gmm.predict(indexes, [lgpvals])[0][0]
+                    cond_gmm = gmm.condition(indexes, [lgpvals])
+                    sample = cond_gmm.sample(1)[0][0]
                 else:
                     sample = np.nan
             else:
