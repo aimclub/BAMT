@@ -4,6 +4,10 @@ Repository of a data modeling and analysis tool based on Bayesian networks
 
 BAMT - Bayesian Analytical and Modelling Toolkit. This repository contains a data modeling and analysis tool based on Bayesian networks. It can be divided into two main parts - algorithms for constructing and training Bayesian networks on data and algorithms for applying Bayesian networks for filling gaps, generating synthetic data, and searching for anomalous values.
 
+### Installation
+
+BAMT package is available via PyPi: ``pip install bamt``
+
 Bayesian network learning
 =========================
 In terms of training Bayesian networks on data, the following algorithms are implemented:
