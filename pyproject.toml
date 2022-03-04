@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "BAMT"
+version = "0.1.202"
+description = "data modeling and analysis tool based on Bayesian networks"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+
+packages = [
+    { include = "bamt" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+numpy = "1.22.2"
+matplotlib = "3.5.1"
+pandas = "1.4.0"
+scikit-learn = "1.0.2"
+pomegranate = "0.14.8"
+gmr = "1.6.2"
+scipy = "^1.8.0"
+pyvis = "^0.1.9"
+missingno = "^0.5.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
