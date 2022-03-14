@@ -220,9 +220,15 @@ class BaseNetwork(object):
         if not self.distributions.items():
             logger_network.error("Parameter learning wasn't done. Call fit_parameters method")
             return None
+        for node in self.nodes:
+            if (node.type == 'Discrete') & (node.name in evidence.keys()):
+                if not(isinstance(evidence[node.name], str)):
+                    evidence[node.name] = str(int(evidence[node.name]))
+                
         for n in range(n):
             output = {}
             for node in self.nodes:
+                print(node.name)
                 parents = node.cont_parents + node.disc_parents
                 if evidence:
                     if node.name in evidence.keys():
@@ -235,6 +241,7 @@ class BaseNetwork(object):
                                 pvals = [str(output[t]) for t in parents]
                             else:
                                 pvals = [output[t] for t in parents]
+                        print(pvals)
                         if predict:
                             output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
                         else:
@@ -295,13 +302,16 @@ class BaseNetwork(object):
                             #     else:
                             #         pred = np.mean(sample[key].values)
                             #         preds[key].append(pred)
-                            if (bn.descriptor['signs'][key] == 'pos') & (sample.loc[0, key] < 0):
-                                preds[key].append(np.nan)
+                            if bn.descriptor['types'][key] == 'cont':
+                                if (bn.descriptor['signs'][key] == 'pos') & (sample.loc[0, key] < 0):
+                                    preds[key].append(np.nan)
+                                else:
+                                    preds[key].append(sample.loc[0, key])
                             else:
                                 preds[key].append(sample.loc[0, key])
                         except Exception as ex:
-                            logger_network.error(ex)
-                            preds[key].append(np.nan)
+                             logger_network.error(ex)
+                             preds[key].append(np.nan)
                 return preds
             else:
                 logger_network.error('Wrapper for one row from pandas.DataFrame')

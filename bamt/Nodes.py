@@ -583,6 +583,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
         node_info: nodes info from distributions
         pvals: parent values
         """
+        
         dispvals = []
         lgpvals = []
         for pval in pvals:
