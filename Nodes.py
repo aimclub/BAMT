@@ -131,6 +131,33 @@ class DiscreteNode(BaseNode):
 
         return vals[rindex]
 
+    @staticmethod
+    def predict(node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
+        """function for prediction based on evidence values in discrete node
+
+        Args:
+            node_info (Dict[str, Union[float, str]]): parameters of node
+            pvals (List[str]): values in parents nodes
+
+        Returns:
+            str: prediction
+        """        
+        vals = node_info['vals']
+        if not pvals:
+            dist = node_info['cprob']
+        else:
+            # noinspection PyTypeChecker
+            dist = node_info['cprob'][str(pvals)]
+        index_max = 0    
+        g = itertools.groupby(dist)
+        if next(g, True) and not next(g, False):
+            index_max = random.randint(0, len(dist))
+        else:
+            index_max = np.argmax(dist)
+        return vals[index_max]
+        
+
+
 
 class GaussianParams(TypedDict):
     mean: float
@@ -191,6 +218,25 @@ class GaussianNode(BaseNode):
         variance = node_info['variance']
         # distribution = [mean, variance]
         return random.gauss(mean, math.sqrt(variance))
+
+    @staticmethod
+    def predict(node_info: Dict[str, Union[float, List[float]]],
+               pvals: List[float]) -> float:
+        """function for prediction in gaussian node
+
+        Args:
+            node_info (Dict[str, Union[float, List[float]]]): node parameters
+            pvals (List[float]): parent values
+
+        Returns:
+            float: prediction
+        """               
+        mean = node_info["mean"]
+        if pvals:
+            for m in pvals:
+                mean += m * node_info['coef'][0]
+        return mean
+    
 
 
 class CondGaussParams(TypedDict):
@@ -278,6 +324,31 @@ class ConditionalGaussianNode(BaseNode):
         variance = lgdistribution["variance"]
         return random.gauss(mean, math.sqrt(variance))
 
+    @staticmethod
+    def predict(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
+        """function for prediction in conditional gaussian node
+
+        Args:
+            node_info (Dict[str, Union[float, List[float]]]): node parameters
+            pvals (List[float]): parent values
+
+        Returns:
+            float: prediction
+        """ 
+        dispvals = []
+        lgpvals = []
+        for pval in pvals:
+            if (isinstance(pval, str)) | (isinstance(pval, int)):
+                dispvals.append(pval)
+            else:
+                lgpvals.append(pval)
+        lgdistribution = node_info["hybcprob"][str(dispvals)]
+        mean = lgdistribution["mean"]
+        if lgpvals:
+            for x in range(len(lgpvals)):
+                mean += lgpvals[x] * lgdistribution["coef"][x]
+        return mean
+
 
 class MixtureGaussianParams(TypedDict):
     mean: List[float]
@@ -351,6 +422,33 @@ class MixtureGaussianNode(BaseNode):
                     gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                     cond_gmm = gmm.condition(indexes, [pvals])
                     sample = cond_gmm.sample(1)[0][0]
+                else:
+                    sample = np.nan
+            else:
+                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                sample = gmm.sample(1)[0][0]
+        else:
+            sample = np.nan
+        return sample
+
+    @staticmethod
+    def predict(node_info: MixtureGaussianParams, pvals: List[Union[str, float]]) -> Optional[float]:
+        """
+        Func to get prediction from current node
+        node_info: nodes info from distributions
+        pvals: parent values
+        Return value from MixtureGaussian node
+        """
+        mean = node_info["mean"]
+        covariance = node_info["covars"]
+        w = node_info["coef"]
+        n_comp = len(node_info['coef'])
+        if n_comp != 0:
+            if pvals:
+                indexes = [i for i in range(1, len(pvals) + 1)]
+                if not np.isnan(np.array(pvals)).all():
+                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                    sample = gmm.predict(indexes, [pvals])[0][0]
                 else:
                     sample = np.nan
             else:
@@ -476,6 +574,43 @@ class ConditionalMixtureGaussianNode(BaseNode):
             sample = np.nan
         return sample
 
+    @staticmethod
+    def predict(node_info: Dict[str, Dict[str, CondMixtureGaussParams]],
+               pvals: List[Union[str, float]]) -> Optional[float]:
+        """
+        Function to get prediction from ConditionalMixtureGaussian node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+        dispvals = []
+        lgpvals = []
+        for pval in pvals:
+            if ((isinstance(pval, str)) | ((isinstance(pval, int)))):
+                dispvals.append(pval)
+            else:
+                lgpvals.append(pval)
+        lgdistribution = node_info["hybcprob"][str(dispvals)]
+        mean = lgdistribution["mean"]
+        covariance = lgdistribution["covars"]
+        w = lgdistribution["coef"]
+        if len(w) != 0:
+            if len(lgpvals) != 0:
+                indexes = [i for i in range(1, (len(lgpvals) + 1), 1)]
+                if not np.isnan(np.array(lgpvals)).all():
+                    n_comp = len(w)
+                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                    sample = gmm.predict(indexes, [lgpvals])[0][0]
+                else:
+                    sample = np.nan
+            else:
+                n_comp = len(w)
+                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                sample = gmm.sample(1)[0][0]
+        else:
+            sample = np.nan
+        return sample
+
 
 class LogitParams(TypedDict):
     classes: List[int]
@@ -559,6 +694,32 @@ class LogitNode(BaseNode):
                     lbound = ubound
 
             return str(node_info["classes"][rindex])
+
+        else:
+            return str(node_info["classes"][0])
+
+
+    def predict(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
+        """
+        Return prediction from Logit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+        pvals = [str(p) for p in pvals]
+
+
+        if len(node_info["classes"]) > 1:
+            if node_info["serialization"] == 'joblib':
+                model = joblib.load(node_info["classifier_obj"])
+            else:
+                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                a = node_info["classifier_obj"].encode('latin1')
+                model = pickle.loads(a)
+
+            pred = model.predict(np.array(pvals).reshape(1, -1))[0]
+
+            return str(pred)
 
         else:
             return str(node_info["classes"][0])
@@ -681,6 +842,41 @@ class ConditionalLogitNode(BaseNode):
                 else:
                     lbound = ubound
             return str(lgdistribution["classes"][rindex])
+
+        else:
+            return str(lgdistribution["classes"][0])
+
+
+    def predict(self, node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]) -> str:
+        """
+        Return value from ConditionalLogit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+
+        dispvals = []
+        lgpvals = []
+        for pval in pvals:
+            if (isinstance(pval, str)):
+                dispvals.append(pval)
+            else:
+                lgpvals.append(pval)
+
+        lgdistribution = node_info["hybcprob"][str(dispvals)]
+
+        # JOBLIB
+        if len(lgdistribution["classes"]) > 1:
+            if lgdistribution["serialization"] == 'joblib':
+                model = joblib.load(lgdistribution["classifier_obj"])
+            else:
+                # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
+                bytes_model = lgdistribution["classifier_obj"].encode('latin1')
+                model = pickle.loads(bytes_model)
+
+            pred = model.predict(np.array(lgpvals).reshape(1, -1))[0]
+
+            return str(pred)
 
         else:
             return str(lgdistribution["classes"][0])

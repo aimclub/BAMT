@@ -1,3 +1,5 @@
+from winreg import LoadKey
+from sklearn.covariance import log_likelihood
 import Builders
 import Nodes
 import random
@@ -210,7 +212,7 @@ class BaseNetwork(object):
                     f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
     def sample(self, n: int, evidence: Optional[Dict[str, Union[str, int, float]]] = None,
-               as_df: bool = True) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
+               as_df: bool = True, predict: bool = False) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
@@ -236,7 +238,11 @@ class BaseNetwork(object):
                                 pvals = [str(output[t]) for t in parents]
                             else:
                                 pvals = [output[t] for t in parents]
-                        output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                        if predict:
+                            output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
+                        else:
+                            output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                        
                 else:
                     if not parents:
                         pvals = None
@@ -245,7 +251,11 @@ class BaseNetwork(object):
                             pvals = [str(output[t]) for t in parents]
                         else:
                             pvals = [output[t] for t in parents]
-                    output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                    if predict:
+                        output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
+                    else:
+                        output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                    
             seq.append(output)
 
         if as_df:
@@ -276,18 +286,22 @@ class BaseNetwork(object):
                     test_row = dict(test.iloc[i, :])
                     for n, key in enumerate(columns):
                         try:
-                            sample = bn.sample(2000, evidence=test_row)
-                            if bn[key].type.startswith(('Discrete', 'Logit', 'ConditionalLogit',)):
-                                count_stats = sample[key].value_counts()
-                                preds[key].append(count_stats.index[0])
+                            sample = bn.sample(1, evidence=test_row, predict=True)
+                            # if bn[key].type.startswith(('Discrete', 'Logit', 'ConditionalLogit',)):
+                            #     count_stats = sample[key].value_counts()
+                            #     preds[key].append(count_stats.index[0])
+                            # else:
+                            #     if bn.descriptor['signs'][key] == 'pos':
+                            #         sample = sample.loc[sample[key] >= 0]
+                            #     if sample.shape[0] == 0:
+                            #         preds[key].append(np.nan)
+                            #     else:
+                            #         pred = np.mean(sample[key].values)
+                            #         preds[key].append(pred)
+                            if (bn.descriptor['signs'][key] == 'pos') & (sample.loc[0, key] < 0):
+                                preds[key].append(np.nan)
                             else:
-                                if bn.descriptor['signs'][key] == 'pos':
-                                    sample = sample.loc[sample[key] >= 0]
-                                if sample.shape[0] == 0:
-                                    preds[key].append(np.nan)
-                                else:
-                                    pred = np.mean(sample[key].values)
-                                    preds[key].append(pred)
+                                preds[key].append(sample.loc[0, key])
                         except Exception as ex:
                             logger_network.error(ex)
                             preds[key].append(np.nan)
