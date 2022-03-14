@@ -2,7 +2,7 @@ from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
 from concurrent.futures import ThreadPoolExecutor
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
-from Utils.MathUtils import *
+from bamt.utils.MathUtils import *
 from gmr import GMM
 from pandas import DataFrame
 
@@ -14,8 +14,8 @@ import joblib
 import pickle
 import os
 
-from log import logger_nodes
-from config import config
+from bamt.log import logger_nodes
+from bamt.config import config
 
 STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
 
