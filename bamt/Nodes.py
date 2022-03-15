@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 from bamt.utils.MathUtils import *
 from gmr import GMM
+from sklearn.mixture import GaussianMixture
 from pandas import DataFrame
 
 from typing import Dict, List, Any, Union, TypedDict, Type, Optional
@@ -374,12 +375,11 @@ class MixtureGaussianNode(BaseNode):
             n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
                                                                           'bic')) / 2)  # component(data, [node], 'LRTS')#
             # n_comp = 3
-            gmm = GMM(n_components=n_comp)
-            gmm.from_samples(np.transpose([data[self.name].values]))
-            means = gmm.means.tolist()
-            cov = gmm.covariances.tolist()
+            gmm = GaussianMixture(n_components=n_comp, max_iter=500).fit(np.transpose([data[self.name].values]))
+            means = gmm.means_.tolist()
+            cov = gmm.covariances_.tolist()
             # weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
-            w = gmm.priors.tolist()  # []
+            w = gmm.weights_.tolist()  # []
             # for row in weigts:
             #     w.append(np.mean(row))
             return {"mean": means, "coef": w, "covars": cov}
@@ -391,12 +391,11 @@ class MixtureGaussianNode(BaseNode):
                 n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
                                                                             'bic')) / 2)  # component(new_data, nodes, 'LRTS')#
                 # n_comp = 3
-                gmm = GMM(n_components=n_comp)
-                gmm.from_samples(new_data[nodes].values)
-                means = gmm.means.tolist()
-                cov = gmm.covariances.tolist()
+                gmm = GaussianMixture(n_components=n_comp, max_iter=500).fit(new_data[nodes].values)
+                means = gmm.means_.tolist()
+                cov = gmm.covariances_.tolist()
                 # weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
-                w = gmm.priors.tolist()  # []
+                w = gmm.weights_.tolist()  # []
                 # for row in weigts:
                 #     w.append(np.mean(row))
                 return {"mean": means,
@@ -452,8 +451,10 @@ class MixtureGaussianNode(BaseNode):
                 else:
                     sample = np.nan
             else:
-                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
-                sample = gmm.sample(1)[0][0]
+                #gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                sample = 0
+                for ind, wi in enumerate(w):
+                    sample += wi*mean[ind][0]
         else:
             sample = np.nan
         return sample
@@ -500,18 +501,16 @@ class ConditionalMixtureGaussianNode(BaseNode):
                     n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
                                                                                 'bic')) / 2)  # component(new_data, nodes, 'LRTS')#int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
                     # n_comp = 3
-                    gmm = GMM(n_components=n_comp)
-                    gmm.from_samples(new_data[nodes].values)
+                    gmm = GaussianMixture(n_components=n_comp, max_iter=500).fit(new_data[nodes].values)
                 else:
                     n_comp = int((component(new_data, [self.name], 'aic') + component(new_data, [self.name],
                                                                                       'bic')) / 2)  # component(new_data, [node], 'LRTS')#int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
                     # n_comp = 3
-                    gmm = GMM(n_components=n_comp)
-                    gmm.from_samples(np.transpose([new_data[self.name].values]))
-                means = gmm.means.tolist()
-                cov = gmm.covariances.tolist()
+                    gmm = GaussianMixture(n_components=n_comp, max_iter=500).fit(np.transpose([new_data[self.name].values]))
+                means = gmm.means_.tolist()
+                cov = gmm.covariances_.tolist()
                 # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
-                w = gmm.priors.tolist()  # []
+                w = gmm.weights_.tolist()  # []
                 # for row in weigts:
                 #     w.append(np.mean(row))
                 hycprob[str(key_comb)] = {'covars': cov, 'mean': means, 'coef': w}
@@ -605,9 +604,11 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 else:
                     sample = np.nan
             else:
-                n_comp = len(w)
-                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
-                sample = gmm.sample(1)[0][0]
+                #n_comp = len(w)
+                #gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                sample = 0
+                for ind, wi in enumerate(w):
+                    sample += wi*mean[ind][0]
         else:
             sample = np.nan
         return sample
