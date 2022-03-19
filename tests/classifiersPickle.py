@@ -1,17 +1,11 @@
-import sys
-import os
-
-path = os.path.abspath(os.path.join(__file__, "../.."))
-sys.path.insert(0, path)
-
 from bamt.Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-from bamt import Networks
+import bamt.Networks as Networks
 
 print('Import complete')
 
-h = pd.read_csv("../data/hack_processed_with_rf.csv")
+h = pd.read_csv("../Data/hack_processed_with_rf.csv")
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross', 'Netpay', 'Porosity', 'Permeability',
         'Depth']
 h = h[cols]
