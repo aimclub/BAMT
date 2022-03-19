@@ -551,7 +551,6 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
-        print(node_info)
         lgdistribution = node_info["hybcprob"][str(dispvals)]
         mean = lgdistribution["mean"]
         covariance = lgdistribution["covars"]
