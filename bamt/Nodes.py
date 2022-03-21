@@ -214,8 +214,8 @@ class GaussianNode(BaseNode):
         """
         mean = node_info["mean"]
         if pvals:
-            for m in pvals:
-                mean += m * node_info['coef'][0]
+            for i, m in enumerate(pvals):
+                mean += m * node_info['coef'][i]
         variance = node_info['variance']
         # distribution = [mean, variance]
         return random.gauss(mean, math.sqrt(variance))
@@ -234,8 +234,8 @@ class GaussianNode(BaseNode):
         """               
         mean = node_info["mean"]
         if pvals:
-            for m in pvals:
-                mean += m * node_info['coef'][0]
+            for i, m in enumerate(pvals):
+                mean += m * node_info['coef'][i]
         return mean
     
 
