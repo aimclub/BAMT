@@ -4,10 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 from bamt.utils.MathUtils import *
 from gmr import GMM
-from sklearn.mixture import GaussianMixture
+# from sklearn.mixture import GaussianMixture
 from pandas import DataFrame
 
-from typing import Dict, List, Any, Union, TypedDict, Type, Optional
+from typing import Dict, List, Any, Union, TypedDict, Type, Optional, Sequence
 
 import itertools
 import random
@@ -142,28 +142,26 @@ class DiscreteNode(BaseNode):
 
         Returns:
             str: prediction
-        """        
+        """
         vals = node_info['vals']
         if not pvals:
             dist = node_info['cprob']
         else:
             # noinspection PyTypeChecker
             dist = node_info['cprob'][str(pvals)]
-        index_max = 0    
+        index_max = 0
         g = itertools.groupby(dist)
         if next(g, True) and not next(g, False):
             index_max = random.randint(0, len(dist))
         else:
             index_max = np.argmax(dist)
         return vals[index_max]
-        
-
 
 
 class GaussianParams(TypedDict):
-    mean: float
-    coef: List[float]
-    variance: float
+    mean: np.ndarray
+    coef: Sequence[Any]
+    variance: Union[np.ndarray, float]
 
 
 class GaussianNode(BaseNode):
@@ -222,7 +220,7 @@ class GaussianNode(BaseNode):
 
     @staticmethod
     def predict(node_info: Dict[str, Union[float, List[float]]],
-               pvals: List[float]) -> float:
+                pvals: List[float]) -> float:
         """function for prediction in gaussian node
 
         Args:
@@ -231,13 +229,12 @@ class GaussianNode(BaseNode):
 
         Returns:
             float: prediction
-        """               
+        """
         mean = node_info["mean"]
         if pvals:
             for i, m in enumerate(pvals):
                 mean += m * node_info['coef'][i]
         return mean
-    
 
 
 class CondGaussParams(TypedDict):
@@ -335,7 +332,7 @@ class ConditionalGaussianNode(BaseNode):
 
         Returns:
             float: prediction
-        """ 
+        """
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -375,7 +372,8 @@ class MixtureGaussianNode(BaseNode):
             n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
                                                                           'bic')) / 2)  # component(data, [node], 'LRTS')#
             # n_comp = 3
-            gmm = GMM(n_components=n_comp).from_samples(np.transpose([data[self.name].values]), n_iter=500, init_params='kmeans++')
+            gmm = GMM(n_components=n_comp).from_samples(np.transpose([data[self.name].values]), n_iter=500,
+                                                        init_params='kmeans++')
             means = gmm.means.tolist()
             cov = gmm.covariances.tolist()
             # weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
@@ -451,10 +449,10 @@ class MixtureGaussianNode(BaseNode):
                 else:
                     sample = np.nan
             else:
-                #gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                # gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                 sample = 0
                 for ind, wi in enumerate(w):
-                    sample += wi*mean[ind][0]
+                    sample += wi * mean[ind][0]
         else:
             sample = np.nan
         return sample
@@ -501,12 +499,14 @@ class ConditionalMixtureGaussianNode(BaseNode):
                     n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
                                                                                 'bic')) / 2)  # component(new_data, nodes, 'LRTS')#int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
                     # n_comp = 3
-                    gmm = GMM(n_components=n_comp).from_samples(new_data[nodes].values, n_iter=500, init_params='kmeans++')
+                    gmm = GMM(n_components=n_comp).from_samples(new_data[nodes].values, n_iter=500,
+                                                                init_params='kmeans++')
                 else:
                     n_comp = int((component(new_data, [self.name], 'aic') + component(new_data, [self.name],
                                                                                       'bic')) / 2)  # component(new_data, [node], 'LRTS')#int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
                     # n_comp = 3
-                    gmm = GMM(n_components=n_comp).from_samples(np.transpose([new_data[self.name].values]), n_iter=500, init_params='kmeans++')
+                    gmm = GMM(n_components=n_comp).from_samples(np.transpose([new_data[self.name].values]), n_iter=500,
+                                                                init_params='kmeans++')
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
                 # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
@@ -575,14 +575,14 @@ class ConditionalMixtureGaussianNode(BaseNode):
 
     @staticmethod
     def predict(node_info: Dict[str, Dict[str, CondMixtureGaussParams]],
-               pvals: List[Union[str, float]]) -> Optional[float]:
+                pvals: List[Union[str, float]]) -> Optional[float]:
         """
         Function to get prediction from ConditionalMixtureGaussian node
         params:
         node_info: nodes info from distributions
         pvals: parent values
         """
-        
+
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -604,11 +604,11 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 else:
                     sample = np.nan
             else:
-                #n_comp = len(w)
-                #gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                # n_comp = len(w)
+                # gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                 sample = 0
                 for ind, wi in enumerate(w):
-                    sample += wi*mean[ind][0]
+                    sample += wi * mean[ind][0]
         else:
             sample = np.nan
         return sample
@@ -700,7 +700,6 @@ class LogitNode(BaseNode):
         else:
             return str(node_info["classes"][0])
 
-
     def predict(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
         """
         Return prediction from Logit node
@@ -709,7 +708,6 @@ class LogitNode(BaseNode):
         pvals: parent values
         """
         pvals = [str(p) for p in pvals]
-
 
         if len(node_info["classes"]) > 1:
             if node_info["serialization"] == 'joblib':
@@ -847,7 +845,6 @@ class ConditionalLogitNode(BaseNode):
 
         else:
             return str(lgdistribution["classes"][0])
-
 
     def predict(self, node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]) -> str:
         """

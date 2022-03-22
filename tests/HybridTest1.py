@@ -1,10 +1,3 @@
-# FIX IT
-import sys
-import os
-path = os.path.abspath(os.path.join(__file__, "../.."))
-sys.path.insert(0, path)
-#---------
-
 import time
 
 start = time.time()
@@ -12,13 +5,13 @@ start = time.time()
 from bamt.Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-from bamt import Networks
+import bamt.Networks as Networks
 from bamt.utils import GraphUtils as gru
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-h = pd.read_csv("../data/hack_processed_with_rf.csv")
+h = pd.read_csv("../Data/hack_processed_with_rf.csv")
 
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross','Netpay','Porosity','Permeability', 'Depth']
 h = h[cols]
@@ -54,27 +47,28 @@ bn.add_nodes(descriptor=info)
 
 for node in bn.nodes:
     print(f"{node.name}: {node.type}") # only gaussian and discrete nodes
-print("#"*1000)
+print("#"*150)
 
-params = {'init_nodes': None,
-          'bl_add': None}
-
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',))
 # -----------------
 print("has_logit=True, use_mixture=False")
 bn = Networks.HybridBN(has_logit=True)
 bn.add_nodes(descriptor=info)
 
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',))
 # --------------------------
 print("has_logit=True, use_mixture=True")
 bn = Networks.HybridBN(has_logit=True, use_mixture=True)
 bn.add_nodes(descriptor=info)
 
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',))
 t1 = time.time()
 bn.fit_parameters(data=h)
 t2 = time.time()
 print(f'PL elaspsed: {t2-t1}')
+bn.save_params("hack_p.json")
+bn.save_structure("hack_s.json")
 # for node, d in bn.distributions.items():
-#     print(node,":", d)
+#     print(node)
+#     for param, value in d.items():
+#         print(f"{param}:{value}")

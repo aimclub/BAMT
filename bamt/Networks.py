@@ -1,3 +1,4 @@
+import bamt.utils.GraphUtils
 from bamt import Builders, Nodes
 import random
 import re
@@ -14,13 +15,14 @@ from concurrent.futures import ThreadPoolExecutor
 from bamt.utils import GraphUtils as gru
 from pyvis.network import Network
 
-from typing import Dict, Tuple, List, Callable, Optional, Type, Union
+from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 from bamt.Builders import ParamDict
 
 from bamt.log import logger_network
 from bamt.config import config
 
 STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
+
 
 class BaseNetwork(object):
     """
@@ -38,19 +40,20 @@ class BaseNetwork(object):
         self._allowed_dtypes = ['Abstract']
         self.nodes = []
         self.edges = []
-        self.descriptor = {}
+        self.descriptor = {"types": {},
+                           "signs": {}}
         self.distributions = {}
         self.has_logit = False
         self.use_mixture = False
-
 
     @property
     def nodes_names(self) -> List[str]:
         return [node.name for node in self.nodes]
 
     def __getitem__(self, node_name: str) -> Type[Nodes.BaseNode]:
-        index = self.nodes_names.index(node_name)
-        return self.nodes[index]
+        if node_name in self.nodes_names:
+            index = self.nodes_names.index(node_name)
+            return self.nodes[index]
 
     def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
         types = descriptor['types']
@@ -68,7 +71,6 @@ class BaseNetwork(object):
         Function for initializing nodes in Bayesian Network
         descriptor: dict with types and signs of nodes
         """
-        self.descriptor = descriptor
         if not self.validate(descriptor=descriptor):
             if not self.type == 'Hybrid':
                 logger_network.error(
@@ -76,10 +78,11 @@ class BaseNetwork(object):
                 return
             else:
                 logger_network.error(
-                    f"Hybrid BN is not supposed to work with only one type of data. Use DiscreteBN or Continuous BN instead.")
+                    f"Descriptor validation failed due to wrong type of column(s).")
                 return
         elif ['Abstract'] in self._allowed_dtypes:
             return None
+        self.descriptor = descriptor
         # LEVEL 1
         worker_1 = Builders.VerticesDefiner(descriptor)
         self.nodes = worker_1.vertices
@@ -116,29 +119,100 @@ class BaseNetwork(object):
             self.nodes = worker.skeleton['V']
             self.edges = worker.skeleton['E']
 
-    def set_nodes(self, nodes: Optional[Dict[str, Type[Nodes.BaseNode]]] = None, **kwargs):
+    def set_nodes(self, nodes: List, info: Optional[Dict] = None):
         """
         additional function to set nodes manually. User should be aware that
         nodes must be a subclass of BaseNode.
         :param nodes dict with name and node (if a lot of nodes should be added)
         """
-        if nodes is None:
-            nodes = dict()
-        nodes.update(kwargs)
-        for column_name, node in nodes.items():
+        if not info and not (self.descriptor["types"] and self.descriptor["signs"]):
+            logger_network.error("In case of manual setting nodes user should set map for them as well.")
+            return
+        self.nodes = []
+        for node in nodes:
             try:
-                assert issubclass(node, Nodes.BaseNode)
+                assert issubclass(type(node), Nodes.BaseNode)
+                self.nodes.append(node)
+                continue
             except AssertionError:
                 logger_network.error(f"{node} is not an instance of {Nodes.BaseNode}")
                 continue
             except TypeError:
-                logger_network.error(f"Passed kwarg must be a class. Arg: {node}")
+                logger_network.error(f"TypeError : {node.__class__}")
                 continue
+        if info:
+            self.descriptor = info
 
-            self.nodes.append(node(name=column_name))
-            self.update_descriptor()
+    def set_edges(self, edges: Optional[List[Sequence[str]]] = None):
+        """
+        additional function to set edges manually. User should be aware that
+        nodes must be a subclass of BaseNode.
+        :param edges dict with name and node (if a lot of nodes should be added)
+        """
 
-    def get_params_tree(self, outdir: str):
+        if not self.nodes:
+            logger_network.error("Graph without nodes")
+        self.edges = []
+        for node1, node2 in edges:
+            if isinstance(node1, str) and isinstance(node2, str):
+                if self[node1] and self[node2]:
+                    self.edges.append((node1, node2))
+                else:
+                    logger_network.error(f"Unknown Nodes : [{node1}, {node2}]")
+                    continue
+            else:
+                logger_network.error(f"Unknown node(s) type: [{node1.__class__}, {node2.__class__}]")
+                continue
+        self.update_descriptor()
+
+    def set_structure(self,
+                      info: Optional[Dict] = None,
+                      nodes: Optional[List] = None,
+                      edges: Optional[List[Sequence[str]]] = None,
+                      overwrite: bool = True):
+        """
+        Function to set structure manually
+        info: Descriptor
+        nodes, edges:
+        overwrite: use 2 stage of defining or not
+        """
+        if nodes and (info or (self.descriptor["types"] and self.descriptor["signs"])):
+            self.set_nodes(nodes=nodes, info=info)
+        if edges:
+            self.set_edges(edges=edges)
+            if overwrite:
+                builder = Builders.VerticesDefiner(descriptor=self.descriptor)  # init worker
+                builder.skeleton['V'] = builder.vertices  # 1 stage
+                builder.skeleton['E'] = self.edges
+                builder.get_family()
+                if self.edges:
+                    builder.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)
+                    self.set_nodes(builder.vertices)
+                else:
+                    logger_network.error("Empty set of edges")
+
+    def _param_validation(self, params: Dict[str, Any]) -> bool:
+        if all(self[i] for i in params.keys()):
+            for name, info in params.items():
+                try:
+                    self[name].choose(node_info=info, pvals=[])
+                except Exception as ex:
+                    logger_network.error("Validation failed", exc_info=ex)
+                    return False
+            return True
+        else:
+            logger_network.error("Param validation failed due to unknown nodes.")
+            return False
+
+    def set_parameters(self, parameters: Dict):
+        if not self.nodes:
+            logger_network.error("Failed on search of BN's nodes.")
+        # elif self._param_validation(parameters):
+            # pass
+
+        self.distributions = parameters
+
+    def save_params(self, outdir: str):
         """
         Function to save BN params to json file
         outdir: output directory
@@ -147,6 +221,17 @@ class BaseNetwork(object):
             return None
         with open(outdir, 'w+') as out:
             json.dump(self.distributions, out)
+        return True
+
+    def save_structure(self, outdir: str):
+        """
+        Function to save BN edges to json file
+        outdir: output directory
+        """
+        if not outdir.endswith('.json'):
+            return None
+        with open(outdir, 'w+') as out:
+            json.dump(self.edges, out)
         return True
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
@@ -163,7 +248,7 @@ class BaseNetwork(object):
                     os.makedirs(os.path.join(STORAGE, "0"))
                 elif os.listdir(STORAGE):
                     index = sorted(
-                    [int(id) for id in os.listdir(STORAGE)]
+                        [int(id) for id in os.listdir(STORAGE)]
                     )[-1] + 1
                     os.makedirs(os.path.join(STORAGE, str(index)))
 
@@ -209,7 +294,8 @@ class BaseNetwork(object):
                     f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
     def sample(self, n: int, evidence: Optional[Dict[str, Union[str, int, float]]] = None,
-               as_df: bool = True, predict: bool = False) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
+               as_df: bool = True, predict: bool = False) -> Union[
+        None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
@@ -223,9 +309,9 @@ class BaseNetwork(object):
         if evidence:
             for node in self.nodes:
                 if (node.type == 'Discrete') & (node.name in evidence.keys()):
-                    if not(isinstance(evidence[node.name], str)):
+                    if not (isinstance(evidence[node.name], str)):
                         evidence[node.name] = str(int(evidence[node.name]))
-                
+
         for n in range(n):
             output = {}
             for node in self.nodes:
@@ -245,7 +331,7 @@ class BaseNetwork(object):
                             output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
                         else:
                             output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
-                        
+
                 else:
                     if not parents:
                         pvals = None
@@ -258,7 +344,7 @@ class BaseNetwork(object):
                         output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
                     else:
                         output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
-                    
+
             seq.append(output)
 
         if as_df:
@@ -292,15 +378,15 @@ class BaseNetwork(object):
                             sample = bn.sample(1, evidence=test_row, predict=True)
                             if bn.descriptor['types'][key] == 'cont':
                                 if (bn.descriptor['signs'][key] == 'pos') & (sample.loc[0, key] < 0):
-                                    #preds[key].append(np.nan)
+                                    # preds[key].append(np.nan)
                                     preds[key].append(0)
                                 else:
                                     preds[key].append(sample.loc[0, key])
                             else:
                                 preds[key].append(sample.loc[0, key])
                         except Exception as ex:
-                             logger_network.error(ex)
-                             preds[key].append(np.nan)
+                            logger_network.error(ex)
+                            preds[key].append(np.nan)
                 return preds
             else:
                 logger_network.error('Wrapper for one row from pandas.DataFrame')
@@ -398,7 +484,6 @@ class BaseNetwork(object):
 
         network.hrepulsion(node_distance=300, central_gravity=0.5)
 
-        import os
         if not (os.path.exists('visualization_result')):
             os.mkdir("visualization_result")
 
@@ -448,4 +533,5 @@ class HybridBN(BaseNetwork):
     def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
         types = descriptor['types']
         s = set(types.values())
-        return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) or ({'cont', 'disc_num'} == s) else False
+        return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) or (
+                {'cont', 'disc_num'} == s) else False
