@@ -28,11 +28,13 @@ Strategies to improve Greedy Hill-Climbing:
 
 from bamt.external.pyBN.classes.bayesnet import BayesNet
 from bamt.external.pyBN.utils.graph import would_cause_cycle
-from bamt.redef_info_scores import log_lik_local, BIC_local, AIC_local
+from bamt.redef_info_scores import log_lik_local, AIC_local
+from bamt.ScoringFunctions import BIC_local
 from bamt.mi_entropy_gauss import mi_gauss
+import matplotlib.pyplot as plt
 
 
-def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restriction=None,
+def hc(data, metric='MI', max_iter=500, debug=True, init_nodes=None, restriction=None,
        init_edges=None, remove_geo_edges=True, black_list=None):
     """
     Greedy Hill Climbing search proceeds by choosing the move
@@ -126,6 +128,7 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
 
     _iter = 0
     improvement = True
+    delta_result = []
 
     while improvement:
         improvement = False
@@ -137,7 +140,7 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
         ### TEST ARC ADDITIONS ###
         for u in bn.nodes():
             for v in bn.nodes():
-                if v not in c_dict[u] and u != v and not would_cause_cycle(c_dict, u, v) and len(p_dict[v]) != 3:
+                if v not in c_dict[u] and u != v and not would_cause_cycle(c_dict, u, v):
                     # FOR MMHC ALGORITHM -> Edge Restrictions
                     if (init_nodes is None or not (v in init_nodes)) and (
                             restriction is None or (u, v) in restriction) and (
@@ -159,6 +162,8 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                             if debug:
                                 print('Improved Arc Addition: ', (u, v))
                                 print('Delta Score: ', delta_score)
+                                print('Old score', mi_old)
+                                print('New score', mi_new)
                             max_delta = delta_score
                             max_operation = 'Addition'
                             max_arc = (u, v)
@@ -185,6 +190,8 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                             if debug:
                                 print('Improved Arc Deletion: ', (u, v))
                                 print('Delta Score: ', delta_score)
+                                print('New score', mi_new)
+                                print('Old score', mi_old)
                             max_delta = delta_score
                             max_operation = 'Deletion'
                             max_arc = (u, v)
@@ -208,7 +215,7 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
         # ### TEST ARC REVERSALS ###
         for u in bn.nodes():
             for v in bn.nodes():
-                if v in c_dict[u] and not would_cause_cycle(c_dict, v, u, reverse=True) and len(p_dict[u]) != 3 and (
+                if v in c_dict[u] and not would_cause_cycle(c_dict, v, u, reverse=True) and (
                         init_nodes is None or not (u in init_nodes)) and (
                         restriction is None or (v, u) in restriction) and (
                         black_list is None or not ((v, u) in black_list)):
@@ -244,6 +251,8 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                             if debug:
                                 print('Improved Arc Reversal: ', (u, v))
                                 print('Delta Score: ', delta_score)
+                                print('New score', mi_new)
+                                print('Old score', mi_old)
                             max_delta = delta_score
                             max_operation = 'Reversal'
                             max_arc = (u, v)
@@ -265,6 +274,7 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                                 max_arc = (u, v)
 
         if max_delta != 0:
+            delta_result.append(max_delta/ nrow)
             improvement = True
             u, v = max_arc
             if max_operation == 'Addition':
@@ -297,6 +307,8 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
             if debug:
                 print('Max Iteration Reached')
             break
+    plt.scatter([ind for ind in range(len(delta_result))], delta_result)
+    plt.show()
 
     bn = BayesNet(c_dict)
 

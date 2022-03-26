@@ -74,12 +74,20 @@ def component(data, columns, method):
     n = 1
     max_comp = 10
     x = []
-    if data.shape[0] < max_comp:
-        max_comp = data.shape[0]
-    if len(columns) == 1:
-        x = np.transpose([data[columns[0]].values])
+    if len(columns) != 0:
+        if data.shape[0] < max_comp:
+            max_comp = data.shape[0]
+        if len(columns) == 1:
+            x = np.transpose([data[columns[0]].values])
+        else:
+            x = data[columns].values
     else:
-        x = data[columns].values
+        if data.shape[0] < max_comp:
+            max_comp = data.shape[0]
+        if len(data.shape) == 1:
+            x = np.transpose([data])
+        else:
+            x = data
     if method == 'aic':
         lowest_aic = np.infty
         comp_lowest = 0

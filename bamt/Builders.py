@@ -234,6 +234,9 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton['E'] = structure
 
+
+    
+
     def apply_group1(self, data: DataFrame, init_edges: List[Tuple[str, str]],
                      remove_init_edges: bool, white_list: List[Tuple[str, str]]):
         # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
@@ -253,7 +256,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                 init_edges.append((column_name_dict[pair[0]], column_name_dict[pair[1]]))
 
         bn = hc_method(data, metric=self.scoring_function[0], restriction=white_list, init_edges=init_edges,
-                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=False)
+                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=True)
         structure = []
         nodes = sorted(list(bn.nodes()))
         for rv in nodes:
