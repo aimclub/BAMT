@@ -207,10 +207,10 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         :param white_list: list of allowed edges
         """
         from bamt.Preprocessors import BasePreprocessor
-        if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
-            logger_builder.error(
-                f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
-            return None
+        # if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
+        #     logger_builder.error(
+        #         f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
+        #     return None
         # TODO: assert self.scoring_function[0] == 'K2'
         scoring_function = self.scoring_function[1]
 
@@ -234,8 +234,6 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton['E'] = structure
 
-
-    
 
     def apply_group1(self, data: DataFrame, init_edges: List[Tuple[str, str]],
                      remove_init_edges: bool, white_list: List[Tuple[str, str]]):

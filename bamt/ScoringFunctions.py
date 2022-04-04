@@ -3,131 +3,91 @@ from bamt.utils.MathUtils import *
 from sklearn.mixture import GaussianMixture
 from gmr import GMM
 import numpy as np
-from scipy.stats import norm
-import os,sys,inspect
+import sys
+import multiprocessing
+from multiprocessing import Pool
+from time import time
+
+
+
+    
 
 def BIC_local(data):
-    # v = []
-    # par = []
-    # if len(data.shape) == 0:
-    #     v.append(data.columns[0])
-    # else:
-    #     v.append(data.columns[0])
-    #     par = data.columns[1:]
-    # n_comp = int((component(data, [], 'AIC') + component(data, [], 'BIC')) / 2)
-    # gmm_model = GMM(n_components=n_comp).from_samples(data)
-    # ll = 0
-
-    # if data.shape[1] != 1:
-    #     for i in range(data.shape[0]):
-    #         par_val = data[i,1:]
-    #         gmm_cond = gmm_model.condition([j for j in range(1, len(par_val) + 1)], par_val)
-    #         ll_log = np.log(gmm_cond.to_probability_density(data[i,0])[0])
-    #         ll += ll_log
-    # else:
-    #     for i in range(data.shape[0]):
-    #         ll_log = np.log(gmm_model.to_probability_density(data[i,0])[0])
-    #         ll += ll_log
-    MI = 0
+    v = []
+    par = []
     if data.shape[1] == 1:
-        MI = gmm_entropy_1d(data.values)
+        v.append(data.columns[0])
     else:
-        data_x = data.values[:,(0,)]
-        data_y = data.values[:,1:]
-        Hx = gmm_entropy_1d(data_x)
-        Hy = 0
-        Hxy = gmm_entropy_nd(data.values)
-        if data.shape[1] - 1 > 1:
-            Hy = gmm_entropy_nd(data_y)
-        else:
-            Hy = gmm_entropy_1d(data_y)
-        MI = Hx + Hy - Hxy
-        #MI = min(Hx, Hy, MI)
+        v.append(data.columns[0])
+        par = data.columns[1:]
+    
+    n_comp = int((component(data, data.columns, 'aic') + component(data, data.columns, 'bic')) / 2)
+    #gmm_model = GaussianMixture(n_components=n_comp).fit(data.values)
+    #gmm_model = GMM(n_components=n_comp, priors=gmm_model.weights_, means=gmm_model.means_, covariances=gmm_model.covariances_)
+    gmm_model = GMM(n_components=n_comp).from_samples(data.values)
+    index = [j for j in range(1, len(par) + 1)]
+    ll = 0
+
+    if data.shape[1] != 1:
+        def process_chunk(row):
+            # df_chunk.reset_index(inplace=True, drop=True)
+            #for i in (df_chunk.shape[0]):
+            # par_val = df_chunk.loc[i, par].values
+            # v_val = df_chunk.loc[i, v].values
+            cond_log = np.log(gmm_model.condition(index, row[1:].values).to_probability_density(row[0])[0])
+            return cond_log
+        res = data.apply(process_chunk, axis=1)
+        ll = np.sum(res)
 
 
-
-    return MI
-
-
-def gmm_entropy_1d(data):
-    n_comp = int((component(data, [], 'AIC') + component(data, [], 'BIC')) / 2)
-    gmm_model = GMM(n_components=n_comp).from_samples(data)
-    #gmm_model = GaussianMixture(n_components=n_comp).fit(data)
-    entropy_sum = 0
-    for i in range(n_comp):
-        entropy_sum += (gmm_model.priors[i]) * entropy_gauss_1d(gmm_model.covariances[i][0][0])
-    return entropy_sum
-
-def gmm_entropy_nd(data):
-    n_comp = int((component(data, [], 'AIC') + component(data, [], 'BIC')) / 2)
-    gmm_model = GMM(n_components=n_comp).from_samples(data)
-    #gmm_model = GaussianMixture(n_components=n_comp).fit(data)
-    entropy_sum = 0
-    for i in range(n_comp):
-        entropy_sum += (gmm_model.priors[i]) * entropy_gauss_nd(gmm_model.covariances[i])
-    return entropy_sum
-
-
-
-
-
-
-def entropy_gauss_1d(var):
-    if var > 1e-16:
-        return 0.5 * (1 + math.log(var*2*math.pi))
     else:
-        return sys.float_info.min
-def entropy_gauss_nd(cov):
-    var = np.linalg.det(cov)
-    N = var.ndim
-    if var > 1e-16:
-        return 0.5 * (N * (1 + math.log(2*math.pi)) + math.log(var))
+
+        def process_chunk_simple(row):
+            # df_chunk.reset_index(inplace=True, drop=True)
+            #for i in (df_chunk.shape[0]):
+            # par_val = df_chunk.loc[i, par].values
+            # v_val = df_chunk.loc[i, v].values
+            cond_log = np.log(gmm_model.to_probability_density(row[0])[0])
+            return cond_log
+        res = data.apply(process_chunk_simple, axis=1)
+        ll = np.sum(res)
+    ll = ll - (np.log(data.shape[0]) / 2) * data.shape[1]
+    
+    return round(ll)
+
+
+
+
+def BIC_local_gauss(data):
+    v = []
+    par = []
+    if data.shape[1] == 1:
+        v.append(data.columns[0])
     else:
-        return sys.float_info.min
+        v.append(data.columns[0])
+        par = data.columns[1:]
+    ll = 0
+    n_comp = 1
+    #gmm_model = GaussianMixture(n_components=n_comp).fit(data.values)
+    #gmm_model = GMM(n_components=n_comp, priors=gmm_model.weights_, means=gmm_model.means_, covariances=gmm_model.covariances_)
+    gmm_model = GMM(n_components=n_comp).from_samples(data.values)
 
+    if data.shape[1] != 1:
+        
+        index = [j for j in range(1, len(par) + 1)]
+        for i in range(data.shape[0]):
+            par_val = data.loc[i, par].values
+            v_val = data.loc[i, v].values
+            cond_log = np.log(gmm_model.condition(index, par_val).to_probability_density(v_val)[0])
+            ll += cond_log
+    else:
+        for i in range(data.shape[0]):
+            ll_log = np.log(gmm_model.to_probability_density(data.loc[i,v].values)[0]) 
+            ll += ll_log
+    ll = ll - (np.log(data.shape[0]) / 2) * data.shape[1]
+    
+    return round(ll)
 
-# def BIC_local(data):
-#     n_comp = int((component(data, [], 'AIC') + component(data, [], 'BIC')) / 2)
-#     gmm_model = GaussianMixture(n_components=n_comp).fit(data)
-#     ll_score = gmm_model.lower_bound_
-#     NROW = data.shape[0]
-#     k = 1
-#     if len(data.shape) > 1:
-#         k = data.shape[1]
-#     num_params = (k*(k+3)) / 2
-#     penalty = 0.5 *(n_comp - 1 + n_comp*num_params)* np.log(NROW) 
-#     bic_score = ll_score - penalty
-#     return bic_score
-
-
-
-
-
-
-class LLGMM(StructureScore):
-    def __init__(self, data, **kwargs):
-        """
-        Class for log-likelihood for BayesianModels with GMM.
-        Parameters
-        ----------
-        data: pandas DataFrame object
-            datafame object where each column represents one variable.
-            (If some values in the data are missing the data cells should be set to `numpy.NaN`.
-            Note that pandas converts each column containing `numpy.NaN`s to dtype `float`.)
-        """
-        super(LLGMM, self).__init__(data, **kwargs)
-
-    def local_score(self, variable, parents):
-        """'Computes a score that measures how much a \
-        given variable is "influenced" by a given list of potential parents.'"""
-        list_var = [variable]
-        list_var.extend(parents)       
-        score = log_lik_local(self.data[list_var], variable, parents)
-        print(variable, parents)
-        print(score)
-        print('------------------------')
-
-        return score
 
 
 class BICGMM(StructureScore):
@@ -152,6 +112,31 @@ class BICGMM(StructureScore):
         score = BIC_local(self.data[list_var])
 
         return score
+
+
+class BICGauss(StructureScore):
+    def __init__(self, data, **kwargs):
+        """
+        Class for log-likelihood for BayesianModels with GMM.
+        Parameters
+        ----------
+        data: pandas DataFrame object
+            datafame object where each column represents one variable.
+            (If some values in the data are missing the data cells should be set to `numpy.NaN`.
+            Note that pandas converts each column containing `numpy.NaN`s to dtype `float`.)
+        """
+        super(BICGauss, self).__init__(data, **kwargs)
+
+    def local_score(self, variable, parents):
+        """'Computes a score that measures how much a \
+        given variable is "influenced" by a given list of potential parents.'"""
+        nrow = len(self.data)
+        list_var = [variable]
+        list_var.extend(parents)       
+        score = BIC_local_gauss(self.data[list_var])
+
+        return score
+
 
 
 
