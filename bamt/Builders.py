@@ -196,17 +196,19 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                        'init_nodes': None,
                        'remove_init_edges': False,
                        'white_list': None,
-                       'bl_add': None}
+                       'bl_add': None,
+                       'epsilon': None,
+                       'tabu': None}
         super(HillClimbDefiner, self).__init__(descriptor)
 
     def apply_K2(self, data: DataFrame, init_edges: Optional[List[Tuple[str, str]]],
-                 remove_init_edges: bool, white_list: Optional[List[Tuple[str, str]]]):
+                 remove_init_edges: bool, white_list: Optional[List[Tuple[str, str]]], epsilon: float, tabu:int):
         """
         :param init_edges: list of tuples, a graph to start learning with
         :param remove_init_edges: allows changes in model defined by user
         :param white_list: list of allowed edges
         """
-        from bamt.Preprocessors import BasePreprocessor
+        # from bamt.Preprocessors import BasePreprocessor
         # if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
         #     logger_builder.error(
         #         f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
@@ -218,25 +220,27 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
             best_model = self.optimizer.estimate(
                 scoring_method=scoring_function(data),
                 black_list=self.black_list,
-                white_list=white_list
+                white_list=white_list, epsilon=epsilon, tabu_length=tabu
             )
         else:
             if remove_init_edges:
                 startdag = DAG()
-                startdag.add_nodes_from(nodes=self.vertices)
+                #startdag.add_nodes_from(nodes=self.vertices)
                 startdag.add_edges_from(ebunch=init_edges)
                 best_model = self.optimizer.estimate(black_list=self.black_list, white_list=white_list,
-                                                     start_dag=startdag, show_progress=False)
+                                                     start_dag=startdag, show_progress=False, epsilon=epsilon, tabu_length=tabu)
             else:
+                startdag = DAG()
+                #startdag.add_nodes_from(nodes=self.vertices)
+                startdag.add_edges_from(ebunch=init_edges)
                 best_model = self.optimizer.estimate(black_list=self.black_list, white_list=white_list,
-                                                     fixed_edges=init_edges, show_progress=False)
+                                                     fixed_edges=init_edges, show_progress=False, epsilon=epsilon, tabu_length=tabu)
 
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton['E'] = structure
 
-
     def apply_group1(self, data: DataFrame, init_edges: List[Tuple[str, str]],
-                     remove_init_edges: bool, white_list: List[Tuple[str, str]]):
+                     remove_init_edges: bool, white_list: List[Tuple[str, str]], epsilon:float, tabu: int):
         # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
         column_name_dict = dict([(n.name, i) for i, n in enumerate(self.vertices)])
         blacklist_new = []
@@ -254,7 +258,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                 init_edges.append((column_name_dict[pair[0]], column_name_dict[pair[1]]))
 
         bn = hc_method(data, metric=self.scoring_function[0], restriction=white_list, init_edges=init_edges,
-                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=True)
+                       remove_geo_edges=remove_init_edges, black_list=blacklist_new, debug=False)
         structure = []
         nodes = sorted(list(bn.nodes()))
         for rv in nodes:

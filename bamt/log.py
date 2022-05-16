@@ -11,10 +11,9 @@ if not os.path.isdir(os.path.join(os.path.expanduser("~"), 'BAMT')):
 try:
     logging.config.fileConfig(log_file_path)
 except:
-    log_file_path = os.path.join(path.dirname(os.path.abspath(__file__)), 'logging.conf')
+    log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logging.conf')
     logging.config.fileConfig(log_file_path)
     warnings.warn("Reading log path location from config file failed. Default location will be used instead.")
-
 
 logger_builder = logging.getLogger('builder')
 logger_network = logging.getLogger('network')

@@ -5,3 +5,14 @@ __pycache__/
 *.log
 *.ini
 
+Data/daks_processed_with_rf_ntg.csv
+.gitignore
+Data/final_sample_fact_processed.csv
+Data/medicine.csv
+experiments/10nodes_cont.csv
+experiments/AHR_time.pdf
+experiments/AHR.pdf
+experiments/AR_time.pdf
+experiments/AR.pdf
+experiments/disc_erup.pdf
+**/experiments
