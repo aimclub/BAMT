@@ -143,19 +143,35 @@ class DiscreteNode(BaseNode):
         Returns:
             str: prediction
         """        
+        # vals = node_info['vals']
+        # if not pvals:
+        #     dist = node_info['cprob']
+        # else:
+        #     # noinspection PyTypeChecker
+        #     dist = node_info['cprob'][str(pvals)]
+        # index_max = 0    
+        # g = itertools.groupby(dist)
+        # if next(g, True) and not next(g, False):
+        #     index_max = random.randint(0, len(dist))
+        # else:
+        #     index_max = np.argmax(dist)
+        # return vals[index_max]
+
         vals = node_info['vals']
+        disct = []
         if not pvals:
             dist = node_info['cprob']
         else:
             # noinspection PyTypeChecker
             dist = node_info['cprob'][str(pvals)]
-        index_max = 0    
-        g = itertools.groupby(dist)
-        if next(g, True) and not next(g, False):
-            index_max = random.randint(0, len(dist))
+        max_value = max(dist)
+        indices = [index for index, value in enumerate(dist) if value == max_value]
+        max_ind = 0
+        if len(indices) == 1:
+            max_ind = indices[0]
         else:
-            index_max = np.argmax(dist)
-        return vals[index_max]
+            max_ind = random.choice(indices)
+        return vals[max_ind]
         
 
 

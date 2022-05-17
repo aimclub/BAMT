@@ -104,12 +104,16 @@ class BaseNetwork(object):
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return None
         if optimizer == 'HC':
+          
             worker = Builders.HCStructureBuilder(data=data,
                                                  descriptor=self.descriptor,
                                                  scoring_function=scoring_function,
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
+       
+           
             self.sf_name = scoring_function[0]
+            
             worker.build(data=data, params=params, classifier=classifier)
 
             # update family

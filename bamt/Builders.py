@@ -51,7 +51,9 @@ class StructureBuilder(object):
         node_type = self.descriptor['types']
         blacklist = []
         datacol = data.columns.to_list()
+        
         if not self.has_logit:
+          
             # Has_logit flag allows BN building edges between cont and disc
             RESTRICTIONS = [('cont', 'disc'), ('cont', 'disc_num')]
             for x, y in itertools.product(datacol, repeat=2):
@@ -276,10 +278,12 @@ class HCStructureBuilder(HillClimbDefiner):
         :param data: train data
         :param descriptor: map for data
         """
-        self.use_mixture = use_mixture
-        self.has_logit = has_logit
+       
+        
         super(HCStructureBuilder, self).__init__(descriptor=descriptor, data=data,
                                                  scoring_function=scoring_function)
+        self.use_mixture = use_mixture
+        self.has_logit = has_logit
 
     def build(self, data: DataFrame,
               classifier: Optional[object],
@@ -301,6 +305,7 @@ class HCStructureBuilder(HillClimbDefiner):
             self.apply_group1(data=data, **self.params)
 
         # Level 2
+      
         self.get_family()
         self.overwrite_vertex(has_logit=self.has_logit,
                               use_mixture=self.use_mixture,
