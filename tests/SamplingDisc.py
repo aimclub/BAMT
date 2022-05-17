@@ -5,11 +5,12 @@ sys.path.insert(0,parentdir)
 
 
 
-from bamt.Preprocessors import Preprocessor
+from Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-from bamt import Networks
+import Networks
 from pgmpy.estimators import K2Score
+from Utils import GraphUtils as gru
 
 data = pd.read_csv("data/hack_processed_with_rf.csv")
 data = data[['Tectonic regime', 'Period', 'Lithology', 'Structural setting']]

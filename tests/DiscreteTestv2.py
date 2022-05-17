@@ -9,17 +9,18 @@ path = os.path.abspath(os.path.join(__file__, "../.."))
 sys.path.insert(0, path)
 #---------
 
-from bamt.Preprocessors import Preprocessor
+from Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-from bamt import Networks
+import Networks
 from pgmpy.estimators import K2Score
-from bamt.utils import GraphUtils as gru
+from Utils import GraphUtils as gru
+
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-vk_data = pd.read_csv(r"../data/vk_data.csv")
+vk_data = pd.read_csv(r"../Data/vk_data.csv")
 ROWS = 50
 vk_data = vk_data.iloc[:ROWS, :]
 

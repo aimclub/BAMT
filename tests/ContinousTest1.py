@@ -1,11 +1,3 @@
-# FIX IT
-import sys
-import os
-
-path = os.path.abspath(os.path.join(__file__, "../.."))
-sys.path.insert(0, path)
-# ---------
-
 import time
 
 start = time.time()
@@ -13,12 +5,12 @@ start = time.time()
 from bamt.Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-from bamt import Networks
+import bamt.Networks as Networks
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-h = pd.read_csv("../data/hack_processed_with_rf.csv")
+h = pd.read_csv("../Data/hack_processed_with_rf.csv")
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross', 'Netpay', 'Porosity', 'Permeability',
         'Depth']
 h = h[cols]
@@ -54,15 +46,11 @@ bn = Networks.ContinuousBN()
 
 bn.add_nodes(descriptor=info)
 
-params = {'init_nodes': None,
-          'bl_add': None,
-          'cont_disc': None}
-
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',))
 
 bn = Networks.ContinuousBN(use_mixture=True)
 
 bn.add_nodes(descriptor=info)
 
-bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',), params=params)
+bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('MI',))
 bn.get_info()
