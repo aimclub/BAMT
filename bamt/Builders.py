@@ -213,8 +213,12 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
             logger_builder.error(
                 f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
             return None
-        # TODO: assert self.scoring_function[0] == 'K2'
-        scoring_function = self.scoring_function[1]
+        
+        if len(self.scoring_function) != 2:
+            from pgmpy.estimators import K2Score
+            scoring_function = K2Score
+        else:
+            scoring_function = self.scoring_function[1]
 
         if not init_edges:
             best_model = self.optimizer.estimate(
