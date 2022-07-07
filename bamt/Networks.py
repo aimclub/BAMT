@@ -237,6 +237,47 @@ class BaseNetwork(object):
         with open(outdir, 'w+') as out:
             json.dump(self.edges, out)
         return True
+    
+    def save(self, outdir: str):
+        """
+        Function to save the whole BN to json file
+        :param outdir: output directory
+        """
+        if not outdir.endswith('.json'):
+            return None
+        outdict = {
+            'info': self.descriptor,
+            'edges': self.edges,
+            'parameters': self.distributions
+        }
+        with open(outdir, 'w+') as out:
+            json.dump(outdict, out)
+        return True
+
+    def topology_sort(self):
+        """
+        Function to sort nodes by topology order
+        """
+        ordered = gru.toporder(self.nodes, self.edges)
+        notOrdered = [node.name for node in self.nodes]
+        mask = [notOrdered.index(name) for name in ordered]
+        self.nodes = [self.nodes[i] for i in mask]
+    
+    def load(self, input_dir: str):
+        """
+        Function to load the whole BN from json file
+        :param input_dir: input directory
+        :return: Bayesian Network
+        """
+        with open(input_dir) as f:
+            input_dict = json.load(f)
+        
+        self.add_nodes(input_dict['info'])
+        self.set_edges(input_dict['edges'])
+        self.set_parameters(input_dict['parameters'])
+        
+        # Topology sorting
+        self.topology_sort()
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
@@ -262,10 +303,7 @@ class BaseNetwork(object):
             data[columns_names] = data.loc[:, columns_names].astype('str')
 
         # Topology sorting
-        ordered = gru.toporder(self.nodes, self.edges)
-        notOrdered = [node.name for node in self.nodes]
-        mask = [notOrdered.index(name) for name in ordered]
-        self.nodes = [self.nodes[i] for i in mask]
+        self.topology_sort()
 
         def worker(node):
             return node.fit_parameters(data)
