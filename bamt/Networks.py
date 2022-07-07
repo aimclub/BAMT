@@ -12,7 +12,6 @@ import os
 
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
-from bamt.utils import GraphUtils as gru
 from pyvis.network import Network
 
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
@@ -253,15 +252,6 @@ class BaseNetwork(object):
         with open(outdir, 'w+') as out:
             json.dump(outdict, out)
         return True
-
-    def topology_sort(self):
-        """
-        Function to sort nodes by topology order
-        """
-        ordered = gru.toporder(self.nodes, self.edges)
-        notOrdered = [node.name for node in self.nodes]
-        mask = [notOrdered.index(name) for name in ordered]
-        self.nodes = [self.nodes[i] for i in mask]
     
     def load(self, input_dir: str):
         """
@@ -273,11 +263,8 @@ class BaseNetwork(object):
             input_dict = json.load(f)
         
         self.add_nodes(input_dict['info'])
-        self.set_edges(input_dict['edges'])
-        self.set_parameters(input_dict['parameters'])
-        
-        # Topology sorting
-        self.topology_sort()
+        self.set_structure(edges=input_dict['edges'])
+        self.set_parameters(parameters=input_dict['parameters'])
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
@@ -301,9 +288,6 @@ class BaseNetwork(object):
         if 'disc_num' in self.descriptor['types'].values():
             columns_names = [name for name, t in self.descriptor['types'].items() if t in ['disc_num']]
             data[columns_names] = data.loc[:, columns_names].astype('str')
-
-        # Topology sorting
-        self.topology_sort()
 
         def worker(node):
             return node.fit_parameters(data)
