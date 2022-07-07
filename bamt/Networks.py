@@ -236,7 +236,7 @@ class BaseNetwork(object):
         with open(outdir, 'w+') as out:
             json.dump(self.edges, out)
         return True
-    
+
     def save(self, outdir: str):
         """
         Function to save the whole BN to json file
@@ -252,7 +252,7 @@ class BaseNetwork(object):
         with open(outdir, 'w+') as out:
             json.dump(outdict, out)
         return True
-    
+
     def load(self, input_dir: str):
         """
         Function to load the whole BN from json file
@@ -261,7 +261,7 @@ class BaseNetwork(object):
         """
         with open(input_dir) as f:
             input_dict = json.load(f)
-        
+
         self.add_nodes(input_dict['info'])
         self.set_structure(edges=input_dict['edges'])
         self.set_parameters(parameters=input_dict['parameters'])
