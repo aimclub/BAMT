@@ -33,3 +33,8 @@ with open("hack_p.json") as params:
     bn.set_parameters(params)
 
 bn.plot("gg3.html")
+
+bn2 = Networks.HybridBN(use_mixture=True, has_logit=True)
+bn2.load("hack.json")
+
+print(bn2.sample(50))

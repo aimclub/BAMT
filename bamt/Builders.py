@@ -7,6 +7,7 @@ from bamt.redef_HC import hc as hc_method
 from bamt import Nodes
 from bamt.log import logger_builder
 from pandas import DataFrame
+from bamt.utils import GraphUtils as gru
 
 from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union
 
@@ -101,6 +102,11 @@ class StructureBuilder(object):
             self.skeleton['V'][id].disc_parents = disc_parents
             self.skeleton['V'][id].cont_parents = cont_parents
             self.skeleton['V'][id].children = children
+
+        ordered = gru.toporder(self.skeleton['V'], self.skeleton['E'])
+        notOrdered = [node.name for node in self.skeleton['V']]
+        mask = [notOrdered.index(name) for name in ordered]
+        self.nodes = [self.skeleton['V'][i] for i in mask]
 
 
 class VerticesDefiner(StructureBuilder):

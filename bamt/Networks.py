@@ -12,7 +12,6 @@ import os
 
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
-from bamt.utils import GraphUtils as gru
 from pyvis.network import Network
 
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
@@ -238,6 +237,35 @@ class BaseNetwork(object):
             json.dump(self.edges, out)
         return True
 
+    def save(self, outdir: str):
+        """
+        Function to save the whole BN to json file
+        :param outdir: output directory
+        """
+        if not outdir.endswith('.json'):
+            return None
+        outdict = {
+            'info': self.descriptor,
+            'edges': self.edges,
+            'parameters': self.distributions
+        }
+        with open(outdir, 'w+') as out:
+            json.dump(outdict, out)
+        return True
+
+    def load(self, input_dir: str):
+        """
+        Function to load the whole BN from json file
+        :param input_dir: input directory
+        :return: Bayesian Network
+        """
+        with open(input_dir) as f:
+            input_dict = json.load(f)
+
+        self.add_nodes(input_dict['info'])
+        self.set_structure(edges=input_dict['edges'])
+        self.set_parameters(parameters=input_dict['parameters'])
+
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
         Base function for parameters learning
@@ -260,12 +288,6 @@ class BaseNetwork(object):
         if 'disc_num' in self.descriptor['types'].values():
             columns_names = [name for name, t in self.descriptor['types'].items() if t in ['disc_num']]
             data[columns_names] = data.loc[:, columns_names].astype('str')
-
-        # Topology sorting
-        ordered = gru.toporder(self.nodes, self.edges)
-        notOrdered = [node.name for node in self.nodes]
-        mask = [notOrdered.index(name) for name in ordered]
-        self.nodes = [self.nodes[i] for i in mask]
 
         def worker(node):
             return node.fit_parameters(data)
