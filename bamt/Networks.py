@@ -190,7 +190,7 @@ class BaseNetwork(object):
                 builder.get_family()
                 if self.edges:
                     builder.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)
-                    self.set_nodes(builder.vertices)
+                    self.set_nodes(builder.skeleton['V'])
                 else:
                     logger_network.error("Empty set of edges")
 
