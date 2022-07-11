@@ -257,7 +257,6 @@ class BaseNetwork(object):
         """
         Function to load the whole BN from json file
         :param input_dir: input directory
-        :return: Bayesian Network
         """
         with open(input_dir) as f:
             input_dict = json.load(f)
