@@ -320,14 +320,16 @@ class BaseNetwork(object):
                     f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
     def sample(self, n: int, evidence: Optional[Dict[str, Union[str, int, float]]] = None,
-               as_df: bool = True, predict: bool = False) -> Union[
+               as_df: bool = True, predict: bool = False, parall_count: int = 1) -> Union[
         None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
         evidence: values for nodes from user
+        parall_count: number of threads. Defaults to 1.
         """
-        seq = []
+        from joblib import Parallel, delayed
+
         random.seed()
         if not self.distributions.items():
             logger_network.error("Parameter learning wasn't done. Call fit_parameters method")
@@ -338,40 +340,42 @@ class BaseNetwork(object):
                     if not (isinstance(evidence[node.name], str)):
                         evidence[node.name] = str(int(evidence[node.name]))
 
-        for n in range(n):
+        def wrapper(bn, evdnce):
             output = {}
-            for node in self.nodes:
+            for node in bn.nodes:
                 parents = node.cont_parents + node.disc_parents
-                if evidence:
-                    if node.name in evidence.keys():
-                        output[node.name] = evidence[node.name]
+                if evdnce:
+                    if node.name in evdnce.keys():
+                        output[node.name] = evdnce[node.name]
                     else:
                         if not parents:
                             pvals = None
                         else:
-                            if self.type == 'Discrete':
+                            if bn.type == 'Discrete':
                                 pvals = [str(output[t]) for t in parents]
                             else:
                                 pvals = [output[t] for t in parents]
                         if predict:
-                            output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
+                            output[node.name] = node.predict(bn.distributions[node.name], pvals=pvals)
                         else:
-                            output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                            output[node.name] = node.choose(bn.distributions[node.name], pvals=pvals)
 
                 else:
                     if not parents:
                         pvals = None
                     else:
-                        if self.type == 'Discrete':
+                        if bn.type == 'Discrete':
                             pvals = [str(output[t]) for t in parents]
                         else:
                             pvals = [output[t] for t in parents]
                     if predict:
-                        output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
+                        output[node.name] = node.predict(bn.distributions[node.name], pvals=pvals)
                     else:
-                        output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                        output[node.name] = node.choose(bn.distributions[node.name], pvals=pvals)
+            return output
 
-            seq.append(output)
+        seq = Parallel(n_jobs=parall_count)(
+            delayed(wrapper)(self, evidence) for i in tqdm(range(n), position=0, leave=True))
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
