@@ -360,10 +360,12 @@ class BaseNetwork(object):
                                 pvals = [output[t] for t in parents]
                         if predict:
                             output[node.name] = \
-                                node.predict(bn.distributions[node.name], pvals=pvals)
+                                node.predict(
+                                    bn.distributions[node.name], pvals=pvals)
                         else:
                             output[node.name] = \
-                                node.choose(bn.distributions[node.name], pvals=pvals)
+                                node.choose(
+                                    bn.distributions[node.name], pvals=pvals)
 
                 else:
                     if not parents:
@@ -375,15 +377,17 @@ class BaseNetwork(object):
                             pvals = [output[t] for t in parents]
                     if predict:
                         output[node.name] = \
-                            node.predict(bn.distributions[node.name], pvals=pvals)
+                            node.predict(
+                                bn.distributions[node.name], pvals=pvals)
                     else:
                         output[node.name] = \
-                            node.choose(bn.distributions[node.name], pvals=pvals)
+                            node.choose(
+                                bn.distributions[node.name], pvals=pvals)
             return output
 
-        seq = Parallel(n_jobs=parall_count)\
-            (delayed(wrapper)(self, evidence)
-             for i in tqdm(range(n), position=0, leave=True))
+        seq = Parallel(n_jobs=parall_count)(
+            delayed(wrapper)(self, evidence)
+            for i in tqdm(range(n), position=0, leave=True))
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
