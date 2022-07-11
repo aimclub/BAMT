@@ -395,6 +395,10 @@ class BaseNetwork(object):
         Returns:
             predicted data (dict): dict with column as key and predicted data as value
         """
+        if test.isnull().any().any():
+            logger_network.error("Test data contains NaN values.")
+            return {}
+        
         from joblib import Parallel, delayed
 
         def wrapper(bn: HybridBN, test: pd.DataFrame, columns: List[str]):
