@@ -318,9 +318,13 @@ class BaseNetwork(object):
                 print(
                     f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
-    def sample(self, n: int, evidence: Optional[Dict[str, Union[str, int, float]]] = None,
-               as_df: bool = True, predict: bool = False, parall_count: int = 1) -> Union[
-        None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
+    def sample(self,
+               n: int,
+               evidence: Optional[Dict[str, Union[str, int, float]]] = None,
+               as_df: bool = True,
+               predict: bool = False,
+               parall_count: int = 1) -> \
+            Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
@@ -355,9 +359,11 @@ class BaseNetwork(object):
                             else:
                                 pvals = [output[t] for t in parents]
                         if predict:
-                            output[node.name] = node.predict(bn.distributions[node.name], pvals=pvals)
+                            output[node.name] = \
+                                node.predict(bn.distributions[node.name], pvals=pvals)
                         else:
-                            output[node.name] = node.choose(bn.distributions[node.name], pvals=pvals)
+                            output[node.name] = \
+                                node.choose(bn.distributions[node.name], pvals=pvals)
 
                 else:
                     if not parents:
@@ -368,13 +374,16 @@ class BaseNetwork(object):
                         else:
                             pvals = [output[t] for t in parents]
                     if predict:
-                        output[node.name] = node.predict(bn.distributions[node.name], pvals=pvals)
+                        output[node.name] = \
+                            node.predict(bn.distributions[node.name], pvals=pvals)
                     else:
-                        output[node.name] = node.choose(bn.distributions[node.name], pvals=pvals)
+                        output[node.name] = \
+                            node.choose(bn.distributions[node.name], pvals=pvals)
             return output
 
-        seq = Parallel(n_jobs=parall_count)(
-            delayed(wrapper)(self, evidence) for i in tqdm(range(n), position=0, leave=True))
+        seq = Parallel(n_jobs=parall_count)\
+            (delayed(wrapper)(self, evidence)
+             for i in tqdm(range(n), position=0, leave=True))
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
@@ -397,7 +406,7 @@ class BaseNetwork(object):
         if test.isnull().any().any():
             logger_network.error("Test data contains NaN values.")
             return {}
-        
+
         from joblib import Parallel, delayed
 
         def wrapper(bn: HybridBN, test: pd.DataFrame, columns: List[str]):
