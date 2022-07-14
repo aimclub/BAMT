@@ -2,7 +2,7 @@ from Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
 
-vk_data = pd.read_csv("../Data/vk_data.csv")
+vk_data = pd.read_csv("../Data/real data/vk_data.csv")
 
 encoder = pp.LabelEncoder()
 discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')

@@ -20,7 +20,7 @@ from Utils import GraphUtils as gru
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-vk_data = pd.read_csv(r"../Data/vk_data.csv")
+vk_data = pd.read_csv(r"../Data/real data/vk_data.csv")
 ROWS = 50
 vk_data = vk_data.iloc[:ROWS, :]
 

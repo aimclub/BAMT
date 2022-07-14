@@ -5,7 +5,7 @@ import bamt.Networks as Networks
 from bamt.Nodes import BaseNode, MixtureGaussianNode
 import bamt.Nodes as nodes
 
-vk_data = pd.read_csv("../Data/vk_data.csv").iloc[0:50]
+vk_data = pd.read_csv("../Data/real data/vk_data.csv").iloc[0:50]
 
 encoder = pp.LabelEncoder()
 discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')

@@ -12,7 +12,7 @@ import Networks
 from pgmpy.estimators import K2Score
 from Utils import GraphUtils as gru
 
-data = pd.read_csv("data/hack_processed_with_rf.csv")
+data = pd.read_csv("data/real data/hack_processed_with_rf.csv")
 data = data[['Tectonic regime', 'Period', 'Lithology', 'Structural setting']]
 data.dropna(inplace=True)
 data.reset_index(inplace=True, drop=True)

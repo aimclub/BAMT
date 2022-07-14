@@ -1,3 +1,4 @@
+
 from bamt.Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
@@ -5,7 +6,7 @@ import bamt.Networks as Networks
 
 print('Import complete')
 
-h = pd.read_csv("../Data/hack_processed_with_rf.csv")
+h = pd.read_csv("../Data/real data/hack_processed_with_rf.csv")
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross', 'Netpay', 'Porosity', 'Permeability',
         'Depth']
 h = h[cols]

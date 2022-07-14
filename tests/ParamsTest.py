@@ -10,7 +10,7 @@ import bamt.Networks as Networks
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-h = pd.read_csv("../Data/hack_processed_with_rf.csv")
+h = pd.read_csv("../Data/real data/hack_processed_with_rf.csv")
 
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross','Netpay','Porosity','Permeability', 'Depth']
 h = h[cols]
