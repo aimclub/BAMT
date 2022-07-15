@@ -9,18 +9,18 @@ path = os.path.abspath(os.path.join(__file__, "../.."))
 sys.path.insert(0, path)
 #---------
 
-from Preprocessors import Preprocessor
+from bamt.Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-import Networks
+import bamt.Networks as Networks
 from pgmpy.estimators import K2Score
-from Utils import GraphUtils as gru
+from bamt.utils import GraphUtils as gru
 
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-vk_data = pd.read_csv(r"../Data/real data/vk_data.csv")
+vk_data = pd.read_csv(r"data/real data/vk_data.csv")
 ROWS = 50
 vk_data = vk_data.iloc[:ROWS, :]
 
@@ -55,6 +55,7 @@ info = p.info
 
 bn = Networks.DiscreteBN()
 bn.add_nodes(descriptor=info)
+print(bn.get_info())
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params)
 bn.get_info(as_df=False)

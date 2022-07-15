@@ -10,15 +10,15 @@ import time
 
 start = time.time()
 
-from Preprocessors import Preprocessor
+from bamt.Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-import Networks
+import bamt.Networks as Networks
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-h = pd.read_csv("../Data/real data/hack_processed_with_rf.csv")
+h = pd.read_csv("data/real data/hack_processed_with_rf.csv")
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross', 'Netpay', 'Porosity', 'Permeability',
         'Depth']
 h = h[cols]

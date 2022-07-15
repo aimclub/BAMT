@@ -13,7 +13,7 @@ from bamt.utils import GraphUtils as gru
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-data = pd.read_csv(r"../Data/real data/hack_processed_with_rf.csv")[['Tectonic regime', 'Period', 'Lithology', 'Structural setting']]
+data = pd.read_csv(r"data/real data/hack_processed_with_rf.csv")[['Tectonic regime', 'Period', 'Lithology', 'Structural setting']]
 
 p2 = time.time()
 print(f"Time elapsed for uploading data: {p2 - p1}")

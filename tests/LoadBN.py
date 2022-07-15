@@ -4,7 +4,7 @@ from sklearn import preprocessing as pp
 import bamt.Networks as Networks
 import json
 
-hack_data = pd.read_csv("../Data/real data/hack_processed_with_rf.csv")[
+hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
     ['Tectonic regime', 'Period', 'Lithology', 'Structural setting',
      'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
 

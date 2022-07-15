@@ -6,7 +6,7 @@ import bamt.Networks as Networks
 
 print('Import complete')
 
-h = pd.read_csv("../Data/real data/hack_processed_with_rf.csv")
+h = pd.read_csv("data/real data/hack_processed_with_rf.csv")
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross', 'Netpay', 'Porosity', 'Permeability',
         'Depth']
 h = h[cols]
@@ -44,7 +44,7 @@ print('fp finished')
 
 predictions_mi = bn.sample(514, as_df=True)
 
-bn.get_params_tree('final.json')
+bn.save_params('final.json')
 print('finished')
 
 # successful = {}

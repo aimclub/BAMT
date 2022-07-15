@@ -5,12 +5,12 @@ sys.path.insert(0,parentdir)
 
 
 
-from Preprocessors import Preprocessor
+from bamt.Preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-import Networks
+import bamt.Networks as Networks
 from pgmpy.estimators import K2Score
-from Utils import GraphUtils as gru
+from bamt.utils import GraphUtils as gru
 
 data = pd.read_csv("data/real data/hack_processed_with_rf.csv")
 data = data[['Tectonic regime', 'Period', 'Lithology', 'Structural setting']]
@@ -31,8 +31,7 @@ bn = Networks.DiscreteBN()
 bn.add_nodes(descriptor=info)
 
 params = {'init_nodes': None,
-          'bl_add': None,
-          'cont_disc': None}
+          'bl_add': None}
 
 bn.add_edges(data=discretized_data, optimizer='HC', scoring_function=('K2', K2Score), params=params)
 bn.fit_parameters(data=data)
