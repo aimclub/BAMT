@@ -202,7 +202,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         self.optimizer = HillClimbSearch(data)
         self.params = {'init_edges': None,
                        'init_nodes': None,
-                       'remove_init_edges': False,
+                       'remove_init_edges': True,
                        'white_list': None,
                        'bl_add': None}
         super(HillClimbDefiner, self).__init__(descriptor)
@@ -233,9 +233,11 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                 white_list=white_list
             )
         else:
+            
             if remove_init_edges:
                 startdag = DAG()
-                startdag.add_nodes_from(nodes=self.vertices)
+                nodes = [str(v) for v in self.vertices]
+                startdag.add_nodes_from(nodes=nodes)
                 startdag.add_edges_from(ebunch=init_edges)
                 best_model = self.optimizer.estimate(black_list=self.black_list, white_list=white_list,
                                                      start_dag=startdag, show_progress=False)
@@ -304,6 +306,8 @@ class HCStructureBuilder(HillClimbDefiner):
 
         init_nodes = self.params.pop('init_nodes')
         bl_add = self.params.pop('bl_add')
+   
+
 
         # Level 1
         self.skeleton['V'] = self.vertices

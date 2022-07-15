@@ -10,7 +10,7 @@ import bamt.Networks as Networks
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
-h = pd.read_csv("../Data/real data/hack_processed_with_rf.csv")
+h = pd.read_csv("data/real data/hack_processed_with_rf.csv")
 
 cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross','Netpay','Porosity','Permeability', 'Depth']
 h = h[cols]
@@ -36,8 +36,4 @@ t1 = time.time()
 bn.fit_parameters(data=h)
 t2 = time.time()
 print(f'PL elaspsed: {t2-t1}')
-
-for num, el in enumerate(bn.sample(20), 1):
-    print('\n', num)
-    for name, val in el.items():
-        print(f"{name: <15}", val)
+print(bn.sample(20))
