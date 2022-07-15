@@ -20,7 +20,7 @@ def nodes_types(data: DataFrame) -> Dict[str, str]:
 
     column_type = dict()
     for c in data.columns.to_list():
-        disc = ['str', 'O', 'b', 'categorical', 'object']
+        disc = ['str', 'O', 'b', 'categorical', 'object', 'bool']
         disc_numerical = ['int32', 'int64']
         cont = ['float32', 'float64']
         if data[c].dtype.name in disc:
