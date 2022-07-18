@@ -6,5 +6,5 @@ __pycache__/
 *.ini
 
 **experiments/
-tutorials/bamt
+tests/bamt
 tutorials/Test.ipynb
