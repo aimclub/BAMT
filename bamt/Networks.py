@@ -343,46 +343,28 @@ class BaseNetwork(object):
                     if not (isinstance(evidence[node.name], str)):
                         evidence[node.name] = str(int(evidence[node.name]))
 
-        def wrapper(bn, evdnce):
+        def wrapper():
             output = {}
-            for node in bn.nodes:
+            for node in self.nodes:
                 parents = node.cont_parents + node.disc_parents
-                if evdnce:
-                    if node.name in evdnce.keys():
-                        output[node.name] = evdnce[node.name]
-                    else:
-                        if not parents:
-                            pvals = None
-                        else:
-                            if bn.type == 'Discrete':
-                                pvals = [str(output[t]) for t in parents]
-                            else:
-                                pvals = [output[t] for t in parents]
-                        if predict:
-                            output[node.name] = \
-                                node.predict(
-                                    bn.distributions[node.name], pvals=pvals)
-                        else:
-                            output[node.name] = \
-                                node.choose(
-                                    bn.distributions[node.name], pvals=pvals)
-
+                if evidence and node.name in evidence.keys():
+                    output[node.name] = evidence[node.name]
                 else:
                     if not parents:
                         pvals = None
                     else:
-                        if bn.type == 'Discrete':
+                        if self.type == 'Discrete':
                             pvals = [str(output[t]) for t in parents]
                         else:
                             pvals = [output[t] for t in parents]
                     if predict:
                         output[node.name] = \
                             node.predict(
-                                bn.distributions[node.name], pvals=pvals)
+                                self.distributions[node.name], pvals=pvals)
                     else:
                         output[node.name] = \
                             node.choose(
-                                bn.distributions[node.name], pvals=pvals)
+                                self.distributions[node.name], pvals=pvals)
             return output
 
         seq = Parallel(n_jobs=parall_count)(
