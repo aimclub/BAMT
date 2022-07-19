@@ -368,8 +368,12 @@ class BaseNetwork(object):
             return output
 
         seq = Parallel(n_jobs=parall_count)(
-            delayed(wrapper)(self, evidence)
+            delayed(wrapper)()
             for i in tqdm(range(n), position=0, leave=True))
+        seq_df = pd.DataFrame.from_dict(seq, orient='columns')
+        seq_df.dropna(inplace=True)
+        seq_df.reset_index(inplace=True, drop=True)
+        seq = seq_df.to_dict('records')
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
