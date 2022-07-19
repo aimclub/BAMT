@@ -372,8 +372,12 @@ class BaseNetwork(object):
             for i in tqdm(range(n), position=0, leave=True))
         seq_df = pd.DataFrame.from_dict(seq, orient='columns')
         seq_df.dropna(inplace=True)
+        cont_nodes = [c.name for c in self.nodes if c.type != 'Discrete']
+        positive_columns = [c for c in cont_nodes if self.descriptor['signs'][c] == 'pos']
+        seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
         seq_df.reset_index(inplace=True, drop=True)
         seq = seq_df.to_dict('records')
+        
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
