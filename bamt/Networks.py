@@ -347,26 +347,8 @@ class BaseNetwork(object):
             output = {}
             for node in self.nodes:
                 parents = node.cont_parents + node.disc_parents
-                if evidence:
-                    if node.name in evidence.keys():
-                        output[node.name] = evidence[node.name]
-                    else:
-                        if not parents:
-                            pvals = None
-                        else:
-                            if self.type == 'Discrete':
-                                pvals = [str(output[t]) for t in parents]
-                            else:
-                                pvals = [output[t] for t in parents]
-                        if predict:
-                            output[node.name] = \
-                                node.predict(
-                                    self.distributions[node.name], pvals=pvals)
-                        else:
-                            output[node.name] = \
-                                node.choose(
-                                    self.distributions[node.name], pvals=pvals)
-
+                if evidence and node.name in evidence.keys():
+                    output[node.name] = evidence[node.name]
                 else:
                     if not parents:
                         pvals = None
