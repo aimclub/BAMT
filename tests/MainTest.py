@@ -11,13 +11,19 @@ You can also uncomment print() that you need.
 '''
 
 hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")
-cont_data = hack_data[['Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
-disc_data = hack_data[['Tectonic regime', 'Period', 'Lithology', 'Structural setting']]
-hybrid_data = hack_data[['Tectonic regime', 'Period', 'Lithology', 'Structural setting',
-                         'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
+cont_data = hack_data[['Gross', 'Netpay', 'Porosity',
+                       'Permeability', 'Depth']]
+disc_data = hack_data[['Tectonic regime', 'Period',
+                       'Lithology', 'Structural setting']]
+hybrid_data = hack_data[['Tectonic regime', 'Period',
+                         'Lithology', 'Structural setting',
+                         'Gross', 'Netpay', 'Porosity',
+                         'Permeability', 'Depth']]
 
 encoder = pp.LabelEncoder()
-discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')
+discretizer = pp.KBinsDiscretizer(n_bins=5,
+                                  encode='ordinal',
+                                  strategy='uniform')
 p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
 # Discrete pipeline
@@ -73,4 +79,3 @@ synth_hybrid_data2 = hybrid_bn2.sample(50)
 # print(hybrid_bn2.get_info())
 # print(synth_hybrid_data)
 # print(synth_hybrid_data2)
-
