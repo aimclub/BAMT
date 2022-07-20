@@ -12,7 +12,6 @@ import os
 
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
-from bamt.utils import GraphUtils as gru
 from pyvis.network import Network
 
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
@@ -107,12 +106,16 @@ class BaseNetwork(object):
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return None
         if optimizer == 'HC':
+          
             worker = Builders.HCStructureBuilder(data=data,
                                                  descriptor=self.descriptor,
                                                  scoring_function=scoring_function,
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
+       
+           
             self.sf_name = scoring_function[0]
+            
             worker.build(data=data, params=params, classifier=classifier)
 
             # update family
@@ -125,7 +128,7 @@ class BaseNetwork(object):
         nodes must be a subclass of BaseNode.
         :param nodes dict with name and node (if a lot of nodes should be added)
         """
-        if not info and not (self.descriptor["types"]):
+        if not info and not self.descriptor["types"]:
             logger_network.error("In case of manual setting nodes user should set map for them as well.")
             return
         self.nodes = []
@@ -187,7 +190,7 @@ class BaseNetwork(object):
                 builder.get_family()
                 if self.edges:
                     builder.overwrite_vertex(has_logit=self.has_logit, use_mixture=self.use_mixture)
-                    self.set_nodes(builder.vertices)
+                    self.set_nodes(nodes=builder.skeleton['V'])
                 else:
                     logger_network.error("Empty set of edges")
 
@@ -234,6 +237,34 @@ class BaseNetwork(object):
             json.dump(self.edges, out)
         return True
 
+    def save(self, outdir: str):
+        """
+        Function to save the whole BN to json file
+        :param outdir: output directory
+        """
+        if not outdir.endswith('.json'):
+            return None
+        outdict = {
+            'info': self.descriptor,
+            'edges': self.edges,
+            'parameters': self.distributions
+        }
+        with open(outdir, 'w+') as out:
+            json.dump(outdict, out)
+        return True
+
+    def load(self, input_dir: str):
+        """
+        Function to load the whole BN from json file
+        :param input_dir: input directory
+        """
+        with open(input_dir) as f:
+            input_dict = json.load(f)
+
+        self.add_nodes(input_dict['info'])
+        self.set_structure(edges=input_dict['edges'])
+        self.set_parameters(parameters=input_dict['parameters'])
+
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
         Base function for parameters learning
@@ -256,12 +287,6 @@ class BaseNetwork(object):
         if 'disc_num' in self.descriptor['types'].values():
             columns_names = [name for name, t in self.descriptor['types'].items() if t in ['disc_num']]
             data[columns_names] = data.loc[:, columns_names].astype('str')
-
-        # Topology sorting
-        ordered = gru.toporder(self.nodes, self.edges)
-        notOrdered = [node.name for node in self.nodes]
-        mask = [notOrdered.index(name) for name in ordered]
-        self.nodes = [self.nodes[i] for i in mask]
 
         def worker(node):
             return node.fit_parameters(data)
@@ -293,15 +318,21 @@ class BaseNetwork(object):
                 print(
                     f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}")
 
-    def sample(self, n: int, evidence: Optional[Dict[str, Union[str, int, float]]] = None,
-               as_df: bool = True, predict: bool = False) -> Union[
-        None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
+    def sample(self,
+               n: int,
+               evidence: Optional[Dict[str, Union[str, int, float]]] = None,
+               as_df: bool = True,
+               predict: bool = False,
+               parall_count: int = 1) -> \
+            Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
         evidence: values for nodes from user
+        parall_count: number of threads. Defaults to 1.
         """
-        seq = []
+        from joblib import Parallel, delayed
+
         random.seed()
         if not self.distributions.items():
             logger_network.error("Parameter learning wasn't done. Call fit_parameters method")
@@ -312,26 +343,12 @@ class BaseNetwork(object):
                     if not (isinstance(evidence[node.name], str)):
                         evidence[node.name] = str(int(evidence[node.name]))
 
-        for n in range(n):
+        def wrapper():
             output = {}
             for node in self.nodes:
                 parents = node.cont_parents + node.disc_parents
-                if evidence:
-                    if node.name in evidence.keys():
-                        output[node.name] = evidence[node.name]
-                    else:
-                        if not parents:
-                            pvals = None
-                        else:
-                            if self.type == 'Discrete':
-                                pvals = [str(output[t]) for t in parents]
-                            else:
-                                pvals = [output[t] for t in parents]
-                        if predict:
-                            output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
-                        else:
-                            output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
-
+                if evidence and node.name in evidence.keys():
+                    output[node.name] = evidence[node.name]
                 else:
                     if not parents:
                         pvals = None
@@ -341,11 +358,26 @@ class BaseNetwork(object):
                         else:
                             pvals = [output[t] for t in parents]
                     if predict:
-                        output[node.name] = node.predict(self.distributions[node.name], pvals=pvals)
+                        output[node.name] = \
+                            node.predict(
+                                self.distributions[node.name], pvals=pvals)
                     else:
-                        output[node.name] = node.choose(self.distributions[node.name], pvals=pvals)
+                        output[node.name] = \
+                            node.choose(
+                                self.distributions[node.name], pvals=pvals)
+            return output
 
-            seq.append(output)
+        seq = Parallel(n_jobs=parall_count)(
+            delayed(wrapper)()
+            for i in tqdm(range(n), position=0, leave=True))
+        seq_df = pd.DataFrame.from_dict(seq, orient='columns')
+        seq_df.dropna(inplace=True)
+        cont_nodes = [c.name for c in self.nodes if c.type != 'Discrete']
+        positive_columns = [c for c in cont_nodes if self.descriptor['signs'][c] == 'pos']
+        seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
+        seq_df.reset_index(inplace=True, drop=True)
+        seq = seq_df.to_dict('records')
+        
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
@@ -365,6 +397,10 @@ class BaseNetwork(object):
         Returns:
             predicted data (dict): dict with column as key and predicted data as value
         """
+        if test.isnull().any().any():
+            logger_network.error("Test data contains NaN values.")
+            return {}
+
         from joblib import Parallel, delayed
 
         def wrapper(bn: HybridBN, test: pd.DataFrame, columns: List[str]):

@@ -142,7 +142,21 @@ class DiscreteNode(BaseNode):
 
         Returns:
             str: prediction
-        """
+        """        
+        # vals = node_info['vals']
+        # if not pvals:
+        #     dist = node_info['cprob']
+        # else:
+        #     # noinspection PyTypeChecker
+        #     dist = node_info['cprob'][str(pvals)]
+        # index_max = 0    
+        # g = itertools.groupby(dist)
+        # if next(g, True) and not next(g, False):
+        #     index_max = random.randint(0, len(dist))
+        # else:
+        #     index_max = np.argmax(dist)
+        # return vals[index_max]
+
         vals = node_info['vals']
         disct = []
         if not pvals:
@@ -157,14 +171,9 @@ class DiscreteNode(BaseNode):
             max_ind = indices[0]
         else:
             max_ind = random.choice(indices)
-
-
-        # g = itertools.groupby(dist)
-        # if next(g, True) and not next(g, False):
-        #     index_max = random.randint(0, len(dist))
-        # else:
-        #     index_max = np.argmax(dist)
         return vals[max_ind]
+        
+
 
 
 class GaussianParams(TypedDict):
@@ -380,7 +389,7 @@ class MixtureGaussianNode(BaseNode):
         if not parents:
             n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
                                                                           'bic')) / 2)  # component(data, [node], 'LRTS')#
-            #n_comp = 2
+            # n_comp = 3
             gmm = GMM(n_components=n_comp).from_samples(np.transpose([data[self.name].values]), n_iter=500,
                                                         init_params='kmeans++')
             means = gmm.means.tolist()
@@ -397,7 +406,7 @@ class MixtureGaussianNode(BaseNode):
                 new_data.reset_index(inplace=True, drop=True)
                 n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
                                                                             'bic')) / 2)  # component(new_data, nodes, 'LRTS')#
-                #n_comp = 2
+                # n_comp = 3
                 gmm = GMM(n_components=n_comp).from_samples(new_data[nodes].values, n_iter=500, init_params='kmeans++')
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
