@@ -124,15 +124,15 @@ class BaseNetwork(object):
             self.nodes = worker.skeleton['V']
             self.edges = worker.skeleton['E']
 
-    def calculate_weights(self, data: pd.DataFrame):
+    def calculate_weights(self, discretized_data: pd.DataFrame):
+        from bamt.Preprocessors import BasePreprocessor
+        if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(discretized_data).values()]):
+            logger_network.error(f"calculate_weghts() method deals only with discrete data. Continuous data: " +
+                                 f"{[col for col, type in BasePreprocessor.get_nodes_types(discretized_data).items() if type not in ['disc', 'disc_num']]}")
         if not self.edges:
             logger_network.error("Bayesian Network hasn't fitted yet. Please add edges with add_edges() method")
-        encoder = pp.LabelEncoder()
-        discretizer = pp.KBinsDiscretizer(n_bins=5,
-                                          encode='ordinal',
-                                          strategy='uniform')
-        p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
-        discretized_data, _ = p.apply(data)
+        if not self.nodes:
+            logger_network.error("Bayesian Network hasn't fitted yet. Please add nodes with add_nodes() method")
         weights = dict()
 
         for node in self.nodes:
