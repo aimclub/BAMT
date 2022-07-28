@@ -1,5 +1,4 @@
 import bamt.utils.GraphUtils
-from bamt import Builders, Nodes
 import random
 import re
 import networkx as nx
@@ -10,15 +9,18 @@ import numpy as np
 import json
 import os
 
+from sklearn import preprocessing as pp
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from pyvis.network import Network
-
+from pyitlib import discrete_random_variable as drv
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
-from bamt.Builders import ParamDict
 
+from bamt.Builders import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
+from bamt import Builders, Nodes
+from bamt.Preprocessors import Preprocessor
 
 STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
 
@@ -39,6 +41,7 @@ class BaseNetwork(object):
         self._allowed_dtypes = ['Abstract']
         self.nodes = []
         self.edges = []
+        self.weights = {}
         self.descriptor = {"types": {},
                            "signs": {}}
         self.distributions = {}
@@ -112,7 +115,6 @@ class BaseNetwork(object):
                                                  scoring_function=scoring_function,
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
-       
            
             self.sf_name = scoring_function[0]
             
@@ -121,6 +123,41 @@ class BaseNetwork(object):
             # update family
             self.nodes = worker.skeleton['V']
             self.edges = worker.skeleton['E']
+
+    def calculate_weights(self, data: pd.DataFrame):
+        if not self.edges:
+            logger_network.error("Bayesian Network hasn't fitted yet. Please add edges with add_edges() method")
+        encoder = pp.LabelEncoder()
+        discretizer = pp.KBinsDiscretizer(n_bins=5,
+                                          encode='ordinal',
+                                          strategy='uniform')
+        p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
+        discretized_data, _ = p.apply(data)
+        weights = dict()
+
+        for node in self.nodes:
+            parents = node.cont_parents + node.disc_parents
+            if parents is None:
+                continue
+            y = discretized_data[node.name].values
+            if len(parents) == 1:
+                x = discretized_data[parents[0]].values
+                LS_true = drv.information_mutual(X=y, Y=x)
+                entropy = drv.entropy(X=y)
+                weight = LS_true / entropy
+                weights[(parents[0], node.name)] = weight
+            else:
+                for parent_node in parents:
+                    x = discretized_data[parent_node].values
+                    other_parents = [tmp for tmp in parents if tmp != parent_node]
+                    z = list()
+                    for other_parent in other_parents:
+                        z.append(list(discretized_data[other_parent].values))
+                    LS_true = np.average(drv.information_mutual_conditional(X=y, Y=x, Z=z, cartesian_product=True))
+                    entropy = np.average(drv.entropy_conditional(X=y, Y=z, cartesian_product=True)) + 1e-8
+                    weight = LS_true / entropy
+                    weights[(parent_node, node.name)] = weight
+        self.weights = weights
 
     def set_nodes(self, nodes: List, info: Optional[Dict] = None):
         """
