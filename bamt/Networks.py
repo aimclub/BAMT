@@ -284,7 +284,8 @@ class BaseNetwork(object):
         outdict = {
             'info': self.descriptor,
             'edges': self.edges,
-            'parameters': self.distributions
+            'parameters': self.distributions,
+            'weights': self.weights
         }
         with open(outdir, 'w+') as out:
             json.dump(outdict, out)
@@ -301,6 +302,7 @@ class BaseNetwork(object):
         self.add_nodes(input_dict['info'])
         self.set_structure(edges=input_dict['edges'])
         self.set_parameters(parameters=input_dict['parameters'])
+        self.weights = input_dict['weights']
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
