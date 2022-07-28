@@ -281,11 +281,14 @@ class BaseNetwork(object):
         """
         if not outdir.endswith('.json'):
             return None
+        new_weights = dict()
+        for key in self.weights:
+            new_weights[str(key)] = self.weights[key]
         outdict = {
             'info': self.descriptor,
             'edges': self.edges,
             'parameters': self.distributions,
-            'weights': self.weights
+            'weights': new_weights
         }
         with open(outdir, 'w+') as out:
             json.dump(outdict, out)
@@ -302,7 +305,12 @@ class BaseNetwork(object):
         self.add_nodes(input_dict['info'])
         self.set_structure(edges=input_dict['edges'])
         self.set_parameters(parameters=input_dict['parameters'])
-        self.weights = input_dict['weights']
+        str_keys = list(input_dict['weights'].keys())
+        tuple_keys = [eval(key) for key in str_keys]
+        weights = {}
+        for tuple_key in tuple_keys:
+            weights[tuple_key] = input_dict['weights'][str(tuple_key)]
+        self.weights = weights
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
