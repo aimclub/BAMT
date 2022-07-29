@@ -1,3 +1,4 @@
+from tkinter import N
 from pgmpy.estimators.StructureScore import StructureScore
 from bamt.utils.MathUtils import *
 from sklearn.mixture import GaussianMixture
@@ -7,30 +8,72 @@ import sys
 import multiprocessing
 from multiprocessing import Pool
 from time import time
-
-
+from sklearn.metrics import mean_squared_error as mse
+from sklearn import linear_model
+from scipy.stats import norm
+import math
+import numba
 
     
 
-def BIC_local(data):
-    v = []
-    par = []
-    if data.shape[1] == 1:
-        v.append(data.columns[0])
-    else:
-        v.append(data.columns[0])
-        par = data.columns[1:]
+def BIC_local(data, var, parents):
+    
+    cols = [var]+parents
+    data = data[cols]
+    # n_comp = int((component(data, cols, 'aic') + component(data, cols, 'bic')) / 2)
+    # gmm_model = GaussianMixture(n_components=n_comp, random_state=2).fit(data.values)
+    # ll = 0
+    # if len(parents) != 0:
+    #     data['label'] = gmm_model.predict(data.values)
+    #     for i in range(n_comp):
+    #         sample = data.loc[data['label'] == i]
+    #         n = sample.shape[0]
+    #         m = linear_model.LinearRegression().fit(sample[parents].values, sample[var].values)
+    #         predict = m.predict(sample[parents].values)
+    #         variance = math.sqrt(mse(sample[var].values, predict))
+    #         cond_m = [m.intercept_]*n + np.sum(([m.coef_]*n) * (sample[parents].values), axis=1)
+    #         # for j in range(len(parents)):
+    #         #     cond_m += ([m.coef_[j]]*n)*sample[parents[j]].values
+    #         p = norm(loc=cond_m, scale=variance).logpdf(sample[var].values)
+    #         p = [0 if math.isnan(x) else x for x in p]
+    #         ll += np.sum(p) / sample.shape[0]
+    #     ll /= n_comp
+    # else:
+    #     ll = np.sum(gmm_model.score(data.values))
+    # if math.isnan(ll):
+    #     ll = -10000000000000000000
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # v = []
+    # par = []
+    # if data.shape[1] == 1:
+    #     v.append(data.columns[0])
+    # else:
+    #     v.append(data.columns[0])
+    #     par = data.columns[1:]
     ll = 0
     try:
-        n_comp = int((component(data, data.columns, 'aic') + component(data, data.columns, 'bic')) / 2)
+        n_comp = int((component(data, cols, 'aic') + component(data, cols, 'bic')) / 2)
         gmm_model = GaussianMixture(n_components=n_comp).fit(data.values)
         gmm_model = GMM(n_components=n_comp, priors=gmm_model.weights_, means=gmm_model.means_, covariances=gmm_model.covariances_)
         #gmm_model = GMM(n_components=n_comp).from_samples(data.values)
-        index = [j for j in range(1, len(par) + 1)]
+        index = [j for j in range(1, len(parents) + 1)]
         ll = 0
 
         if data.shape[1] != 1:
             def process_chunk(row):
+                import numpy as np
                 # df_chunk.reset_index(inplace=True, drop=True)
                 #for i in (df_chunk.shape[0]):
                 # par_val = df_chunk.loc[i, par].values
@@ -44,6 +87,7 @@ def BIC_local(data):
         else:
 
             def process_chunk_simple(row):
+                import numpy as np
                 # df_chunk.reset_index(inplace=True, drop=True)
                 #for i in (df_chunk.shape[0]):
                 # par_val = df_chunk.loc[i, par].values
@@ -107,12 +151,11 @@ class BICGMM(StructureScore):
         super(BICGMM, self).__init__(data, **kwargs)
 
     def local_score(self, variable, parents):
+    
+
         """'Computes a score that measures how much a \
-        given variable is "influenced" by a given list of potential parents.'"""
-        nrow = len(self.data)
-        list_var = [variable]
-        list_var.extend(parents)       
-        score = BIC_local(self.data[list_var])
+        given variable is "influenced" by a given list of potential parents.'"""    
+        score = BIC_local(self.data, variable, parents)
 
         return score
 

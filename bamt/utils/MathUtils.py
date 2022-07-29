@@ -71,23 +71,24 @@ def sum_dist(data, vals, q):
 
 
 def component(data, columns, method):
+    data = data[columns]
     n = 1
     max_comp = 10
     x = []
-    if len(columns) != 0:
-        if data.shape[0] < max_comp:
-            max_comp = data.shape[0]
-        if len(columns) == 1:
-            x = np.transpose([data[columns[0]].values])
-        else:
-            x = data[columns].values
+    # if len(columns) != 0:
+    #     if data.shape[0] < max_comp:
+    #         max_comp = data.shape[0]
+    #     if len(columns) == 1:
+    #         x = np.transpose([data[columns[0]].values])
+    #     else:
+    #         x = data[columns].values
+    # else:
+    if data.shape[0] < max_comp:
+        max_comp = data.shape[0]
+    if len(data.shape) == 1:
+        x = np.transpose([data])
     else:
-        if data.shape[0] < max_comp:
-            max_comp = data.shape[0]
-        if len(data.shape) == 1:
-            x = np.transpose([data])
-        else:
-            x = data
+        x = data
     if method == 'aic':
         lowest_aic = np.infty
         comp_lowest = 0
