@@ -1,5 +1,4 @@
 import bamt.utils.GraphUtils
-from bamt import Builders, Nodes
 import random
 import re
 import networkx as nx
@@ -10,15 +9,18 @@ import numpy as np
 import json
 import os
 
+from sklearn import preprocessing as pp
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from pyvis.network import Network
-
+from pyitlib import discrete_random_variable as drv
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
-from bamt.Builders import ParamDict
 
+from bamt.Builders import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
+from bamt import Builders, Nodes
+from bamt.Preprocessors import Preprocessor
 
 STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
 
@@ -39,6 +41,7 @@ class BaseNetwork(object):
         self._allowed_dtypes = ['Abstract']
         self.nodes = []
         self.edges = []
+        self.weights = {}
         self.descriptor = {"types": {},
                            "signs": {}}
         self.distributions = {}
@@ -112,7 +115,6 @@ class BaseNetwork(object):
                                                  scoring_function=scoring_function,
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
-       
            
             self.sf_name = scoring_function[0]
             
@@ -121,6 +123,41 @@ class BaseNetwork(object):
             # update family
             self.nodes = worker.skeleton['V']
             self.edges = worker.skeleton['E']
+
+    def calculate_weights(self, discretized_data: pd.DataFrame):
+        from bamt.Preprocessors import BasePreprocessor
+        if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(discretized_data).values()]):
+            logger_network.error(f"calculate_weghts() method deals only with discrete data. Continuous data: " +
+                                 f"{[col for col, type in BasePreprocessor.get_nodes_types(discretized_data).items() if type not in ['disc', 'disc_num']]}")
+        if not self.edges:
+            logger_network.error("Bayesian Network hasn't fitted yet. Please add edges with add_edges() method")
+        if not self.nodes:
+            logger_network.error("Bayesian Network hasn't fitted yet. Please add nodes with add_nodes() method")
+        weights = dict()
+
+        for node in self.nodes:
+            parents = node.cont_parents + node.disc_parents
+            if parents is None:
+                continue
+            y = discretized_data[node.name].values
+            if len(parents) == 1:
+                x = discretized_data[parents[0]].values
+                LS_true = drv.information_mutual(X=y, Y=x)
+                entropy = drv.entropy(X=y)
+                weight = LS_true / entropy
+                weights[(parents[0], node.name)] = weight
+            else:
+                for parent_node in parents:
+                    x = discretized_data[parent_node].values
+                    other_parents = [tmp for tmp in parents if tmp != parent_node]
+                    z = list()
+                    for other_parent in other_parents:
+                        z.append(list(discretized_data[other_parent].values))
+                    LS_true = np.average(drv.information_mutual_conditional(X=y, Y=x, Z=z, cartesian_product=True))
+                    entropy = np.average(drv.entropy_conditional(X=y, Y=z, cartesian_product=True)) + 1e-8
+                    weight = LS_true / entropy
+                    weights[(parent_node, node.name)] = weight
+        self.weights = weights
 
     def set_nodes(self, nodes: List, info: Optional[Dict] = None):
         """
@@ -244,10 +281,14 @@ class BaseNetwork(object):
         """
         if not outdir.endswith('.json'):
             return None
+        new_weights = dict()
+        for key in self.weights:
+            new_weights[str(key)] = self.weights[key]
         outdict = {
             'info': self.descriptor,
             'edges': self.edges,
-            'parameters': self.distributions
+            'parameters': self.distributions,
+            'weights': new_weights
         }
         with open(outdir, 'w+') as out:
             json.dump(outdict, out)
@@ -264,6 +305,12 @@ class BaseNetwork(object):
         self.add_nodes(input_dict['info'])
         self.set_structure(edges=input_dict['edges'])
         self.set_parameters(parameters=input_dict['parameters'])
+        str_keys = list(input_dict['weights'].keys())
+        tuple_keys = [eval(key) for key in str_keys]
+        weights = {}
+        for tuple_key in tuple_keys:
+            weights[tuple_key] = input_dict['weights'][str(tuple_key)]
+        self.weights = weights
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
@@ -372,7 +419,7 @@ class BaseNetwork(object):
             for i in tqdm(range(n), position=0, leave=True))
         seq_df = pd.DataFrame.from_dict(seq, orient='columns')
         seq_df.dropna(inplace=True)
-        cont_nodes = [c.name for c in self.nodes if c.type != 'Discrete']
+        cont_nodes = [c.name for c in self.nodes if c.type != 'Discrete' and 'Logit' not in c.type]
         positive_columns = [c for c in cont_nodes if self.descriptor['signs'][c] == 'pos']
         seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
         seq_df.reset_index(inplace=True, drop=True)
