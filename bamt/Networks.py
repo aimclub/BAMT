@@ -19,6 +19,7 @@ from bamt.Builders import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
 from bamt import Builders, Nodes
+
 # from bamt.Preprocessors import Preprocessor
 
 STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
@@ -103,20 +104,36 @@ class BaseNetwork(object):
             logger_network.error("Classifiers dict will be ignored since logit nodes are forbidden.")
             return None
 
+        # init_edges validation
+        if not self.has_logit and "init_edges" in params.keys():
+            type_map = np.array([
+                [self.descriptor["types"][node1], self.descriptor["types"][node2]] for node1, node2 in
+                 params["init_edges"]]
+            )
+            failed = (
+                    (type_map[:, 0] == "cont") &
+                    ((type_map[:, 1] == "disc") | (type_map[:, 1] == "disc_num"))
+            )
+            if sum(failed):
+                logger_network.warning(
+                    f"Edges between continuous nodes and disc nodes are forbidden (has_logit = {self.has_logit}), "
+                    f"they will be ignored. Indexes: {np.where(failed)[0]}")
+                for index in np.where(failed)[0]:
+                    del params["init_edges"][index]
+
         if not self.validate(descriptor=self.descriptor):
             logger_network.error(
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return None
         if optimizer == 'HC':
-          
             worker = Builders.HCStructureBuilder(data=data,
                                                  descriptor=self.descriptor,
                                                  scoring_function=scoring_function,
                                                  has_logit=self.has_logit,
                                                  use_mixture=self.use_mixture)
-           
+
             self.sf_name = scoring_function[0]
-            
+
             worker.build(data=data, params=params, classifier=classifier)
 
             # update family
@@ -250,7 +267,7 @@ class BaseNetwork(object):
         if not self.nodes:
             logger_network.error("Failed on search of BN's nodes.")
         # elif self._param_validation(parameters):
-            # pass
+        # pass
 
         self.distributions = parameters
 
@@ -426,7 +443,6 @@ class BaseNetwork(object):
         seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
         seq_df.reset_index(inplace=True, drop=True)
         seq = seq_df.to_dict('records')
-        
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')

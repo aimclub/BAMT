@@ -214,10 +214,10 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         :param remove_init_edges: allows changes in model defined by user
         :param white_list: list of allowed edges
         """
-        from bamt.Preprocessors import BasePreprocessor
-        if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(data).values()]):
+        import bamt.utils.GraphUtils as gru
+        if not all([i in ['disc', 'disc_num'] for i in gru.nodes_types(data).values()]):
             logger_builder.error(
-                f"K2 deals only with discrete data. Continuous data: {[col for col, type in BasePreprocessor.get_nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
+                f"K2 deals only with discrete data. Continuous data: {[col for col, type in gru.nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
             return None
         
         if len(self.scoring_function) != 2:
@@ -248,8 +248,8 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton['E'] = structure
 
-    def apply_group1(self, data: DataFrame, init_edges: List[Tuple[str, str]],
-                     remove_init_edges: bool, white_list: List[Tuple[str, str]]):
+    def apply_group1(self, data: DataFrame, init_edges: Optional[List[Tuple[str, str]]],
+                     remove_init_edges: bool, white_list: Optional[List[Tuple[str, str]]]):
         # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
         column_name_dict = dict([(n.name, i) for i, n in enumerate(self.vertices)])
         blacklist_new = []
