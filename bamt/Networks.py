@@ -1,4 +1,3 @@
-import bamt.utils.GraphUtils
 import random
 import re
 import networkx as nx
@@ -9,7 +8,7 @@ import numpy as np
 import json
 import os
 
-from sklearn import preprocessing as pp
+# from sklearn import preprocessing as pp
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from pyvis.network import Network
@@ -20,7 +19,7 @@ from bamt.Builders import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
 from bamt import Builders, Nodes
-from bamt.Preprocessors import Preprocessor
+# from bamt.Preprocessors import Preprocessor
 
 STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
 
@@ -125,10 +124,13 @@ class BaseNetwork(object):
             self.edges = worker.skeleton['E']
 
     def calculate_weights(self, discretized_data: pd.DataFrame):
-        from bamt.Preprocessors import BasePreprocessor
-        if not all([i in ['disc', 'disc_num'] for i in BasePreprocessor.get_nodes_types(discretized_data).values()]):
+        """
+        Provide calculation of link strength according mutual information between node and its parent(-s) values.
+        """
+        import bamt.utils.GraphUtils as gru
+        if not all([i in ['disc', 'disc_num'] for i in gru.nodes_types(discretized_data).values()]):
             logger_network.error(f"calculate_weghts() method deals only with discrete data. Continuous data: " +
-                                 f"{[col for col, type in BasePreprocessor.get_nodes_types(discretized_data).items() if type not in ['disc', 'disc_num']]}")
+                                 f"{[col for col, type in gru.nodes_types(discretized_data).items() if type not in ['disc', 'disc_num']]}")
         if not self.edges:
             logger_network.error("Bayesian Network hasn't fitted yet. Please add edges with add_edges() method")
         if not self.nodes:
