@@ -104,22 +104,24 @@ class BaseNetwork(object):
             logger_network.error("Classifiers dict will be ignored since logit nodes are forbidden.")
             return None
 
-        # init_edges validation
-        if not self.has_logit and "init_edges" in params.keys():
-            type_map = np.array([
-                [self.descriptor["types"][node1], self.descriptor["types"][node2]] for node1, node2 in
-                 params["init_edges"]]
-            )
-            failed = (
-                    (type_map[:, 0] == "cont") &
-                    ((type_map[:, 1] == "disc") | (type_map[:, 1] == "disc_num"))
-            )
-            if sum(failed):
-                logger_network.warning(
-                    f"Edges between continuous nodes and disc nodes are forbidden (has_logit = {self.has_logit}), "
-                    f"they will be ignored. Indexes: {np.where(failed)[0]}")
-                for index in np.where(failed)[0]:
-                    del params["init_edges"][index]
+        # params validation
+        if params:
+            # init_edges validation
+            if not self.has_logit and "init_edges" in params.keys():
+                type_map = np.array([
+                    [self.descriptor["types"][node1], self.descriptor["types"][node2]] for node1, node2 in
+                     params["init_edges"]]
+                )
+                failed = (
+                        (type_map[:, 0] == "cont") &
+                        ((type_map[:, 1] == "disc") | (type_map[:, 1] == "disc_num"))
+                )
+                if sum(failed):
+                    logger_network.warning(
+                        f"Edges between continuous nodes and disc nodes are forbidden (has_logit = {self.has_logit}), "
+                        f"they will be ignored. Indexes: {np.where(failed)[0]}")
+                    for index in np.where(failed)[0]:
+                        del params["init_edges"][index]
 
         if not self.validate(descriptor=self.descriptor):
             logger_network.error(
