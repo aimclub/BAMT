@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn import preprocessing as pp
 import bamt.Networks as Networks
 
-vk_data = pd.read_csv(r"data\real data\vk_data.csv", index_col=0)
+vk_data = pd.read_csv(r"data\real data\vk_data.csv").sample(150)
 
 encoder = pp.LabelEncoder()
 discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')
@@ -25,4 +25,3 @@ bn.fit_parameters(data=vk_data)
 
 # bn.get_info(as_df=False)
 bn.sample(n=100)
-

@@ -425,6 +425,12 @@ class BaseNetwork(object):
                             pvals = [str(output[t]) for t in parents]
                         else:
                             pvals = [output[t] for t in parents]
+
+                        # If any nan from parents, sampling from node blocked.
+                        if any(pd.isnull(pvalue) for pvalue in pvals):
+                            output[node.name] = np.nan
+                            continue
+
                     if predict:
                         output[node.name] = \
                             node.predict(

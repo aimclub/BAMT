@@ -172,8 +172,6 @@ class DiscreteNode(BaseNode):
         else:
             max_ind = random.choice(indices)
         return vals[max_ind]
-        
-
 
 
 class GaussianParams(TypedDict):
