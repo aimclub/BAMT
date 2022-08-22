@@ -120,8 +120,8 @@ class BaseNetwork(object):
                     logger_network.warning(
                         f"Edges between continuous nodes and disc nodes are forbidden (has_logit = {self.has_logit}), "
                         f"they will be ignored. Indexes: {np.where(failed)[0]}")
-                    for index in np.where(failed)[0]:
-                        del params["init_edges"][index]
+                    params["init_edges"] = [params["init_edges"][i] for i in range(len(params["init_edges"]))
+                                            if i not in np.where(failed)[0]]
 
         if not self.validate(descriptor=self.descriptor):
             logger_network.error(
