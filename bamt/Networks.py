@@ -655,7 +655,7 @@ class BigBraveBN:
         self.proximity_metric = proximity_metric
         self.possible_edges = []
 
-    def get_possible_edges_by_brave(self, df, proximity_matrix):
+    def get_possible_edges_by_brave(self, df):
         """Returns list of possible edges for structure learning
 
         Args:
@@ -668,7 +668,7 @@ class BigBraveBN:
         Returns:
             Possible edges: list of possible edges
         """
-        proximity_matrix = (df, df, self.proximity_metric)
+        proximity_matrix = get_proximity_matrix(df, df, proximity_metric = self.proximity_metric)
         brave_matrix = get_brave_matrix(df, proximity_matrix, self.n_nearest)
 
         possible_edges_list = []
