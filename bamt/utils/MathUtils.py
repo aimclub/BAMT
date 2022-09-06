@@ -198,12 +198,14 @@ def get_brave_matrix(df, proximity_matrix, n_nearest=5) -> pd.DataFrame:
     groups = get_n_nearest(proximity_matrix, df.columns.tolist(),
                            corr=True, number_close=n_nearest)
 
+    initial_value = .0
+
     for c1 in df.columns:
         for c2 in df.columns:
-            a = .0
-            b = .0
-            c = .0
-            d = .0
+            a = initial_value
+            b = initial_value
+            c = initial_value
+            d = initial_value
             if c1 != c2:
                 for g in groups:
                     if (c1 in g) & (c2 in g):
@@ -214,8 +216,14 @@ def get_brave_matrix(df, proximity_matrix, n_nearest=5) -> pd.DataFrame:
                         c += 1
                     if (c1 not in g) & (c2 not in g):
                         d += 1
-                br = (a * len(groups) + (a + c)*(a + b)) / ((math.sqrt((a + c) *
-                                                                       (b + d))) * (math.sqrt((a + b) * (c + d))))
-                brave_matrix.loc[c1, c2] = br
+
+                if (a + c) * (b + d) != 0 and (a + b) * (c + d) != 0:
+
+                    br = (a * len(groups) + (a + c)*(a + b)) / ((math.sqrt((a + c) *
+                                                                        (b + d))) * (math.sqrt((a + b) * (c + d))))
+                    brave_matrix.loc[c1, c2] = br
+                else:
+                    br = 0
+                    brave_matrix.loc[c1, c2] = br
 
     return brave_matrix
