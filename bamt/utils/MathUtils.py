@@ -198,14 +198,14 @@ def get_brave_matrix(df, proximity_matrix, n_nearest=5) -> pd.DataFrame:
     groups = get_n_nearest(proximity_matrix, df.columns.tolist(),
                            corr=True, number_close=n_nearest)
 
-    initial_value = .0
+    counter_zeroer = .0
 
     for c1 in df.columns:
         for c2 in df.columns:
-            a = initial_value
-            b = initial_value
-            c = initial_value
-            d = initial_value
+            a = counter_zeroer
+            b = counter_zeroer
+            c = counter_zeroer
+            d = counter_zeroer
             if c1 != c2:
                 for g in groups:
                     if (c1 in g) & (c2 in g):

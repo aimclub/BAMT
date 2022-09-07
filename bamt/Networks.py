@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
+from sklearn.preprocessing import OrdinalEncoder
 
 from bamt.Builders import ParamDict
 from bamt.log import logger_network
@@ -668,7 +669,15 @@ class BigBraveBN:
         Returns:
             Possible edges: list of possible edges
         """
-        proximity_matrix = get_proximity_matrix(df, df, proximity_metric = self.proximity_metric)
+
+        encoder = OrdinalEncoder()
+        df_coded = df
+        columnsToEncode = list(df_coded.select_dtypes(include=['category','object']))
+
+        df_coded[columnsToEncode] = encoder.fit_transform(df_coded[columnsToEncode])
+
+
+        proximity_matrix = get_proximity_matrix(df, df_coded, proximity_metric = self.proximity_metric)
         brave_matrix = get_brave_matrix(df, proximity_matrix, self.n_nearest)
 
         possible_edges_list = []
