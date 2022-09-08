@@ -9,11 +9,6 @@ import bamt.Networks as Nets
 import os
 import sys
 from pathlib import Path
-currentdir = Path(os.getcwd())
-sys.path.insert(0, os.path.dirname(currentdir.parent))
-sys.path.insert(0, os.path.dirname(currentdir))
-print(str(sys.path[0:3]))
-
 
 data_discrete = pd.read_csv(r"../Data/benchmark/pigs.csv")
 data_continuous = pd.read_csv(r"../Data/benchmark/arth150.csv")
