@@ -221,9 +221,8 @@ def get_brave_matrix(df, proximity_matrix, n_nearest=5) -> pd.DataFrame:
 
                     br = (a * len(groups) + (a + c) * (a + b)) / ((math.sqrt((a + c) *
                                                                              (b + d))) * (math.sqrt((a + b) * (c + d))))
-                    brave_matrix.loc[c1, c2] = br
                 else:
                     br = (a * len(groups) + (a + c) * (a + b)) / 0.0000000001
-                    brave_matrix.loc[c1, c2] = br
+                brave_matrix.loc[c1, c2] = br
 
     return brave_matrix
