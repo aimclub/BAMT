@@ -700,7 +700,7 @@ class BigBraveBN:
 
         proximity_matrix = get_proximity_matrix(
             df, proximity_metric=self.proximity_metric)
-        brave_matrix = get_brave_matrix(df, proximity_matrix, self.n_nearest)
+        brave_matrix = get_brave_matrix(df.columns, proximity_matrix, self.n_nearest)
 
         possible_edges_list = []
 
