@@ -139,11 +139,11 @@ def get_n_nearest(data, columns, corr=False, number_close=5):
     """
     groups = []
     for c in columns:
-            if corr:
-                  close_ind = data[c].sort_values(ascending=False).index.tolist()
-            else:
-                  close_ind = data[c].sort_values().index.tolist()
-            groups.append(close_ind[0:number_close + 1])
+        if corr:
+            close_ind = data[c].sort_values(ascending=False).index.tolist()
+        else:
+            close_ind = data[c].sort_values().index.tolist()
+        groups.append(close_ind[0:number_close + 1])
 
     return groups
 
