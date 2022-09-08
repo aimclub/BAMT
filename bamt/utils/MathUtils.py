@@ -5,6 +5,7 @@ from scipy import stats
 from sklearn.metrics import mutual_info_score
 from sklearn.mixture import GaussianMixture
 from scipy.stats.distributions import chi2
+from sklearn.preprocessing import OrdinalEncoder
 
 
 def lrts_comp(data):
@@ -148,7 +149,7 @@ def get_n_nearest(data, columns, corr=False, number_close=5):
     return groups
 
 
-def get_proximity_matrix(df, df_coded, proximity_metric) -> pd.DataFrame:
+def get_proximity_matrix(df, proximity_metric) -> pd.DataFrame:
     """Returns matrix of proximity matrix of the dataframe, dataframe must be coded first if it contains
                                                                                                     categorical data
 
@@ -160,6 +161,14 @@ def get_proximity_matrix(df, df_coded, proximity_metric) -> pd.DataFrame:
     Returns:
         df_distance: mutual information matrix
     """
+
+    encoder = OrdinalEncoder()
+    df_coded = df
+    columnsToEncode = list(df_coded.select_dtypes(
+        include=['category', 'object']))
+
+    df_coded[columnsToEncode] = encoder.fit_transform(
+        df_coded[columnsToEncode])    
 
     df_distance = pd.DataFrame(data=np.zeros(
         (len(df.columns), len(df.columns))), columns=df.columns)
