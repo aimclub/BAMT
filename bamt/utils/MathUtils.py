@@ -138,7 +138,7 @@ def get_n_nearest(data, columns, corr=False, number_close=5):
         groups
     """
     groups = []
-        for c in columns:
+    for c in columns:
             if corr:
                   close_ind = data[c].sort_values(ascending=False).index.tolist()
             else:
