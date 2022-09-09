@@ -168,7 +168,7 @@ def get_proximity_matrix(df, proximity_metric) -> pd.DataFrame:
         include=['category', 'object']))
 
     df_coded[columnsToEncode] = encoder.fit_transform(
-        df_coded[columnsToEncode])    
+        df_coded[columnsToEncode])
 
     df_distance = pd.DataFrame(data=np.zeros(
         (len(df.columns), len(df.columns))), columns=df.columns)
