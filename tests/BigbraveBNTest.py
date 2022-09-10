@@ -24,7 +24,7 @@ info = p.info
 
 space_restrictor = BigBraveBN()
 
-space_restrictor.get_possible_edges_by_brave(
+space_restrictor.set_possible_edges_by_brave(
     df=data_discrete)
 
 ps = space_restrictor.possible_edges
@@ -48,7 +48,7 @@ info = p.info
 
 space_restrictor = BigBraveBN()
 
-space_restrictor.get_possible_edges_by_brave(
+space_restrictor.set_possible_edges_by_brave(
     df=data_continuous)
 
 ps = space_restrictor.possible_edges
