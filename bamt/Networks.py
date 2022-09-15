@@ -359,12 +359,16 @@ class BaseNetwork(object):
         if self.has_logit:
             if any(['Logit' in node.type for node in self.nodes]):
                 if not os.path.isdir(STORAGE):
+                    os.makedirs(STORAGE)
+
+                # init folder
+                if not os.listdir(STORAGE):
                     os.makedirs(os.path.join(STORAGE, "0"))
-                elif os.listdir(STORAGE):
-                    index = sorted(
-                        [int(id) for id in os.listdir(STORAGE)]
-                    )[-1] + 1
-                    os.makedirs(os.path.join(STORAGE, str(index)))
+
+                index = sorted(
+                    [int(id) for id in os.listdir(STORAGE)]
+                )[-1] + 1
+                os.makedirs(os.path.join(STORAGE, str(index)))
 
         # Turn all discrete values to str for learning algorithm
         if 'disc_num' in self.descriptor['types'].values():
