@@ -28,7 +28,7 @@ def BIC_local_gmm(data, var, parents):
         n_comp = number_of_components(data, cols)
         #n_comp = number_of_components_k_means(data, cols)
         gmm_model = GaussianMixture(n_components=n_comp, init_params='k-means++').fit(data.values)
-        ll = np.sum(gmm_model.score(data.values)) - 0.005*np.log(N)*n_comp*(d + 1 + d*(d+1)//2)
+        ll = np.sum(gmm_model.score(data.values)) - 0.001*np.log(N)*n_comp*(d + 1 + d*(d+1)//2)
     else:
         cols = [var]+parents
         data = data[cols]
@@ -46,7 +46,7 @@ def BIC_local_gmm(data, var, parents):
         #variance = math.sqrt(mse(data[var].values, cond_m))
         p = norm(loc=cond_m, scale=std).logpdf(data[var].values)
         p = [0 if math.isnan(x) or math.isinf(x) else x for x in p]
-        ll = (np.sum(p)/N) - 0.005*np.log(N)*n_comp*(d + 1 + d*(d+1)//2)
+        ll = (np.sum(p)/N) - 0.001*np.log(N)*n_comp*(d + 1 + d*(d+1)//2)
 
     return round(ll)
 

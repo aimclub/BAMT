@@ -6,12 +6,13 @@ from scipy.stats.distributions import chi2
 from kneed import KneeLocator
 from yellowbrick.cluster import KElbowVisualizer
 from sklearn.cluster import KMeans
+from sklearn.linear_model import LinearRegression
 
 
 def lrts_comp(data):
-    n = 0
-    biggets_p = -1 * np.infty
-    comp_biggest = 0
+    n = 1
+    ps = []
+    comps = []
     max_comp = 10
     if len(data) < max_comp:
         max_comp = len(data)
@@ -22,12 +23,15 @@ def lrts_comp(data):
         ll1 = np.mean(gm1.score_samples(data))
         gm2.fit(data)
         ll2 = np.mean(gm2.score_samples(data))
-        LR = 2 * (ll2 - ll1)
-        p = chi2.sf(LR, 1)
-        if p > biggets_p:
-            biggets_p = p
-            comp_biggest = i
-        n = comp_biggest
+        LR = -2 * (ll1 - ll2)
+        p = chi2.sf(LR, 2)
+        ps.append(p)
+        comps.append(i)
+    if len(comps) > 1:
+        kn = KneeLocator(comps, ps, curve="concave", direction="increasing")
+        n = kn.knee
+        if not n:
+            n = np.argmax(ps) + 1
     return n
 
 
@@ -79,14 +83,6 @@ def component(data, columns, method):
     n = 1
     max_comp = 10
     x = []
-    # if len(columns) != 0:
-    #     if data.shape[0] < max_comp:
-    #         max_comp = data.shape[0]
-    #     if len(columns) == 1:
-    #         x = np.transpose([data[columns[0]].values])
-    #     else:
-    #         x = data[columns].values
-    # else:
     if data.shape[0] < max_comp:
         max_comp = data.shape[0]
     if len(data.shape) == 1:
@@ -94,16 +90,6 @@ def component(data, columns, method):
     else:
         x = data
     if method == 'aic':
-        # lowest_aic = np.infty
-        # comp_lowest = 0
-        # for i in range(1, max_comp + 1, 1):
-        #     gm1 = GaussianMixture(n_components=i, random_state=0)
-        #     gm1.fit(x)
-        #     aic1 = gm1.aic(x)
-        #     if aic1 < lowest_aic:
-        #         lowest_aic = aic1
-        #         comp_lowest = i
-        #     n = comp_lowest
         aics = []
         comps = []
         for i in range(1, max_comp + 1, 1):
@@ -121,19 +107,7 @@ def component(data, columns, method):
             if not n:
                 n = np.argmin(aics) + 1
             
-        
-
     if method == 'bic':
-        # lowest_bic = np.infty
-        # comp_lowest = 0
-        # for i in range(1, max_comp + 1, 1):
-        #     gm1 = GaussianMixture(n_components=i, random_state=0)
-        #     gm1.fit(x)
-        #     bic1 = gm1.bic(x)
-        #     if bic1 < lowest_bic:
-        #         lowest_bic = bic1
-        #         comp_lowest = i
-        #     n = comp_lowest
         bics = []
         comps = []
         for i in range(1, max_comp + 1, 1):
@@ -161,6 +135,8 @@ def component(data, columns, method):
             dists.append(dist)
         kn1 = KneeLocator([i for i in range(1, max_comp, 1)], dists, curve='convex', direction='decreasing')
         n = kn1.knee
+        if not n:
+            n = np.argmin(dists) + 1
     return n
 
 def number_of_components(data, columns):
@@ -184,27 +160,104 @@ def number_of_components(data, columns):
         aics.append(aic1)
         comps.append(i)
     if len(comps) > 1:
-        kn1 = KneeLocator(comps, bics, curve='convex', direction='decreasing')
-        kn2 = KneeLocator(comps, aics, curve='convex', direction='decreasing')
-        if kn1.knee and kn2.knee:
-            n = int((kn1.knee + kn2.knee) / 2)
-        else:
-            n = int((np.argmin(bics) + 1 + np.argmin(aics) + 1) / 2)
+        # kn1 = KneeLocator(comps, bics, curve='convex', direction='decreasing')
+        # kn2 = KneeLocator(comps, aics, curve='convex', direction='decreasing')
+        # if kn1.knee and kn2.knee:
+        #     n = int((kn1.knee + kn2.knee) / 2)
+        # else:
+        n = int((np.argmin(bics) + 1 + np.argmin(aics) + 1) / 2)
+    return n
+
+def lrts_comp_old(data):
+    n = 0
+    biggets_p = -1 * np.infty
+    comp_biggest = 0
+    max_comp = 10
+    if len(data) < max_comp:
+        max_comp = len(data)
+    for i in range(1, max_comp + 1, 1):
+        gm1 = GaussianMixture(n_components=i, random_state=0)
+        gm2 = GaussianMixture(n_components=i + 1, random_state=0)
+        gm1.fit(data)
+        ll1 = np.mean(gm1.score_samples(data))
+        gm2.fit(data)
+        ll2 = np.mean(gm2.score_samples(data))
+        LR = 2 * (ll2 - ll1)
+        p = chi2.sf(LR, 1)
+        if p > biggets_p:
+            biggets_p = p
+            comp_biggest = i
+        n = comp_biggest
     return n
 
 
-def number_of_components_k_means(data, columns):
-    data = data[columns].values
+def component_old(data, columns, method):
+    n = 1
     max_comp = 10
+    x = []
     if data.shape[0] < max_comp:
         max_comp = data.shape[0]
-    Sum_of_squared_distances = []
-    K = range(1,max_comp)
-    for k in K:
-        km = KMeans(n_clusters=k)
-        km = km.fit(data)
-        Sum_of_squared_distances.append(km.inertia_)
-    kn1 = KneeLocator(K, Sum_of_squared_distances, curve='convex', direction='decreasing')
+    if len(columns) == 1:
+        x = np.transpose([data[columns[0]].values])
+    else:
+        x = data[columns].values
+    if method == 'aic':
+        lowest_aic = np.infty
+        comp_lowest = 0
+        for i in range(1, max_comp + 1, 1):
+            gm1 = GaussianMixture(n_components=i, random_state=0)
+            gm1.fit(x)
+            aic1 = gm1.aic(x)
+            if aic1 < lowest_aic:
+                lowest_aic = aic1
+                comp_lowest = i
+            n = comp_lowest
 
-    return kn1.knee
-    
+    if method == 'bic':
+        lowest_bic = np.infty
+        comp_lowest = 0
+        for i in range(1, max_comp + 1, 1):
+            gm1 = GaussianMixture(n_components=i, random_state=0)
+            gm1.fit(x)
+            bic1 = gm1.bic(x)
+            if bic1 < lowest_bic:
+                lowest_bic = bic1
+                comp_lowest = i
+            n = comp_lowest
+
+    if method == 'LRTS':
+        n = lrts_comp_old(x)
+    if method == 'quantile':
+        biggest_p = -1 * np.infty
+        comp_biggest = 0
+        for i in range(1, max_comp, 1):
+            vals, q = theoretical_quantile(x, i)
+            dist = sum_dist(x, vals, q)
+            p = probability_mix(dist, vals, q)
+            if p > biggest_p:
+                biggest_p = p
+                comp_biggest = i
+        n = comp_biggest
+    return n
+
+
+coef095 = [13.5, 43.5, 73.25, 101.25, 133.5, 161.75, 198.0, 217.25, 249.25, 275.25]
+intercept095 = [-7.499999999999993,
+ -29.66666666666662,
+ -39.666666666666615,
+ -56.49999999999994,
+ -76.33333333333329,
+ -78.33333333333329,
+ -105.49999999999989,
+ -94.99999999999994,
+ -113.66666666666663,
+ -92.49999999999977]
+
+def func_for_ndim (n_dim):
+    Zpred095 = []
+    for j in range(10):
+        Zpred095.append(n_dim*coef095[j] + intercept095[j])
+    return Zpred095
+def sample_n_comp (size, Z):
+    m095 = LinearRegression().fit(np.transpose([Z]), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    return round(m095.predict([[size]])[0])
