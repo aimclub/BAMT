@@ -1,0 +1,1 @@
+{"types": {"Tectonic regime": "disc", "Period": "disc", "Lithology": "disc", "Structural setting": "disc", "Gross": "cont", "Netpay": "cont", "Porosity": "cont", "Permeability": "cont", "Depth": "cont"}, "signs": {"Gross": "pos", "Netpay": "pos", "Porosity": "pos", "Permeability": "pos", "Depth": "pos"}}

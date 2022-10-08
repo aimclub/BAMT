@@ -92,6 +92,7 @@ class BaseNetwork(object):
         self.nodes = worker_1.vertices
 
     def add_edges(self, data: pd.DataFrame, scoring_function: Union[Tuple[str, Callable], Tuple[str]],
+                  progress_bar: bool = True,
                   classifier: Optional[object] = None,
                   params: Optional[ParamDict] = None, optimizer: str = 'HC'):
         """
@@ -140,7 +141,7 @@ class BaseNetwork(object):
 
             self.sf_name = scoring_function[0]
 
-            worker.build(data=data, params=params, classifier=classifier)
+            worker.build(data=data, params=params, classifier=classifier, progress_bar=progress_bar)
 
             # update family
             self.nodes = worker.skeleton['V']
@@ -410,6 +411,7 @@ class BaseNetwork(object):
 
     def sample(self,
                n: int,
+               progress_bar: bool = True,
                evidence: Optional[Dict[str, Union[str, int, float]]] = None,
                as_df: bool = True,
                predict: bool = False,
@@ -464,9 +466,11 @@ class BaseNetwork(object):
                                 self.distributions[node.name], pvals=pvals)
             return output
 
-        seq = Parallel(n_jobs=parall_count)(
-            delayed(wrapper)()
-            for i in tqdm(range(n), position=0, leave=True))
+        if progress_bar:
+            seq = Parallel(n_jobs=parall_count)(
+                delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True))
+        else:
+            seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
         seq_df = pd.DataFrame.from_dict(seq, orient='columns')
         seq_df.dropna(inplace=True)
         cont_nodes = [c.name for c in self.nodes if c.type !=
