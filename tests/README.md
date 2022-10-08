@@ -37,6 +37,7 @@ They are an assertion with any feature we want to compare.</dd>
 </ul>
 
 ## How to add new test
+![Flowcharts](https://user-images.githubusercontent.com/68499591/194711621-8d398d86-13ff-449e-8ce3-0004b013b2a2.png)
 ### How to write and use rules
 <p>
 In order to write new rule we need to write a wrapper for <code>use_rules(...)</code> with the rule itself. <br> 
