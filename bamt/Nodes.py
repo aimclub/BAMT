@@ -1,3 +1,4 @@
+from statistics import variance
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
 from concurrent.futures import ThreadPoolExecutor
@@ -177,88 +178,204 @@ class DiscreteNode(BaseNode):
 
 
 class GaussianParams(TypedDict):
-    mean: np.ndarray
-    coef: Sequence[Any]
+    #mean: np.ndarray
+    #coef: Sequence[Any]
+    #variance: Union[np.ndarray, float]
+    
+    regressor: str
+    regressor_obj: Optional[Union[str, bool, bytes]]
     variance: Union[np.ndarray, float]
+    mean: Union[np.ndarray, float]
+    serialization: str
 
 
 class GaussianNode(BaseNode):
     """
     Main class for Gaussian Node
     """
-
-    def __init__(self, name: str, model=linear_model.LinearRegression()):
+    def __init__(self, name, regressor: Optional[object] = None):
         super(GaussianNode, self).__init__(name)
-        self.model = model
-        self.type = 'Gaussian'
+        if regressor is None:
+            regressor = linear_model.LinearRegression()
+        self.regressor = regressor
+        self.type = 'Gaussian' + f" ({type(self.regressor).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> GaussianParams:
-        """
-        Function for training parameters for gaussian node
-        """
-        parents = self.disc_parents + self.cont_parents
+        parents = self.cont_parents
         if parents:
-            # model = self.model
-            predict = []
-            if len(parents) == 1:
-                self.model.fit(np.transpose([data[parents[0]].values]), data[self.name].values)
-                predict = self.model.predict(np.transpose([data[parents[0]].values]))
+            self.regressor.fit(data[parents].values, data[self.name].values)
+            predicted_value = self.regressor.predict(data[parents].values)
+            variance = mse(data[self.name].values, predicted_value, squared=False)
+            serialization = self.choose_serialization(self.regressor)
+
+            if serialization == 'pickle':
+                ex_b = pickle.dumps(self.regressor, protocol=4)
+                # model_ser = ex_b.decode('latin1').replace('\'', '\"')
+                model_ser = ex_b.decode('latin1')
+                return { 'mean':np.nan,
+                        'regressor_obj': model_ser,
+                        'regressor': type(self.regressor).__name__,
+                        'variance':variance,
+                        'serialization': 'pickle'}
             else:
-                self.model.fit(data[parents].values, data[self.name].values)
-                predict = self.model.predict(data[parents].values)
-            variance = mse(data[self.name].values, predict)
-            return {"mean": self.model.intercept_,
-                    "coef": list(self.model.coef_),
-                    "variance": variance}
+                logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
+                index = str(int(os.listdir(STORAGE)[-1]))
+                if not os.path.isdir(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}")):
+                    os.makedirs(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}"))
+                path = os.path.abspath(os.path.join(STORAGE,
+                                                    index,
+                                                    f"{self.name.replace(' ', '_')}",
+                                                    f"{self.name.replace(' ', '_')}.joblib.compressed"))
+
+                joblib.dump(self.regressor, path, compress=True, protocol=4)
+                return { 'mean':np.nan,
+                        'regressor_obj': path,
+                        'regressor': type(self.regressor).__name__,
+                        'variance':variance,
+                        'serialization': 'joblib'}
         else:
             mean_base = np.mean(data[self.name].values)
-            self.model.intercept_ = mean_base
-            self.model.coef_ = np.array([])
             variance = np.var(data[self.name].values)
-            return {"mean": mean_base,
-                    "coef": [],
-                    "variance": variance}
+            return {    'mean':mean_base,
+                        'regressor_obj': None,
+                        'regressor': None,
+                        'variance':variance,
+                        'serialization': None}
 
-    @staticmethod
-    def choose(node_info: Dict[str, Union[float, List[float]]],
-               pvals: List[float]) -> float:
+
+
+    # def __init__(self, name: str, model=linear_model.LinearRegression()):
+    #     super(GaussianNode, self).__init__(name)
+    #     self.model = model
+    #     self.type = 'Gaussian'
+
+    # def fit_parameters(self, data: DataFrame) -> GaussianParams:
+    #     """
+    #     Function for training parameters for gaussian node
+    #     """
+    #     parents = self.disc_parents + self.cont_parents
+    #     if parents:
+    #         # model = self.model
+    #         predict = []
+    #         if len(parents) == 1:
+    #             self.model.fit(np.transpose([data[parents[0]].values]), data[self.name].values)
+    #             predict = self.model.predict(np.transpose([data[parents[0]].values]))
+    #         else:
+    #             self.model.fit(data[parents].values, data[self.name].values)
+    #             predict = self.model.predict(data[parents].values)
+    #         variance = mse(data[self.name].values, predict)
+    #         return {"mean": self.model.intercept_,
+    #                 "coef": list(self.model.coef_),
+    #                 "variance": variance}
+    #     else:
+    #         mean_base = np.mean(data[self.name].values)
+    #         self.model.intercept_ = mean_base
+    #         self.model.coef_ = np.array([])
+    #         variance = np.var(data[self.name].values)
+    #         return {"mean": mean_base,
+    #                 "coef": [],
+    #                 "variance": variance}
+
+ 
+    def choose(self, node_info: GaussianParams, pvals: List[float]) -> float:
         """
-        Return value from Gaussian node
+        Return value from Logit node
         params:
-        node_info: information about node
+        node_info: nodes info from distributions
         pvals: parent values
         """
-        mean = node_info["mean"]
-        if pvals:
-            for i, m in enumerate(pvals):
-                mean += m * node_info['coef'][i]
-        variance = node_info['variance']
-        # distribution = [mean, variance]
-        return random.gauss(mean, math.sqrt(variance))
+        flag = False
+        for el in pvals:
+            if str(el) == 'nan':
+                flag = True
+                break
+        if flag:
+            return np.nan
+        else:
+            if pvals:
+                if node_info["serialization"] == 'joblib':
+                    model = joblib.load(node_info["regressor_obj"])
+                else:
+                        # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                    a = node_info["regressor_obj"].encode('latin1')
+                    model = pickle.loads(a)
 
-    @staticmethod
-    def predict(node_info: Dict[str, Union[float, List[float]]],
-                pvals: List[float]) -> float:
-        """function for prediction in gaussian node
+                cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
+                var = node_info['variance']
+                return random.gauss(cond_mean, var)
+            else:
+                return random.gauss(node_info['mean'], math.sqrt(node_info['variance']))
 
-        Args:
-            node_info (Dict[str, Union[float, List[float]]]): node parameters
-            pvals (List[float]): parent values
-
-        Returns:
-            float: prediction
+    def predict(self, node_info: GaussianParams, pvals: List[float]) -> float:
         """
-        mean = node_info["mean"]
-        if pvals:
-            for i, m in enumerate(pvals):
-                mean += m * node_info['coef'][i]
-        return mean
+        Return prediction from Logit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+        flag = False
+        for el in pvals:
+            if str(el) == 'nan':
+                flag = True
+                break
+        if flag:
+            return np.nan
+        else:
+            if pvals:
+                if node_info["serialization"] == 'joblib':
+                    model = joblib.load(node_info["regressor_obj"])
+                else:
+                        # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                    a = node_info["regressor_obj"].encode('latin1')
+                    model = pickle.loads(a)
+
+                pred = model.predict(np.array(pvals).reshape(1, -1))[0]
+                return pred
+            else:
+                return node_info['mean']
+
+    # @staticmethod
+    # def choose(node_info: Dict[str, Union[float, List[float]]],
+    #            pvals: List[float]) -> float:
+    #     """
+    #     Return value from Gaussian node
+    #     params:
+    #     node_info: information about node
+    #     pvals: parent values
+    #     """
+    #     mean = node_info["mean"]
+    #     if pvals:
+    #         for i, m in enumerate(pvals):
+    #             mean += m * node_info['coef'][i]
+    #     variance = node_info['variance']
+    #     # distribution = [mean, variance]
+    #     return random.gauss(mean, math.sqrt(variance))
+
+    # @staticmethod
+    # def predict(node_info: Dict[str, Union[float, List[float]]],
+    #             pvals: List[float]) -> float:
+    #     """function for prediction in gaussian node
+
+    #     Args:
+    #         node_info (Dict[str, Union[float, List[float]]]): node parameters
+    #         pvals (List[float]): parent values
+
+    #     Returns:
+    #         float: prediction
+    #     """
+    #     mean = node_info["mean"]
+    #     if pvals:
+    #         for i, m in enumerate(pvals):
+    #             mean += m * node_info['coef'][i]
+    #     return mean
 
 
 class CondGaussParams(TypedDict):
-    variance: Optional[float]
-    mean: Optional[List[float]]
-    coef: List[float]
+    regressor: str
+    regressor_obj: Optional[Union[str, bool, bytes]]
+    variance: Union[np.ndarray, float]
+    mean: Union[np.ndarray, float]
+    serialization: str
 
 
 class ConditionalGaussianNode(BaseNode):
@@ -266,9 +383,13 @@ class ConditionalGaussianNode(BaseNode):
     Main class for Conditional Gaussian Node
     """
 
-    def __init__(self, name):
+    def __init__(self, name, regressor: Optional[object] = None):
         super(ConditionalGaussianNode, self).__init__(name)
-        self.type = 'ConditionalGaussian'
+        if regressor is None:
+            regressor = linear_model.LinearRegression()
+        self.regressor = regressor
+        self.type = 'ConditionalGaussian' + f" ({type(self.regressor).__name__})"
+
 
     def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
         """
@@ -288,82 +409,197 @@ class ConditionalGaussianNode(BaseNode):
             for col, val in zip(self.disc_parents, comb):
                 mask = (mask) & (data[col] == val)
             new_data = data[mask]
-            mean_base = np.nan
-            variance = np.nan
             key_comb = [str(x) for x in comb]
-            if new_data.shape[0] != 0:
+            if new_data.shape[0] > 0:
                 if self.cont_parents:
-                    model = linear_model.LinearRegression()
-                    if len(self.cont_parents) == 1:
-                        model.fit(np.transpose([new_data[self.cont_parents[0]].values]), new_data[self.name].values)
-                        predict = model.predict(np.transpose([new_data[self.cont_parents[0]].values]))
+                    model = self.regressor
+                    values = set(new_data[self.name])
+                    model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
+                    predicted_value = model.predict(new_data[self.cont_parents].values)
+                    variance = mse(new_data[self.name].values, predicted_value, squared=False)
+                    serialization = self.choose_serialization(model)
+
+                    if serialization == 'pickle':
+                        ex_b = pickle.dumps(self.regressor, protocol=4)
+                        model_ser = ex_b.decode('latin1')
+
+                        # model_ser = pickle.dumps(self.classifier, protocol=4)
+                        hycprob[str(key_comb)] = {  'variance':variance,
+                                                    'mean': np.nan,
+                                                    'regressor_obj': model_ser,
+                                                    'regressor': type(self.regressor).__name__,
+                                                    'serialization': 'pickle'}
                     else:
-                        model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
-                        predict = model.predict(new_data[self.cont_parents].values)
-                    mean_base = model.intercept_
-                    variance = mse(new_data[self.name].values, predict)
-                    hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base,
-                                              'coef': list(model.coef_)}
+                        logger_nodes.warning(
+                            f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
+                        index = str(int(os.listdir(STORAGE)[-1]))
+                        if not os.path.isdir(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}")):
+                            os.makedirs(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}"))
+                        path = os.path.abspath(os.path.join(STORAGE,
+                                                            index,
+                                                            f"{self.name.replace(' ', '_')}",
+                                                            f"{comb}.joblib.compressed"))
+
+                        joblib.dump(model, path, compress=True, protocol=4)
+                        hycprob[str(key_comb)] = {  'variance':variance,
+                                                    'mean': np.nan,
+                                                    'regressor_obj': path,
+                                                    'regressor': type(self.regressor).__name__,
+                                                    'serialization': 'joblib'}
                 else:
                     mean_base = np.mean(new_data[self.name].values)
                     variance = np.var(new_data[self.name].values)
-                    hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': []}
+                    hycprob[str(key_comb)] = {  'variance':variance,
+                                                    'mean': mean_base,
+                                                    'regressor_obj': None,
+                                                    'regressor': None,
+                                                    'serialization': None}
+
+                
             else:
-                if self.cont_parents:
-                    scal = list(np.full(len(self.cont_parents), np.nan))
-                    hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': scal}
-                else:
-                    # mean_base = np.nan
-                    # variance = np.nan
-                    hycprob[str(key_comb)] = {'variance': variance, 'mean': mean_base, 'coef': []}
+                hycprob[str(key_comb)] = {'variance':np.nan, 'regressor': None,
+                                          'regressor_obj': None, 'serialization': None, 'mean':np.nan}
         return {"hybcprob": hycprob}
 
-    @staticmethod
-    def choose(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
+    
+    def choose(self, node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
         """
-        Return value from ConditionalGaussian node
+        Return value from ConditionalLogit node
+        params:
         node_info: nodes info from distributions
         pvals: parent values
         """
+
         dispvals = []
         lgpvals = []
         for pval in pvals:
-            if (isinstance(pval, str)) | (isinstance(pval, int)):
+            if (isinstance(pval, str)):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
+
         lgdistribution = node_info["hybcprob"][str(dispvals)]
-        mean = lgdistribution["mean"]
-        if lgpvals:
-            for x in range(len(lgpvals)):
-                mean += lgpvals[x] * lgdistribution["coef"][x]
-        variance = lgdistribution["variance"]
-        return random.gauss(mean, math.sqrt(variance))
 
-    @staticmethod
-    def predict(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
-        """function for prediction in conditional gaussian node
+        # JOBLIB
+        
+        if self.cont_parents:
+            flag = False
+            for el in lgpvals:
+                if str(el) == 'nan':
+                    flag = True
+                    break
+            if flag:
+                return np.nan
+            else:
+                if lgdistribution['regressor']:
+                    if lgdistribution["serialization"] == 'joblib':
+                        model = joblib.load(lgdistribution["regressor_obj"])
+                    else:
+                        # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
+                        bytes_model = lgdistribution["regressor_obj"].encode('latin1')
+                        model = pickle.loads(bytes_model)
 
-        Args:
-            node_info (Dict[str, Union[float, List[float]]]): node parameters
-            pvals (List[float]): parent values
+                    cond_mean = model.predict(np.array(lgpvals).reshape(1, -1))[0]
+                    variance = lgdistribution['variance']
+                    return random.gauss(cond_mean, variance)
+                else:
+                    return np.nan
 
-        Returns:
-            float: prediction
+
+            
+        else:
+            return random.gauss(lgdistribution['mean'], math.sqrt(lgdistribution['variance']))
+
+        
+
+    def predict(self, node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
         """
+        Return value from ConditionalLogit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+
         dispvals = []
         lgpvals = []
         for pval in pvals:
-            if (isinstance(pval, str)) | (isinstance(pval, int)):
+            if (isinstance(pval, str)):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
+
         lgdistribution = node_info["hybcprob"][str(dispvals)]
-        mean = lgdistribution["mean"]
-        if lgpvals:
-            for x in range(len(lgpvals)):
-                mean += lgpvals[x] * lgdistribution["coef"][x]
-        return mean
+
+        if self.cont_parents:
+            flag = False
+            for el in lgpvals:
+                if str(el) == 'nan':
+                    flag = True
+                    break
+            if flag:
+                return np.nan
+            else:
+                if lgdistribution['regressor']:
+
+                    if lgdistribution["serialization"] == 'joblib':
+                        model = joblib.load(lgdistribution["regressor_obj"])
+                    else:
+                        # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
+                        bytes_model = lgdistribution["regressor_obj"].encode('latin1')
+                        model = pickle.loads(bytes_model)
+                    return model.predict(np.array(lgpvals).reshape(1, -1))[0]
+                else:
+                    return np.nan
+        else:
+            return lgdistribution['mean']
+    
+    
+    # @staticmethod
+    # def choose(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
+    #     """
+    #     Return value from ConditionalGaussian node
+    #     node_info: nodes info from distributions
+    #     pvals: parent values
+    #     """
+    #     dispvals = []
+    #     lgpvals = []
+    #     for pval in pvals:
+    #         if (isinstance(pval, str)) | (isinstance(pval, int)):
+    #             dispvals.append(pval)
+    #         else:
+    #             lgpvals.append(pval)
+    #     lgdistribution = node_info["hybcprob"][str(dispvals)]
+    #     mean = lgdistribution["mean"]
+    #     if lgpvals:
+    #         for x in range(len(lgpvals)):
+    #             mean += lgpvals[x] * lgdistribution["coef"][x]
+    #     variance = lgdistribution["variance"]
+    #     return random.gauss(mean, math.sqrt(variance))
+
+    # @staticmethod
+    # def predict(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
+    #     """function for prediction in conditional gaussian node
+
+    #     Args:
+    #         node_info (Dict[str, Union[float, List[float]]]): node parameters
+    #         pvals (List[float]): parent values
+
+    #     Returns:
+    #         float: prediction
+    #     """
+    #     dispvals = []
+    #     lgpvals = []
+    #     for pval in pvals:
+    #         if (isinstance(pval, str)) | (isinstance(pval, int)):
+    #             dispvals.append(pval)
+    #         else:
+    #             lgpvals.append(pval)
+    #     lgdistribution = node_info["hybcprob"][str(dispvals)]
+    #     mean = lgdistribution["mean"]
+    #     if lgpvals:
+    #         for x in range(len(lgpvals)):
+    #             mean += lgpvals[x] * lgdistribution["coef"][x]
+    #     return mean
 
 
 class MixtureGaussianParams(TypedDict):
