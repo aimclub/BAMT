@@ -17,12 +17,13 @@ The following features have been covered:
 <li>Structure learning</li>
 <li>Parameters learning</li>
 <li>Sample</li>
-<p>In this cases we just compare result of network trained in new version with pretrained one
-in stable version by structure (nodes, edges) and parameters (distributions).</p>
+<p>In these cases we just compare a result of network trained in a new version with pretrained one
+in a stable version by structure (nodes, edges) and parameters (distributions).</p>
 </ul>
 <li>Hybrid BN</li>
-<dd>With this type of BN not entire net can be compared,  parameters diverge. Thus, we use rules.
-They are an assertion with any feature we want to compare.</dd>
+<dd>With this type of BN not entire net can be compared, parameters diverge. 
+Thus, we use rules.
+They are assertions with any feature we want to compare.</dd>
 <ul>
 <li>Preprocessing</li>
 <li>Structure learning</li>
@@ -30,13 +31,13 @@ They are an assertion with any feature we want to compare.</dd>
 <ul>
 <li>Non Empty Rule</li>
 <li>Sum of coefficients equals to 1.</li>
-<dd>Coefficients of model/combination (MixtureGaussian, ConditionalMixtureGaussian, respectively) </dd>
+<dd>Coefficients of a model/combination (MixtureGaussian, ConditionalMixtureGaussian, respectively) </dd>
 </ul>
 <li>Sample</li>
 </ul>
 </ul>
 
-## How to add new test
+## How to add a new test
 ![Flowcharts](https://user-images.githubusercontent.com/68499591/194711621-8d398d86-13ff-449e-8ce3-0004b013b2a2.png)
 ### How to write and use rules
 <p>
@@ -48,6 +49,7 @@ The assertion inside <b>must be</b> with assert construction (or write if-else c
 <p>
 Then pass your wrapper inside test as static method (if needed), and use method 
 <code>use_rules(self.rule1, self.rule2, data=data, something_else=else)</code>. 
-Note that if all rules accept the same arguments you can use this function. 
+Note that if all rules accept the same arguments, 
+you can use this function. 
 Otherwise, you need to call use_rule for each rule.
 </p>

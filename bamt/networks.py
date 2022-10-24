@@ -15,11 +15,14 @@ from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
-from bamt.Builders import ParamDict
+from bamt.builders import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
 from bamt.utils.MathUtils import get_brave_matrix, get_proximity_matrix
-from bamt import Builders, Nodes
+# from bamt import Builders, Nodes
+
+import bamt.builders as Builders
+import bamt.nodes as Nodes
 
 # from bamt.Preprocessors import Preprocessor
 
@@ -117,9 +120,9 @@ class BaseNetwork(object):
                     params["init_edges"]]
                 )
                 failed = (
-                    (type_map[:, 0] == "cont") &
-                    ((type_map[:, 1] == "disc") |
-                     (type_map[:, 1] == "disc_num"))
+                        (type_map[:, 0] == "cont") &
+                        ((type_map[:, 1] == "disc") |
+                         (type_map[:, 1] == "disc_num"))
                 )
                 if sum(failed):
                     logger_network.warning(
@@ -229,9 +232,15 @@ class BaseNetwork(object):
         for node1, node2 in edges:
             if isinstance(node1, str) and isinstance(node2, str):
                 if self[node1] and self[node2]:
-                    self.edges.append((node1, node2))
+                    if not self.has_logit and \
+                            self.descriptor["types"][node1] == "cont" and \
+                            self.descriptor["types"][node2] == "disc":
+                        logger_network.warning(f"Restricted edge detected (has_logit=False) : [{node1}, {node2}]")
+                        continue
+                    else:
+                        self.edges.append((node1, node2))
                 else:
-                    logger_network.error(f"Unknown Nodes : [{node1}, {node2}]")
+                    logger_network.error(f"Unknown nodes : [{node1}, {node2}]")
                     continue
             else:
                 logger_network.error(
@@ -398,7 +407,7 @@ class BaseNetwork(object):
                 types_n.append(n.type)
                 types_d.append(self.descriptor['types'][n.name])
                 parents_types.append([self.descriptor['types'][name]
-                                     for name in n.cont_parents + n.disc_parents])
+                                      for name in n.cont_parents + n.disc_parents])
                 parents.append(
                     [name for name in n.cont_parents + n.disc_parents])
             return pd.DataFrame({'name': names, 'node_type': types_n,
@@ -678,7 +687,7 @@ class HybridBN(BaseNetwork):
         types = descriptor['types']
         s = set(types.values())
         return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) or (
-            {'cont', 'disc_num'} == s) else False
+                {'cont', 'disc_num'} == s) else False
 
 
 class BigBraveBN:

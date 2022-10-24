@@ -1,13 +1,19 @@
 import json
 import time
 import itertools
+# import abc
 
 import pandas as pd
 from pandas.testing import assert_frame_equal
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing as pp
 
-from bamt.Preprocessors import Preprocessor
-import bamt.Networks as Networks
+from bamt.preprocessors import Preprocessor
+import bamt.networks as Networks
+import bamt.nodes as Nodes
 
 
 class NetworkTest(object):
@@ -18,7 +24,7 @@ class NetworkTest(object):
                  sample_n: int = 500,
                  sample_tol: float = .6):
         """
-        sample_n: number of rows in samle
+        sample_n: number of rows in sample
         sample_tol: precent of acceptable number of nans.
         If number of nan more than sample_int * sample_tol, then sample test failed.
         """
@@ -118,6 +124,11 @@ class NetworkTest(object):
 
     def apply(self):
         pass
+
+    @staticmethod
+    def use_rules(*args, **kwargs):
+        for rule in args:
+            rule(**kwargs)
 
 
 class TestDiscreteBN(NetworkTest):
@@ -278,6 +289,56 @@ class TestHybridBN(NetworkTest):
         super(TestHybridBN, self).__init__(**kwargs)
         self.type = 'hybrid'
 
+    def _test_setters(self):
+        failed = False
+
+        bn = Networks.HybridBN(has_logit=True)
+        ns = []
+        for d, g in zip(
+                [Nodes.GaussianNode(name="Node" + str(id)) for id in range(0, 3)],
+                [Nodes.DiscreteNode(name="Node" + str(id)) for id in range(3, 6)]):
+            ns.append(d)
+            ns.append(g)
+        edges = [('Node0', 'Node3'), ('Node3', 'Node1'), ('Node1', 'Node4'), ('Node4', 'Node2'), ('Node2', 'Node5')]
+        test_info = {'types': {'Node0': 'cont', 'Node1': 'cont', 'Node2': 'cont',
+                               'Node3': 'disc', 'Node4': 'disc', 'Node5': 'disc'},
+                     'signs': {'Node0': 'pos', 'Node1': 'pos', 'Node2': 'pos'}}
+
+        # Structure setter
+        bn.set_structure(info=test_info,
+                         nodes=ns,
+                         edges=edges)
+
+        assert ['Gaussian', 'Logit (LogisticRegression)', 'ConditionalGaussian', 'Logit (LogisticRegression)',
+                'ConditionalGaussian', 'Logit (LogisticRegression)'] == \
+               [node.type for node in bn.nodes], "Setter | Nodes are not the same."
+        assert edges == bn.edges, "Setter | Edges are not the same."
+
+        # Classifiers setters
+
+        bn.set_classifiers(classifiers={'Node3': DecisionTreeClassifier(),
+                                        'Node4': RandomForestClassifier(),
+                                        'Node5': KNeighborsClassifier(n_neighbors=2)})
+
+        assert [str(bn[node].classifier) for node in ["Node3", "Node4", "Node5"]] == \
+               ["DecisionTreeClassifier()", "RandomForestClassifier()",
+                "KNeighborsClassifier(n_neighbors=2)"], "Setter | Classifiers are wrong."
+
+        # Parameters setters
+
+        with open("test_params.json") as f:
+            p = json.load(f)
+
+        bn.set_parameters(p)
+        assert bn.distributions == p, "Setter | Parameters are not the same."
+
+        if not failed:
+            status = "OK"
+        else:
+            status = "Failed"
+
+        print(self._tabularize_output("Setters", status))
+
     def _test_structure_learning(self, use_mixture: bool = False, has_logit: bool = False):
         self.use_mixture = use_mixture
         self.has_logit = has_logit
@@ -312,13 +373,13 @@ class TestHybridBN(NetworkTest):
             f"Structure ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})", status))
 
     @staticmethod
-    def use_rules(*args, **kwargs):
-        for rule in args:
-            rule(**kwargs)
+    def non_empty_gaussian_nodes(name, node_params):
+        empty_data = {"mean": [], "covars": [], "coef": []}
+        assert all([node_params[obj] != empty for obj, empty in empty_data.items()]), f"Empty data in {name}."
 
     @staticmethod
-    def non_empty(name, node_params):
-        empty_data = {"mean": [], "covars": [], "coef": []}
+    def non_empty_logit_nodes(name, node_params):
+        empty_data = {"classes": [], "classifier_obj": None}
         assert all([node_params[obj] != empty for obj, empty in empty_data.items()]), f"Empty data in {name}."
 
     @staticmethod
@@ -328,14 +389,17 @@ class TestHybridBN(NetworkTest):
     def _validate_node(self, name, type, node_params, true_vals):
         try:
             if type == "MixtureGaussian":
-                self.use_rules(self.non_empty, self.sum_equals_to_1,
+                self.use_rules(self.non_empty_gaussian_nodes, self.sum_equals_to_1,
                                name=name, node_params=node_params)
             elif type == "ConditionalMixtureGaussian":
                 for comb, data in node_params["hybcprob"].items():
-                    self.use_rules(self.non_empty, self.sum_equals_to_1,
+                    self.use_rules(self.non_empty_gaussian_nodes, self.sum_equals_to_1,
                                    name=name, node_params=data)
-            elif "Logit" in type:
-                pass
+            elif type.startswith("Logit"):
+                self.use_rules(self.non_empty_logit_nodes, name=name, node_params=node_params)
+            elif type.startswith("ConditionalLogit"):
+                for comb, data in node_params["hybcprob"].items():
+                    self.use_rules(self.non_empty_logit_nodes, name=name, node_params=data)
             else:
                 assert node_params == true_vals, f"Parameters error on  {name}, {type}"
         except AssertionError as ex:
@@ -370,10 +434,11 @@ class TestHybridBN(NetworkTest):
     def apply(self):
         print(f"Executing {self.type} BN tests.")
         self._test_preprocess()
+        self._test_setters()
         t0 = time.time()
 
         for use_mixture, has_logit in itertools.product([True, False], repeat=2):
-            for sf in ["MI","K2", "BIC"]:
+            for sf in ["MI", "K2", "BIC"]:
                 self.sf = sf
                 t1 = time.time()
                 self._test_structure_learning(use_mixture=use_mixture, has_logit=has_logit)

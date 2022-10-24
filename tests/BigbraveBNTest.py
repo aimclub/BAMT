@@ -3,9 +3,9 @@ from pgmpy.estimators import K2Score
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from bamt.Networks import BigBraveBN
-import bamt.Preprocessors as pp
-import bamt.Networks as Nets
+from bamt.networks import BigBraveBN
+import bamt.preprocessors as pp
+import bamt.networks as Nets
 import os
 import sys
 from pathlib import Path

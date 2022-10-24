@@ -2,10 +2,10 @@ import time
 
 start = time.time()
 
-from bamt.Preprocessors import Preprocessor
+from bamt.preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
-import bamt.Networks as Networks
+import bamt.networks as Networks
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")

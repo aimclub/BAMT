@@ -4,7 +4,7 @@ from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 from bamt.redef_HC import hc as hc_method
 
-from bamt import Nodes
+from bamt import nodes
 from bamt.log import logger_builder
 from pandas import DataFrame
 from bamt.utils import GraphUtils as gru
@@ -71,7 +71,7 @@ class StructureBuilder(object):
 
     def get_family(self):
         """
-        A function that update a skeleton;
+        A function that updates a skeleton;
         """
         if not self.skeleton['V']:
             logger_builder.error("Vertex list is None")
@@ -126,9 +126,9 @@ class VerticesDefiner(StructureBuilder):
         # LEVEL 1: Define a general type of node: Discrete or Gaussian
         for vertex, type in self.descriptor['types'].items():
             if type in ['disc_num', 'disc']:
-                Node = Nodes.DiscreteNode(name=vertex)
+                Node = nodes.DiscreteNode(name=vertex)
             elif type == 'cont':
-                Node = Nodes.GaussianNode(name=vertex)
+                Node = nodes.GaussianNode(name=vertex)
             else:
                 msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
@@ -150,23 +150,23 @@ class VerticesDefiner(StructureBuilder):
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
                         if not node_instance.disc_parents:
-                            Node = Nodes.LogitNode(name=node_instance.name, classifier=classifier)
+                            Node = nodes.LogitNode(name=node_instance.name, classifier=classifier)
 
                         elif node_instance.disc_parents:
-                            Node = Nodes.ConditionalLogitNode(name=node_instance.name, classifier=classifier)
+                            Node = nodes.ConditionalLogitNode(name=node_instance.name, classifier=classifier)
 
             if use_mixture:
                 if 'Gaussian' in node_instance.type:
                     if not node_instance.disc_parents:
-                        Node = Nodes.MixtureGaussianNode(name=node_instance.name)
+                        Node = nodes.MixtureGaussianNode(name=node_instance.name)
                     elif node_instance.disc_parents:
-                        Node = Nodes.ConditionalMixtureGaussianNode(name=node_instance.name)
+                        Node = nodes.ConditionalMixtureGaussianNode(name=node_instance.name)
                     else:
                         continue
             else:
                 if 'Gaussian' in node_instance.type:
                     if node_instance.disc_parents:
-                        Node = Nodes.ConditionalGaussianNode(name=node_instance.name)
+                        Node = nodes.ConditionalGaussianNode(name=node_instance.name)
                     else:
                         continue
 

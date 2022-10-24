@@ -1,7 +1,7 @@
 import networkx as nx
 from bamt.log import logger_preprocessor
 from pandas import DataFrame
-from bamt.Nodes import BaseNode
+from bamt.nodes import BaseNode
 
 from typing import Dict, List, Tuple, Type
 

@@ -3,8 +3,8 @@ from sklearn import preprocessing as pp
 from sklearn.metrics import mean_squared_error as mse
 from pgmpy.estimators import K2Score
 
-from bamt.Preprocessors import Preprocessor
-import bamt.Networks as Networks
+from bamt.preprocessors import Preprocessor
+import bamt.networks as Networks
 
 '''
 Optional:

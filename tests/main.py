@@ -2,7 +2,9 @@ from NetworksTest import TestHybridBN, TestContinuousBN, TestDiscreteBN
 
 import logging
 import time
+import traceback
 
+# Print only errors
 logging.getLogger('preprocessor').setLevel(logging.ERROR)
 
 if __name__ == "__main__":
@@ -12,10 +14,12 @@ if __name__ == "__main__":
     tests = [TestHybridBN(directory=dir),
              TestDiscreteBN(directory=dir),
              TestContinuousBN(directory=dir)]
+
     for test in tests:
         try:
             test.apply()
         except Exception as ex:
-            print(ex)
+            traceback.print_exc()
             continue
+
     print(f"Total time: {time.time() - t0}")

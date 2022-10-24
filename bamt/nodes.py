@@ -650,6 +650,9 @@ class LogitNode(BaseNode):
         self.type = 'Logit' + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> LogitParams:
+        model_ser = None
+        path = None
+
         parents = self.disc_parents + self.cont_parents
         self.classifier.fit(data[parents].values, data[self.name].values)
         serialization = self.choose_serialization(self.classifier)
@@ -658,10 +661,7 @@ class LogitNode(BaseNode):
             ex_b = pickle.dumps(self.classifier, protocol=4)
             # model_ser = ex_b.decode('latin1').replace('\'', '\"')
             model_ser = ex_b.decode('latin1')
-            return {'classes': list(self.classifier.classes_),
-                    'classifier_obj': model_ser,
-                    'classifier': type(self.classifier).__name__,
-                    'serialization': 'pickle'}
+            serialization_name = 'pickle'
         else:
             logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
             index = str(int(os.listdir(STORAGE)[-1]))
@@ -673,10 +673,11 @@ class LogitNode(BaseNode):
                                                 f"{self.name.replace(' ', '_')}.joblib.compressed"))
 
             joblib.dump(self.classifier, path, compress=True, protocol=4)
-            return {'classes': list(self.classifier.classes_),
-                    'classifier_obj': path,
-                    'classifier': type(self.classifier).__name__,
-                    'serialization': 'joblib'}
+            serialization_name = 'joblib'
+        return {'classes': list(self.classifier.classes_),
+                'classifier_obj': path or model_ser,
+                'classifier': type(self.classifier).__name__,
+                'serialization': serialization_name}
 
     def choose(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
         """
