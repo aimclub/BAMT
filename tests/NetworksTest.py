@@ -208,6 +208,30 @@ class TestContinuousBN(NetworkTest):
         super(TestContinuousBN, self).__init__(**kwargs)
         self.type = 'continuous'
 
+    def _test_setters(self):
+        failed = False
+
+        bn = Networks.ContinuousBN()
+        ns = []
+        for d in [Nodes.GaussianNode(name="Node" + str(id)) for id in range(0, 4)]:
+            ns.append(d)
+
+        bn.set_structure(nodes=ns)
+        bn.set_classifiers(classifiers={'Node0': DecisionTreeClassifier(),
+                                        'Node1': RandomForestClassifier(),
+                                        'Node2': KNeighborsClassifier(n_neighbors=2)})
+
+        assert [str(bn[node].classifier) for node in ["Node0", "Node1", "Node2"]] == \
+               ["DecisionTreeClassifier()", "RandomForestClassifier()",
+                "KNeighborsClassifier(n_neighbors=2)"], "Setter | Classifiers are wrong."
+
+        if not failed:
+            status = "OK"
+        else:
+            status = "Failed"
+
+        print(self._tabularize_output("Setters", status))
+
     def _test_structure_learning(self, use_mixture: bool = False):
         self.use_mixture = use_mixture
         failed = False
@@ -266,6 +290,8 @@ class TestContinuousBN(NetworkTest):
     def apply(self):
         print(f"Executing {self.type} BN tests.")
         self._test_preprocess()
+        # Auskommentieren mich
+        # self._test_setters()
         t0 = time.time()
         for use_mixture in [True, False]:
             for sf in ["MI", "K2", "BIC"]:
