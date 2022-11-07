@@ -467,15 +467,15 @@ class BaseNetwork(object):
         seq = Parallel(n_jobs=parall_count)(
             delayed(wrapper)()
             for i in tqdm(range(n), position=0, leave=True))
-        seq_df = pd.DataFrame.from_dict(seq, orient='columns')
-        seq_df.dropna(inplace=True)
-        cont_nodes = [c.name for c in self.nodes if c.type !=
-                      'Discrete' and 'Logit' not in c.type]
-        positive_columns = [
-            c for c in cont_nodes if self.descriptor['signs'][c] == 'pos']
-        seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
-        seq_df.reset_index(inplace=True, drop=True)
-        seq = seq_df.to_dict('records')
+
+        #seq_df = pd.DataFrame.from_dict(seq, orient='columns')
+        #seq_df.dropna(inplace=True)
+        #cont_nodes = [c.name for c in self.nodes if c.type != 'Discrete' and 'Logit' not in c.type]
+        #positive_columns = [c for c in cont_nodes if self.descriptor['signs'][c] == 'pos']
+        #seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
+        #seq_df.reset_index(inplace=True, drop=True)
+        #seq = seq_df.to_dict('records')
+
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
@@ -509,16 +509,17 @@ class BaseNetwork(object):
                     test_row = dict(test.iloc[i, :])
                     for n, key in enumerate(columns):
                         try:
-                            sample = bn.sample(
-                                1, evidence=test_row, predict=True)
-                            if bn.descriptor['types'][key] == 'cont':
-                                if (bn.descriptor['signs'][key] == 'pos') & (sample.loc[0, key] < 0):
-                                    # preds[key].append(np.nan)
-                                    preds[key].append(0)
-                                else:
-                                    preds[key].append(sample.loc[0, key])
-                            else:
-                                preds[key].append(sample.loc[0, key])
+
+                            sample = bn.sample(1, evidence=test_row, predict=True)
+                            # if bn.descriptor['types'][key] == 'cont':
+                            #     # if (bn.descriptor['signs'][key] == 'pos') & (sample.loc[0, key] < 0):
+                            #     #     # preds[key].append(np.nan)
+                            #     #     preds[key].append(0)
+                            #     # else:
+                            #     preds[key].append(sample.loc[0, key])
+                            # else:
+                            preds[key].append(sample.loc[0, key])
+
                         except Exception as ex:
                             logger_network.error(ex)
                             preds[key].append(np.nan)
@@ -563,6 +564,19 @@ class BaseNetwork(object):
                     node.classifier = classifiers[node.name]
                     node.type = re.sub(
                         r"\([\s\S]*\)", f"({type(node.classifier).__name__})", node.type)
+                else:
+                    continue
+    def set_regressor(self, regressors: Dict[str, object]):
+        """
+        Set classifiers for logit nodes.
+        classifiers: dict with node_name and Classifier
+        """
+
+        for node in self.nodes:
+            if "Gaussian" in node.type:
+                if node.name in regressors.keys():
+                    node.regressor = regressors[node.name]
+                    node.type = re.sub(r"\([\s\S]*\)", f"({type(node.regressor).__name__})", node.type)
                 else:
                     continue
 
