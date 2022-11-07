@@ -173,8 +173,6 @@ class DiscreteNode(BaseNode):
         else:
             max_ind = random.choice(indices)
         return vals[max_ind]
-        
-
 
 
 class GaussianParams(TypedDict):
@@ -1010,7 +1008,7 @@ class ConditionalLogitNode(BaseNode):
                 mask = (mask) & (data[col] == val)
             new_data = data[mask]
             # mean_base = [np.nan]
-            classes = []
+            classes = [np.nan]
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
                 model = self.classifier
@@ -1070,6 +1068,9 @@ class ConditionalLogitNode(BaseNode):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
+
+        if any(parent_value == 'nan' for parent_value in dispvals):
+            return np.nan
 
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
