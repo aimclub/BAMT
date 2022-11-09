@@ -495,7 +495,8 @@ class BaseNetwork(object):
         else:
             return seq
 
-    def predict(self, test: pd.DataFrame, parall_count: int = 1) -> Dict[str, Union[List[str], List[int], List[float]]]:
+    def predict(self, test: pd.DataFrame, parall_count: int = 1,
+                progress_bar: bool = True) -> Dict[str, Union[List[str], List[int], List[float]]]:
         """
         Function to predict columns from given data.
         Note that train data and test data must have different columns.
@@ -522,8 +523,10 @@ class BaseNetwork(object):
                     test_row = dict(test.iloc[i, :])
                     for n, key in enumerate(columns):
                         try:
-                            sample = bn.sample(
-                                1, evidence=test_row, predict=True)
+                            sample = bn.sample(1, evidence=test_row, predict=True, progress_bar=False)
+                            if sample.empty:
+                                preds[key].append(np.nan)
+                                continue
                             if bn.descriptor['types'][key] == 'cont':
                                 if (bn.descriptor['signs'][key] == 'pos') & (sample.loc[0, key] < 0):
                                     # preds[key].append(np.nan)
@@ -548,8 +551,14 @@ class BaseNetwork(object):
 
         preds = {column_name: list() for column_name in columns}
 
-        processed_list = Parallel(n_jobs=parall_count)(
+        # processed_list = Parallel(n_jobs=parall_count)(
+        #     delayed(wrapper)(self, test.loc[[i]], columns) for i in tqdm(test.index, position=0, leave=True))
+
+        if progress_bar:
+            processed_list = Parallel(n_jobs=parall_count)(
             delayed(wrapper)(self, test.loc[[i]], columns) for i in tqdm(test.index, position=0, leave=True))
+        else:
+            processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(self, test.loc[[i]], columns) for i in test.index)
 
         for i in range(test.shape[0]):
             curr_pred = processed_list[i]
