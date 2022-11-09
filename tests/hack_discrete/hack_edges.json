@@ -1,1 +1,56 @@
-{"K2": [["Tectonic regime", "Structural setting"], ["Structural setting", "Period"]], "MI": [["Tectonic regime", "Period"], ["Structural setting", "Period"], ["Tectonic regime", "Lithology"], ["Lithology", "Structural setting"]], "BIC": [["Tectonic regime", "Period"], ["Structural setting", "Period"], ["Lithology", "Period"], ["Tectonic regime", "Lithology"], ["Tectonic regime", "Structural setting"], ["Lithology", "Structural setting"]]}
+{
+  "K2": [
+    [
+      "Tectonic regime",
+      "Structural setting"
+    ],
+    [
+      "Structural setting",
+      "Period"
+    ]
+  ],
+  "MI": [
+    [
+      "Tectonic regime",
+      "Period"
+    ],
+    [
+      "Structural setting",
+      "Period"
+    ],
+    [
+      "Tectonic regime",
+      "Lithology"
+    ],
+    [
+      "Lithology",
+      "Structural setting"
+    ]
+  ],
+  "BIC": [
+    [
+      "Tectonic regime",
+      "Period"
+    ],
+    [
+      "Structural setting",
+      "Period"
+    ],
+    [
+      "Lithology",
+      "Period"
+    ],
+    [
+      "Tectonic regime",
+      "Lithology"
+    ],
+    [
+      "Tectonic regime",
+      "Structural setting"
+    ],
+    [
+      "Lithology",
+      "Structural setting"
+    ]
+  ]
+}

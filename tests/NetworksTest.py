@@ -4,6 +4,7 @@ import itertools
 # import abc
 
 import pandas as pd
+import numpy as np
 from pandas.testing import assert_frame_equal
 
 from sklearn.neighbors import KNeighborsClassifier
@@ -28,7 +29,7 @@ class NetworkTest(object):
         sample_tol: precent of acceptable number of nans.
         If number of nan more than sample_int * sample_tol, then sample test failed.
         """
-        self.bn = None
+        self.bn = Networks.BaseNetwork()
         self.sf = ""
         self.type = "abstract"
         self.case_id = case_id
@@ -43,7 +44,7 @@ class NetworkTest(object):
         # message2 - usually description of message 1
         return f"{message1: <52} | {message2: >3}"
 
-    def _test_preprocess(self):
+    def test_preprocess(self):
         failed = False
 
         if self.case_id == 0:
@@ -97,16 +98,16 @@ class NetworkTest(object):
         self.info = info
         self.data = discretized_data
 
-    def _test_structure_learning(self):
+    def test_structure_learning(self):
         pass
 
-    def _test_parameters_learning(self):
+    def test_parameters_learning(self):
         pass
 
-    def _test_sampling(self):
+    def test_sampling(self):
         failed = False
 
-        sample = self.bn.sample(self.sample_n, progress_bar=False)
+        sample = self.bn.sample(n=self.sample_n, progress_bar=False)
 
         if sample.empty:
             self.verboseprint("Sampling", "Dataframe is empty")
@@ -122,6 +123,74 @@ class NetworkTest(object):
 
         print(self._tabularize_output(f"Sampling ({self.sf})", status))
 
+    def test_predict(self):
+        failed = False
+
+        if self.type == "discrete":
+            cols = self.discrete_cols
+        elif self.type == "continuous":
+            cols = self.cont_cols
+        elif self.type == "hybrid":
+            cols = self.hybrid_cols
+        else:
+            raise Exception("Inner error")
+
+        preds = self.bn.predict(test=pd.read_csv(self.directory)[cols[:2]].dropna(),
+                                progress_bar=False, parall_count=2)
+
+        # with open(f"{self.base}/hack_predict.json", "r") as f:
+        #     p = json.load(f)
+
+        if self.type == "continuous":
+            # cols: ['Porosity', 'Permeability', 'Depth']
+            for node in preds.keys():
+                right_val = json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node]
+                test_val = np.mean([mx for mx in preds[node] if not np.isnan(mx)])
+                assert np.all(np.isclose(test_val, right_val, rtol=.4)), f"Predict failed: {node, right_val, test_val}"
+        elif self.type == "discrete":
+            # cols: ['Lithology', 'Structural setting']
+            for node in preds.keys():
+                test_vals = pd.Series(preds[node]).value_counts().to_dict()
+                for category, right_val in json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node].items():
+                    try:
+                        assert np.all(np.isclose(test_vals[category], right_val, atol=5)),  \
+                            f"Predict failed: {node, test_vals[category], right_val}"
+                    except KeyError as ex:
+                        print("Unknown preds category: ", ex.args[0])
+                        continue
+        elif self.type == "hybrid":
+            cont_nodes = [node for node in self.bn.nodes_names if self.info["types"][node] == "cont"]
+            for node in preds.keys():
+                if node in cont_nodes:
+                    right_val = json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node]
+                    test_val = np.mean([mx for mx in preds[node] if not np.isnan(mx)])
+                    # p[self.sf][node] = test_val
+                    s = [right_val, test_val]
+                    assert np.all(np.isclose(min(s), max(s), atol=5, rtol=.6)), \
+                        f"Predict failed: {node, test_val, right_val}"
+                else:
+                    test_vals = pd.Series(preds[node]).value_counts().to_dict()
+                    # p[self.sf][node] = test_vals
+                    for category, right_val in json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node].items():
+                        try:
+                            assert np.all(np.isclose(min(test_vals[category], right_val),
+                                                     max(right_val, test_vals[category]),
+                                                     atol=100, rtol=.5)), \
+                                f"Predict failed: {node, test_vals[category], right_val}"
+                        except KeyError as ex:
+                            print("Unknown preds category: ", ex.args[0])
+                            continue
+
+        if not failed:
+            status = "OK"
+        else:
+            status = "Failed"
+
+        print(self._tabularize_output(f"Predict ({self.sf})", status))
+
+        # with open(f"{self.base}/hack_predict.json", "w") as f:
+        #     json.dump(p, f)
+
     def apply(self):
         pass
 
@@ -136,7 +205,7 @@ class TestDiscreteBN(NetworkTest):
         super(TestDiscreteBN, self).__init__(**kwargs)
         self.type = 'discrete'
 
-    def _test_structure_learning(self):
+    def test_structure_learning(self):
         failed = False
 
         bn = Networks.DiscreteBN()
@@ -165,7 +234,7 @@ class TestDiscreteBN(NetworkTest):
 
         print(self._tabularize_output(f"Structure ({self.sf})", status))
 
-    def _test_parameters_learning(self):
+    def test_parameters_learning(self):
         failed = False
 
         self.bn.fit_parameters(pd.read_csv(self.directory)[self.discrete_cols])
@@ -185,18 +254,19 @@ class TestDiscreteBN(NetworkTest):
 
     def apply(self):
         print(f"Executing {self.type} BN tests.")
-        self._test_preprocess()
+        self.test_preprocess()
         t0 = time.time()
         for sf in ["MI", "K2", "BIC"]:
             self.sf = sf
             t1 = time.time()
-            self._test_structure_learning()
+            self.test_structure_learning()
             if not self.bn:
                 print(self._tabularize_output(f"Error on {sf}", "No structure"))
                 print("-" * 8)
                 continue
-            self._test_parameters_learning()
-            self._test_sampling()
+            self.test_parameters_learning()
+            self.test_sampling()
+            self.test_predict()
             t2 = time.time()
             print("-" * 8, f"Elapsed time: {t2 - t1}", "-" * 8, "\n")
         t3 = time.time()
@@ -208,7 +278,7 @@ class TestContinuousBN(NetworkTest):
         super(TestContinuousBN, self).__init__(**kwargs)
         self.type = 'continuous'
 
-    def _test_setters(self):
+    def test_setters(self):
         failed = False
 
         bn = Networks.ContinuousBN()
@@ -232,7 +302,7 @@ class TestContinuousBN(NetworkTest):
 
         print(self._tabularize_output("Setters", status))
 
-    def _test_structure_learning(self, use_mixture: bool = False):
+    def test_structure_learning(self, use_mixture: bool = False):
         self.use_mixture = use_mixture
         failed = False
 
@@ -262,7 +332,7 @@ class TestContinuousBN(NetworkTest):
 
         print(self._tabularize_output(f"Structure ({self.sf}, use_mixture={self.use_mixture})", status))
 
-    def _test_parameters_learning(self):
+    def test_parameters_learning(self):
         failed = False
 
         self.bn.fit_parameters(pd.read_csv(self.directory)[self.cont_cols])
@@ -289,7 +359,7 @@ class TestContinuousBN(NetworkTest):
 
     def apply(self):
         print(f"Executing {self.type} BN tests.")
-        self._test_preprocess()
+        self.test_preprocess()
         # Auskommentieren mich
         # self._test_setters()
         t0 = time.time()
@@ -297,13 +367,14 @@ class TestContinuousBN(NetworkTest):
             for sf in ["MI", "K2", "BIC"]:
                 self.sf = sf
                 t1 = time.time()
-                self._test_structure_learning(use_mixture=use_mixture)
+                self.test_structure_learning(use_mixture=use_mixture)
                 if not self.bn:
                     print(self._tabularize_output(f"Error on {sf}", "No structure"))
                     print("-" * 8)
                     continue
-                self._test_parameters_learning()
-                self._test_sampling()
+                self.test_parameters_learning()
+                self.test_sampling()
+                self.test_predict()
                 t2 = time.time()
                 print("-" * 8, f"Elapsed time: {t2 - t1}", "-" * 8)
         t3 = time.time()
@@ -315,7 +386,7 @@ class TestHybridBN(NetworkTest):
         super(TestHybridBN, self).__init__(**kwargs)
         self.type = 'hybrid'
 
-    def _test_setters(self):
+    def test_setters(self):
         failed = False
 
         bn = Networks.HybridBN(has_logit=True)
@@ -365,7 +436,7 @@ class TestHybridBN(NetworkTest):
 
         print(self._tabularize_output("Setters", status))
 
-    def _test_structure_learning(self, use_mixture: bool = False, has_logit: bool = False):
+    def test_structure_learning(self, use_mixture: bool = False, has_logit: bool = False):
         self.use_mixture = use_mixture
         self.has_logit = has_logit
         failed = False
@@ -432,7 +503,7 @@ class TestHybridBN(NetworkTest):
             self.verboseprint(self._tabularize_output(
                 f"Parameters ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})", ex.args[0]))
 
-    def _test_parameters_learning(self):
+    def test_parameters_learning(self):
         failed = False
 
         self.bn.fit_parameters(pd.read_csv(self.directory)[self.hybrid_cols])
@@ -459,21 +530,22 @@ class TestHybridBN(NetworkTest):
 
     def apply(self):
         print(f"Executing {self.type} BN tests.")
-        self._test_preprocess()
-        self._test_setters()
+        self.test_preprocess()
+        self.test_setters()
         t0 = time.time()
 
         for use_mixture, has_logit in itertools.product([True, False], repeat=2):
             for sf in ["MI", "K2", "BIC"]:
                 self.sf = sf
                 t1 = time.time()
-                self._test_structure_learning(use_mixture=use_mixture, has_logit=has_logit)
-                self._test_parameters_learning()
+                self.test_structure_learning(use_mixture=use_mixture, has_logit=has_logit)
+                self.test_parameters_learning()
                 if not self.bn:
                     print(self._tabularize_output(f"Error on {sf}", "No structure"))
                     print("-" * 8)
                     continue
-                self._test_sampling()
+                self.test_sampling()
+                self.test_predict()
                 t2 = time.time()
                 print("-" * 8, f"Elapsed time: {t2 - t1}", "-" * 8)
 

@@ -1,0 +1,54 @@
+{
+  "MI": {
+    "Depth": 2232.2805152437486,
+    "Lithology": {
+      "SANDSTONE": 240
+    },
+    "Permeability": 1185.5188134215794,
+    "Structural setting": {
+      "FORELAND": 442
+    },
+    "Gross": 285.8500110381299,
+    "Netpay": 28.755855263157894,
+    "Porosity": 19.72756199171904
+  },
+  "K2": {
+    "Depth": 1911.7526905258635,
+    "Lithology": {
+      "SANDSTONE": 442
+    },
+    "Permeability": 469.91628959276017,
+    "Structural setting": {
+      "FORELAND": 214,
+      "RIFT": 78,
+      "INVERSION": 70,
+      "SALT": 56,
+      "WRENCH": 20,
+      "PASSIVE MARGIN": 3,
+      "INTRACRATONIC": 1
+    },
+    "Gross": 235.362443438914,
+    "Netpay": 56.71832579185522,
+    "Porosity": 19.198079440572318
+  },
+  "BIC": {
+    "Depth": 1722.742527777778,
+    "Lithology": {
+      "SANDSTONE": 359,
+      "VOLCANICS": 1
+    },
+    "Permeability": 684.9195788239538,
+    "Structural setting": {
+      "FORELAND": 191,
+      "RIFT": 69,
+      "INVERSION": 59,
+      "DELTA": 20,
+      "WRENCH": 17,
+      "PASSIVE MARGIN": 3,
+      "INTRACRATONIC": 1
+    },
+    "Gross": 225.60428054353056,
+    "Netpay": 40.813190836940834,
+    "Porosity": 19.8396443001443
+  }
+}
