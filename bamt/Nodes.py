@@ -50,12 +50,28 @@ class BaseNode(object):
     def __repr__(self):
         return f"{self.name}"
 
+    def __eq__(self, other):
+        if not isinstance(other, BaseNode):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        return self.name == other.name and \
+               self.type == other.type and \
+               self.disc_parents == other.disc_parents and \
+               self.cont_parents == other.cont_parents and \
+               self.children == other.children
+
     @staticmethod
     def choose_serialization(model) -> Union[str, Exception]:
         try:
             ex_b = pickle.dumps(model, protocol=4)
             model_ser = ex_b.decode('latin1').replace('\'', '\"')
-            a = model_ser.replace('\"', '\'').encode('latin1')
+
+            if type(model).__name__ == "CatBoostRegressor":
+                a = model_ser.encode('latin1')
+            else:
+                a = model_ser.replace('\"', '\'').encode('latin1')
+
             classifier_body = pickle.loads(a)
             return 'pickle'
         except Exception as ex:
@@ -143,7 +159,7 @@ class DiscreteNode(BaseNode):
 
         Returns:
             str: prediction
-        """        
+        """
         # vals = node_info['vals']
         # if not pvals:
         #     dist = node_info['cprob']
@@ -176,10 +192,10 @@ class DiscreteNode(BaseNode):
 
 
 class GaussianParams(TypedDict):
-    #mean: np.ndarray
-    #coef: Sequence[Any]
-    #variance: Union[np.ndarray, float]
-    
+    # mean: np.ndarray
+    # coef: Sequence[Any]
+    # variance: Union[np.ndarray, float]
+
     regressor: str
     regressor_obj: Optional[Union[str, bool, bytes]]
     variance: Union[np.ndarray, float]
@@ -191,6 +207,7 @@ class GaussianNode(BaseNode):
     """
     Main class for Gaussian Node
     """
+
     def __init__(self, name, regressor: Optional[object] = None):
         super(GaussianNode, self).__init__(name)
         if regressor is None:
@@ -210,13 +227,14 @@ class GaussianNode(BaseNode):
                 ex_b = pickle.dumps(self.regressor, protocol=4)
                 # model_ser = ex_b.decode('latin1').replace('\'', '\"')
                 model_ser = ex_b.decode('latin1')
-                return { 'mean':np.nan,
+                return {'mean': np.nan,
                         'regressor_obj': model_ser,
                         'regressor': type(self.regressor).__name__,
-                        'variance':variance,
+                        'variance': variance,
                         'serialization': 'pickle'}
             else:
-                logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
+                logger_nodes.warning(
+                    f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
                 index = str(int(os.listdir(STORAGE)[-1]))
                 if not os.path.isdir(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}")):
                     os.makedirs(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}"))
@@ -226,21 +244,19 @@ class GaussianNode(BaseNode):
                                                     f"{self.name.replace(' ', '_')}.joblib.compressed"))
 
                 joblib.dump(self.regressor, path, compress=True, protocol=4)
-                return { 'mean':np.nan,
+                return {'mean': np.nan,
                         'regressor_obj': path,
                         'regressor': type(self.regressor).__name__,
-                        'variance':variance,
+                        'variance': variance,
                         'serialization': 'joblib'}
         else:
             mean_base = np.mean(data[self.name].values)
             variance = np.var(data[self.name].values)
-            return {    'mean':mean_base,
-                        'regressor_obj': None,
-                        'regressor': None,
-                        'variance':variance,
-                        'serialization': None}
-
-
+            return {'mean': mean_base,
+                    'regressor_obj': None,
+                    'regressor': None,
+                    'variance': variance,
+                    'serialization': None}
 
     # def __init__(self, name: str, model=linear_model.LinearRegression()):
     #     super(GaussianNode, self).__init__(name)
@@ -274,7 +290,6 @@ class GaussianNode(BaseNode):
     #                 "coef": [],
     #                 "variance": variance}
 
- 
     def choose(self, node_info: GaussianParams, pvals: List[float]) -> float:
         """
         Return value from Logit node
@@ -294,7 +309,7 @@ class GaussianNode(BaseNode):
                 if node_info["serialization"] == 'joblib':
                     model = joblib.load(node_info["regressor_obj"])
                 else:
-                        # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                    # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                     a = node_info["regressor_obj"].encode('latin1')
                     model = pickle.loads(a)
 
@@ -323,7 +338,7 @@ class GaussianNode(BaseNode):
                 if node_info["serialization"] == 'joblib':
                     model = joblib.load(node_info["regressor_obj"])
                 else:
-                        # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                    # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                     a = node_info["regressor_obj"].encode('latin1')
                     model = pickle.loads(a)
 
@@ -388,7 +403,6 @@ class ConditionalGaussianNode(BaseNode):
         self.regressor = regressor
         self.type = 'ConditionalGaussian' + f" ({type(self.regressor).__name__})"
 
-
     def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
         """
         Train params for Conditional Gaussian Node.
@@ -422,11 +436,11 @@ class ConditionalGaussianNode(BaseNode):
                         model_ser = ex_b.decode('latin1')
 
                         # model_ser = pickle.dumps(self.classifier, protocol=4)
-                        hycprob[str(key_comb)] = {  'variance':variance,
-                                                    'mean': np.nan,
-                                                    'regressor_obj': model_ser,
-                                                    'regressor': type(self.regressor).__name__,
-                                                    'serialization': 'pickle'}
+                        hycprob[str(key_comb)] = {'variance': variance,
+                                                  'mean': np.nan,
+                                                  'regressor_obj': model_ser,
+                                                  'regressor': type(self.regressor).__name__,
+                                                  'serialization': 'pickle'}
                     else:
                         logger_nodes.warning(
                             f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
@@ -439,27 +453,26 @@ class ConditionalGaussianNode(BaseNode):
                                                             f"{comb}.joblib.compressed"))
 
                         joblib.dump(model, path, compress=True, protocol=4)
-                        hycprob[str(key_comb)] = {  'variance':variance,
-                                                    'mean': np.nan,
-                                                    'regressor_obj': path,
-                                                    'regressor': type(self.regressor).__name__,
-                                                    'serialization': 'joblib'}
+                        hycprob[str(key_comb)] = {'variance': variance,
+                                                  'mean': np.nan,
+                                                  'regressor_obj': path,
+                                                  'regressor': type(self.regressor).__name__,
+                                                  'serialization': 'joblib'}
                 else:
                     mean_base = np.mean(new_data[self.name].values)
                     variance = np.var(new_data[self.name].values)
-                    hycprob[str(key_comb)] = {  'variance':variance,
-                                                    'mean': mean_base,
-                                                    'regressor_obj': None,
-                                                    'regressor': None,
-                                                    'serialization': None}
+                    hycprob[str(key_comb)] = {'variance': variance,
+                                              'mean': mean_base,
+                                              'regressor_obj': None,
+                                              'regressor': None,
+                                              'serialization': None}
 
-                
+
             else:
-                hycprob[str(key_comb)] = {'variance':np.nan, 'regressor': None,
-                                          'regressor_obj': None, 'serialization': None, 'mean':np.nan}
+                hycprob[str(key_comb)] = {'variance': np.nan, 'regressor': None,
+                                          'regressor_obj': None, 'serialization': None, 'mean': np.nan}
         return {"hybcprob": hycprob}
 
-    
     def choose(self, node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
         """
         Return value from ConditionalLogit node
@@ -479,7 +492,7 @@ class ConditionalGaussianNode(BaseNode):
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
         # JOBLIB
-        
+
         if self.cont_parents:
             flag = False
             for el in lgpvals:
@@ -504,11 +517,9 @@ class ConditionalGaussianNode(BaseNode):
                     return np.nan
 
 
-            
+
         else:
             return random.gauss(lgdistribution['mean'], math.sqrt(lgdistribution['variance']))
-
-        
 
     def predict(self, node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
         """
@@ -550,8 +561,7 @@ class ConditionalGaussianNode(BaseNode):
                     return np.nan
         else:
             return lgdistribution['mean']
-    
-    
+
     # @staticmethod
     # def choose(node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
     #     """

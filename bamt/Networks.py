@@ -67,8 +67,9 @@ class BaseNetwork(object):
         new_nodes_names = [node.name for node in self.nodes]
         self.descriptor['types'] = {node: type for node, type in self.descriptor['types'].items() if
                                     node in new_nodes_names}
-        self.descriptor['signs'] = {node: sign for node, sign in self.descriptor['signs'].items() if
-                                    node in new_nodes_names}
+        if "cont" in self.descriptor["types"].values():
+            self.descriptor['signs'] = {node: sign for node, sign in self.descriptor['signs'].items() if
+                                        node in new_nodes_names}
 
     def add_nodes(self, descriptor: Dict[str, Dict[str, str]]):
         """
@@ -116,9 +117,9 @@ class BaseNetwork(object):
                     params["init_edges"]]
                 )
                 failed = (
-                    (type_map[:, 0] == "cont") &
-                    ((type_map[:, 1] == "disc") |
-                     (type_map[:, 1] == "disc_num"))
+                        (type_map[:, 0] == "cont") &
+                        ((type_map[:, 1] == "disc") |
+                         (type_map[:, 1] == "disc_num"))
                 )
                 if sum(failed):
                     logger_network.warning(
@@ -288,6 +289,28 @@ class BaseNetwork(object):
 
         self.distributions = parameters
 
+        for node, data in self.distributions.items():
+            if "hybcprob" in data.keys():
+                # first_item = next(iter(data["hybcprob"].values()))
+                if "gaussian" in self[node].type.lower():
+                    model_type = "regressor"
+                else:
+                    model_type = "classifier"
+
+                model = None
+                for v in data["hybcprob"].values():
+                    if v[model_type]:
+                        model = v[model_type]
+                        break
+                    else:
+                        continue
+                if not model:
+                    logger_network.warning(f"Classifier/regressor for {node} hadn't been used.")
+
+                self[node].type = re.sub(r"\([\s\S]*\)", f"({model})", self[node].type)
+
+
+
     def save_params(self, outdir: str):
         """
         Function to save BN params to json file
@@ -357,7 +380,7 @@ class BaseNetwork(object):
             data.reset_index(inplace=True, drop=True)
 
         if self.has_logit:
-            if any(['Logit' in node.type for node in self.nodes]):
+            if any(['Logit' or "Gaussian" in node.type for node in self.nodes]):
                 if not os.path.isdir(STORAGE):
                     os.makedirs(STORAGE)
 
@@ -397,7 +420,7 @@ class BaseNetwork(object):
                 types_n.append(n.type)
                 types_d.append(self.descriptor['types'][n.name])
                 parents_types.append([self.descriptor['types'][name]
-                                     for name in n.cont_parents + n.disc_parents])
+                                      for name in n.cont_parents + n.disc_parents])
                 parents.append(
                     [name for name in n.cont_parents + n.disc_parents])
             return pd.DataFrame({'name': names, 'node_type': types_n,
@@ -410,6 +433,7 @@ class BaseNetwork(object):
 
     def sample(self,
                n: int,
+               models_dir: Optional[str] = None,
                evidence: Optional[Dict[str, Union[str, int, float]]] = None,
                as_df: bool = True,
                predict: bool = False,
@@ -454,28 +478,37 @@ class BaseNetwork(object):
                             output[node.name] = np.nan
                             continue
 
+                    node_data = self.distributions[node.name]
+                    if models_dir and ("hybcprob" in node_data.keys()):
+                        for obj, obj_data in node_data["hybcprob"].items():
+                            if "serialization" in obj_data.keys():
+                                if "gaussian" in node.type.lower():
+                                    model_type = "regressor"
+                                else:
+                                    model_type = "classifier"
+                                if obj_data["serialization"] == 'joblib' and obj_data[f"{model_type}_obj"]:
+                                    new_path = models_dir + f"\\{node.name.replace(' ', '_')}\\{obj}.joblib.compressed"
+                                    node_data["hybcprob"][obj][f"{model_type}_obj"] = new_path
+
                     if predict:
                         output[node.name] = \
-                            node.predict(
-                                self.distributions[node.name], pvals=pvals)
+                            node.predict(node_data, pvals=pvals)
                     else:
                         output[node.name] = \
-                            node.choose(
-                                self.distributions[node.name], pvals=pvals)
+                            node.choose(node_data, pvals=pvals)
             return output
 
         seq = Parallel(n_jobs=parall_count)(
             delayed(wrapper)()
             for i in tqdm(range(n), position=0, leave=True))
 
-        #seq_df = pd.DataFrame.from_dict(seq, orient='columns')
-        #seq_df.dropna(inplace=True)
-        #cont_nodes = [c.name for c in self.nodes if c.type != 'Discrete' and 'Logit' not in c.type]
-        #positive_columns = [c for c in cont_nodes if self.descriptor['signs'][c] == 'pos']
-        #seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
-        #seq_df.reset_index(inplace=True, drop=True)
-        #seq = seq_df.to_dict('records')
-
+        # seq_df = pd.DataFrame.from_dict(seq, orient='columns')
+        # seq_df.dropna(inplace=True)
+        # cont_nodes = [c.name for c in self.nodes if c.type != 'Discrete' and 'Logit' not in c.type]
+        # positive_columns = [c for c in cont_nodes if self.descriptor['signs'][c] == 'pos']
+        # seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
+        # seq_df.reset_index(inplace=True, drop=True)
+        # seq = seq_df.to_dict('records')
 
         if as_df:
             return pd.DataFrame.from_dict(seq, orient='columns')
@@ -566,9 +599,10 @@ class BaseNetwork(object):
                         r"\([\s\S]*\)", f"({type(node.classifier).__name__})", node.type)
                 else:
                     continue
+
     def set_regressor(self, regressors: Dict[str, object]):
         """
-        Set classifiers for logit nodes.
+        Set classifiers for gaussian nodes.
         classifiers: dict with node_name and Classifier
         """
 
@@ -688,7 +722,7 @@ class HybridBN(BaseNetwork):
         types = descriptor['types']
         s = set(types.values())
         return True if ({'cont', 'disc', 'disc_num'} == s) or ({'cont', 'disc'} == s) or (
-            {'cont', 'disc_num'} == s) else False
+                {'cont', 'disc_num'} == s) else False
 
 
 class BigBraveBN:

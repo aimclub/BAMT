@@ -12,7 +12,7 @@ from bamt.utils import GraphUtils as gru
 from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union
 
 
-class ParamDict(TypedDict):
+class ParamDict(TypedDict, total=False):
     init_edges: Optional[Tuple[str, str]]
     init_nodes: Optional[List[str]]
     remove_init_edges: bool
