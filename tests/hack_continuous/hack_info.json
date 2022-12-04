@@ -1,0 +1,1 @@
+{"types": {"Gross": "cont", "Netpay": "cont", "Porosity": "cont", "Permeability": "cont", "Depth": "cont"}, "signs": {"Gross": "pos", "Netpay": "pos", "Porosity": "pos", "Permeability": "pos", "Depth": "pos"}}

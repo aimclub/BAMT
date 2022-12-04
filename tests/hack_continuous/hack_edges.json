@@ -1,0 +1,7 @@
+{"use_mixture=False":
+{"K2": [["Netpay", "Gross"], ["Porosity", "Depth"], ["Permeability", "Porosity"]],
+  "MI": [["Permeability", "Gross"], ["Gross", "Porosity"], ["Netpay", "Permeability"], ["Gross", "Depth"]],
+  "BIC": [["Netpay", "Gross"], ["Netpay", "Porosity"], ["Permeability", "Porosity"], ["Gross", "Porosity"], ["Netpay", "Permeability"], ["Gross", "Permeability"], ["Porosity", "Depth"], ["Permeability", "Depth"], ["Gross", "Depth"]]},
+  "use_mixture=True": {"K2": [["Netpay", "Gross"], ["Porosity", "Depth"], ["Permeability", "Porosity"]],
+    "MI": [["Permeability", "Gross"], ["Gross", "Porosity"], ["Netpay", "Permeability"], ["Gross", "Depth"]],
+    "BIC": [["Netpay", "Gross"], ["Netpay", "Porosity"], ["Permeability", "Porosity"], ["Gross", "Porosity"], ["Netpay", "Permeability"], ["Gross", "Permeability"], ["Porosity", "Depth"], ["Permeability", "Depth"], ["Gross", "Depth"]]}}

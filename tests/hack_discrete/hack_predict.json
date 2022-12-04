@@ -1,0 +1,41 @@
+{
+  "MI": {
+    "Lithology": {
+      "SANDSTONE": 441,
+      "VOLCANICS": 1
+    },
+    "Structural setting": {
+      "RIFT": 441,
+      "INTRACRATONIC": 1
+    }
+  },
+  "K2": {
+    "Lithology": {
+      "SANDSTONE": 442
+    },
+    "Structural setting": {
+      "FORELAND": 214,
+      "RIFT": 78,
+      "INVERSION": 70,
+      "SALT": 56,
+      "WRENCH": 20,
+      "PASSIVE MARGIN": 3,
+      "INTRACRATONIC": 1
+    }
+  },
+  "BIC": {
+    "Lithology": {
+      "SANDSTONE": 441,
+      "VOLCANICS": 1
+    },
+    "Structural setting": {
+      "FORELAND": 214,
+      "RIFT": 78,
+      "INVERSION": 70,
+      "DELTA": 56,
+      "WRENCH": 20,
+      "PASSIVE MARGIN": 3,
+      "INTRACRATONIC": 1
+    }
+  }
+}
