@@ -49,6 +49,17 @@ class BaseNode(object):
     def __repr__(self):
         return f"{self.name}"
 
+    def __eq__(self, other):
+        if not isinstance(other, BaseNode):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        return self.name == other.name and \
+               self.type == other.type and \
+               self.disc_parents == other.disc_parents and \
+               self.cont_parents == other.cont_parents and \
+               self.children == other.children
+
     @staticmethod
     def choose_serialization(model) -> Union[str, Exception]:
         try:

@@ -23,7 +23,6 @@ class TestStructureBuilder(unittest.TestCase):
         self.SB = builders.StructureBuilder(descriptor=self.descriptor)
 
     def test_restrict(self):
-        # ---------
         self.SB.has_logit = True
 
         self.SB.restrict(data=self.data,

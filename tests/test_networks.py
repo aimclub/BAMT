@@ -3,7 +3,6 @@ import json
 import os
 from shutil import rmtree
 import unittest
-# from mock import patch
 
 import logging
 
@@ -12,7 +11,7 @@ import pandas as pd
 import bamt.networks as Nets
 from bamt.nodes import GaussianNode, DiscreteNode, LogitNode
 
-# logging.getLogger("network").setLevel(logging.CRITICAL)
+logging.getLogger("network").setLevel(logging.CRITICAL)
 
 
 class TestCaseBase(unittest.TestCase):
