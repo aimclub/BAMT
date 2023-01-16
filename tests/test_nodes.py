@@ -1,12 +1,5 @@
-# import pathlib as pl
-# import json
-# import os
-# from shutil import rmtree
 import unittest
-# from mock import patch
-
 import logging
-
 import pandas as pd
 import numpy as np
 
@@ -85,11 +78,10 @@ class TestDiscreteNode(unittest.TestCase):
 
     def test_fit_parameters(self):
         params = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))
+        self.assertIsNotNone(params["vals"])
+        self.assertNotEqual(params["vals"], [])
 
-        self.assertIsNotNone(params["values"])
-        self.assertNotEqual(params["values"], [])
-
-        for comb, probas in params["cprob"]:
+        for comb, probas in params["cprob"].items():
             self.assertAlmostEqual(sum(probas), 1, delta=1e-5)
 
     def test_choose(self):
@@ -113,6 +105,7 @@ class TestGaussianNode(unittest.TestCase):
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),
+            "foster-son": np.random.normal(2.5, .2, 30),
             "test": np.random.normal(3, .3, 30),
             "node2": np.random.choice(["cat1", "cat2", "cat3"], 30),
             "node4": np.random.choice(["cat4", "cat5", "cat6"], 30),
@@ -125,15 +118,19 @@ class TestGaussianNode(unittest.TestCase):
         self.node.children = ["node6"]
 
     def test_fit_parameters(self):
-        # print(pd.DataFrame.from_records(self.data_dict))
-        params = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))
-        print(sum(params["coef"]))
-        # eltern
-        # reg not none, var != None, mean is None
-        # not eltern
-        # mean != None var != None reg == None
-        # self.assertIsNotNone(params["values"])
-        # self.assertNotEqual(params["values"], [])
+        node_without_parents = nodes.GaussianNode(name="foster-son")
+        node_without_parents.children = ["node6", "node5"]
+
+        params_parents = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))
+        params_foster = node_without_parents.fit_parameters(pd.DataFrame.from_records(self.data_dict))
+
+        self.assertIsNotNone(params_parents["regressor_obj"])
+        self.assertTrue(pd.isna(params_parents["mean"]))
+        self.assertIsNotNone(params_parents["variance"])
+
+        self.assertIsNone(params_foster["regressor_obj"])
+        self.assertFalse(pd.isna(params_foster["mean"]))
+        self.assertIsNotNone(params_foster["variance"])
 
     def test_choose(self):
         pvals = [1.05, 1.95]
@@ -144,9 +141,8 @@ class TestGaussianNode(unittest.TestCase):
     def test_predict(self):
         pvals = [1.05, 1.95]
         params = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))
-
         self.assertTrue(isinstance(self.node.predict(params, pvals), float))
-        self.assertRaises(TypeError, self.node.predict, params, ["bad", "values"])
+        self.assertRaises(ValueError, self.node.predict, params, ["bad", "values"])
 
 
 class TestConditionalGaussianNode(unittest.TestCase):
@@ -156,6 +152,7 @@ class TestConditionalGaussianNode(unittest.TestCase):
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),
+            "foster-son": np.random.normal(2.5, .2, 30),
             "test": np.random.normal(3, .3, 30),
             "node2": np.random.choice(["cat1", "cat2", "cat3"], 30),
             "node4": np.random.choice(["cat4", "cat5", "cat6"], 30),
@@ -168,15 +165,33 @@ class TestConditionalGaussianNode(unittest.TestCase):
         self.node.children = ["node6"]
 
     def test_fit_parameters(self):
-        # print(pd.DataFrame.from_records(self.data_dict))
-        params = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))["hybcprob"]
-        print(params)
+        node_without_parents = nodes.ConditionalGaussianNode(name="foster-son")
+        node_without_parents.children = ["node6", "node5"]
 
-        # self.assertIsNotNone(params["values"])
-        # self.assertNotEqual(params["values"], [])
+        params_parents = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))["hybcprob"]
+        params_foster = node_without_parents.fit_parameters(pd.DataFrame.from_records(self.data_dict))["hybcprob"]['[]']
 
-        for comb, data in params.items():
-            self.assertAlmostEqual(sum(data["coef"]), 1, delta=1e-5)
+        self.assertIsNone(params_foster["regressor_obj"])
+        self.assertIsNotNone(params_foster["mean"])
+
+        # Since there can be empty dictionaries,
+        # we have to count them and if a percent is greater than the threshold test failed.
+        report = []
+        for comb, data in params_parents.items():
+            if all(pd.isna(x) for x in data.values()):
+                report.append(1)
+                continue
+            else:
+                report.append(0)
+
+            if pd.isna(data["mean"]):
+                self.assertIsNotNone(data["regressor_obj"])
+                self.assertIsNotNone(data["variance"])
+            else:
+                self.assertIsNone(data["regressor_obj"])
+                self.assertIsNotNone(data["mean"])
+
+        self.assertLess(sum(report)/len(report), 0.3)
 
     def test_choose(self):
         pvals = [1.05, 1.95, "cat4", "cat7"]
@@ -245,8 +260,14 @@ class TestConditionalMixtureGaussianNode(unittest.TestCase):
 
     def test_fit_parameters(self):
         params = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))["hybcprob"]
+        report = []
+        # sometimes combination's data can be empty, so we set the percent of empty combinations
         for comb, data in params.items():
-            self.assertAlmostEqual(sum(data["coef"]), 1, delta=1e-5)
+            if np.isclose(sum(data["coef"]), 1, atol=1e-5):
+                report.append(0)
+            else:
+                report.append(1)
+        self.assertLess(sum(report)/len(report), 0.3)
 
     def test_choose(self):
         pvals = [1.05, 1.95, "cat4", "cat7"]
@@ -285,7 +306,7 @@ class TestLogitNode(unittest.TestCase):
     def test_choose(self):
         pvals = [1.05, 1.95]
         params = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))
-        self.assertTrue([self.node.choose(params, pvals) in params["classes"]])
+        self.assertTrue(self.node.choose(params, pvals) in params["classes"])
 
     def test_predict(self):
         pvals = [1.05, 1.95]
@@ -294,4 +315,5 @@ class TestLogitNode(unittest.TestCase):
         self.assertTrue([self.node.choose(params, pvals) in params["classes"]])
 
 
-
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

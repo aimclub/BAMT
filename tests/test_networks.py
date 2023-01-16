@@ -179,7 +179,7 @@ class TestBaseNetwork(TestCaseBase):
                            ["Tectonic regime","Lithology"],
                            ["Lithology","Structural setting"]])
         self.bn.fit_parameters(pd.DataFrame.from_records(data))
-        self.assertIsNotNone(self.bn.sample(50, as_df=False))
+        self.assertIsNotNone(self.bn.sample(50, as_df=False, progress_bar=False))
 
     def test_predict(self):
         seq = {
@@ -225,4 +225,4 @@ class TestBigBraveBN(unittest.SkipTest):
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)

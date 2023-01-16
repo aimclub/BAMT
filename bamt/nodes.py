@@ -297,27 +297,22 @@ class GaussianNode(BaseNode):
         node_info: nodes info from distributions
         pvals: parent values
         """
-        flag = False
-        for el in pvals:
-            if str(el) == 'nan':
-                flag = True
-                break
-        if flag:
-            return np.nan
-        else:
-            if pvals:
-                if node_info["serialization"] == 'joblib':
-                    model = joblib.load(node_info["regressor_obj"])
-                else:
-                    # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
-                    a = node_info["regressor_obj"].encode('latin1')
-                    model = pickle.loads(a)
-
-                cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
-                var = node_info['variance']
-                return random.gauss(cond_mean, var)
+        if pvals:
+            for el in pvals:
+                if str(el) == 'nan':
+                    return np.nan
+            if node_info["serialization"] == 'joblib':
+                model = joblib.load(node_info["regressor_obj"])
             else:
-                return random.gauss(node_info['mean'], math.sqrt(node_info['variance']))
+                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                a = node_info["regressor_obj"].encode('latin1')
+                model = pickle.loads(a)
+
+            cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
+            var = node_info['variance']
+            return random.gauss(cond_mean, var)
+        else:
+            return random.gauss(node_info['mean'], math.sqrt(node_info['variance']))
 
     def predict(self, node_info: GaussianParams, pvals: List[float]) -> float:
         """
@@ -466,8 +461,6 @@ class ConditionalGaussianNode(BaseNode):
                                               'regressor_obj': None,
                                               'regressor': None,
                                               'serialization': None}
-
-
             else:
                 hycprob[str(key_comb)] = {'variance': np.nan, 'regressor': None,
                                           'regressor_obj': None, 'serialization': None, 'mean': np.nan}
@@ -925,14 +918,13 @@ class LogitNode(BaseNode):
                 'classifier': type(self.classifier).__name__,
                 'serialization': serialization_name}
 
-    def choose(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
+    def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return value from Logit node
         params:
         node_info: nodes info from distributions
         pvals: parent values
         """
-        pvals = [str(p) for p in pvals]
 
         rindex = 0
 
@@ -943,7 +935,6 @@ class LogitNode(BaseNode):
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                 a = node_info["classifier_obj"].encode('latin1')
                 model = pickle.loads(a)
-
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose
@@ -963,14 +954,13 @@ class LogitNode(BaseNode):
         else:
             return str(node_info["classes"][0])
 
-    def predict(self, node_info: LogitParams, pvals: List[Union[str, float]]) -> str:
+    def predict(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return prediction from Logit node
         params:
         node_info: nodes info from distributions
         pvals: parent values
         """
-        pvals = [str(p) for p in pvals]
 
         if len(node_info["classes"]) > 1:
             if node_info["serialization"] == 'joblib':
