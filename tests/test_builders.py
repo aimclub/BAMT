@@ -1,6 +1,5 @@
 import itertools
 import unittest
-# from mock import patch
 
 import logging
 
@@ -107,13 +106,13 @@ class TestVerticesDefiner(unittest.TestCase):
                 "True, False": {'Node0': 'MixtureGaussian', 'Node4': 'Discrete', 'Node7': 'Discrete',
                                 'Node1': 'MixtureGaussian', 'Node2': 'ConditionalMixtureGaussian', 'Node5': 'Discrete',
                                 'Node6': 'Discrete', 'Node3': 'ConditionalMixtureGaussian'},
-                "False, True": {'Node0': 'Gaussian', 'Node4': 'Discrete', 'Node7': 'Logit (LogisticRegression)',
-                                'Node1': 'Gaussian', 'Node2': 'ConditionalGaussian',
+                "False, True": {'Node0': 'Gaussian (LinearRegression)', 'Node4': 'Discrete', 'Node7': 'Logit (LogisticRegression)',
+                                'Node1': 'Gaussian (LinearRegression)', 'Node2': 'ConditionalGaussian (LinearRegression)',
                                 'Node5': 'ConditionalLogit (LogisticRegression)', 'Node6': 'Discrete',
-                                'Node3': 'ConditionalGaussian'},
-                "False, False": {'Node0': 'Gaussian', 'Node4': 'Discrete', 'Node7': 'Discrete', 'Node1': 'Gaussian',
-                                 'Node2': 'ConditionalGaussian', 'Node5': 'Discrete', 'Node6': 'Discrete',
-                                 'Node3': 'ConditionalGaussian'}
+                                'Node3': 'ConditionalGaussian (LinearRegression)'},
+                "False, False": {'Node0': 'Gaussian (LinearRegression)', 'Node4': 'Discrete', 'Node7': 'Discrete', 'Node1': 'Gaussian (LinearRegression)',
+                                 'Node2': 'ConditionalGaussian (LinearRegression)', 'Node5': 'Discrete', 'Node6': 'Discrete',
+                                 'Node3': 'ConditionalGaussian (LinearRegression)'}
                 }
 
         for use_mixture, has_logit in itertools.product([True, False], repeat=2):

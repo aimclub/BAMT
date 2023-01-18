@@ -11,7 +11,7 @@ Optional:
 You can also uncomment print() that you need.
 '''
 
-hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")
+hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")
 cont_data = hack_data[['Gross', 'Netpay', 'Porosity',
                        'Permeability', 'Depth']].dropna()
 disc_data = hack_data[['Tectonic regime', 'Period',

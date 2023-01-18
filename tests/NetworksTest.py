@@ -153,7 +153,7 @@ class NetworkTest(object):
                 test_vals = pd.Series(preds[node]).value_counts().to_dict()
                 for category, right_val in json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node].items():
                     try:
-                        assert np.all(np.isclose(test_vals[category], right_val, atol=5)),  \
+                        assert np.all(np.isclose(test_vals[category], right_val, atol=5)), \
                             f"Predict failed: {node, test_vals[category], right_val}"
                     except KeyError as ex:
                         print("Unknown preds category: ", ex.args[0])
@@ -406,8 +406,9 @@ class TestHybridBN(NetworkTest):
                          nodes=ns,
                          edges=edges)
 
-        assert ['Gaussian', 'Logit (LogisticRegression)', 'ConditionalGaussian', 'Logit (LogisticRegression)',
-                'ConditionalGaussian', 'Logit (LogisticRegression)'] == \
+        assert ['Gaussian (LinearRegression)', 'Logit (LogisticRegression)', 'ConditionalGaussian (LinearRegression)',
+                'Logit (LogisticRegression)', 'ConditionalGaussian (LinearRegression)',
+                'Logit (LogisticRegression)'] == \
                [node.type for node in bn.nodes], "Setter | Nodes are not the same."
         assert edges == bn.edges, "Setter | Edges are not the same."
 

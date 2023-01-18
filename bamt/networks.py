@@ -302,24 +302,25 @@ class BaseNetwork(object):
         for node, data in self.distributions.items():
             if "hybcprob" in data.keys():
                 # first_item = next(iter(data["hybcprob"].values()))
-                if "gaussian" in self[node].type.lower():
-                    model_type = "regressor"
+                if "mixture" in self[node].type.lower():
+                    continue
                 else:
-                    model_type = "classifier"
-
-                model = None
-                for v in data["hybcprob"].values():
-                    if v[model_type]:
-                        model = v[model_type]
-                        break
+                    if "gaussian" in self[node].type.lower():
+                        model_type = "regressor"
                     else:
-                        continue
-                if not model:
-                    logger_network.warning(f"Classifier/regressor for {node} hadn't been used.")
+                        model_type = "classifier"
 
-                self[node].type = re.sub(r"\([\s\S]*\)", f"({model})", self[node].type)
+                    model = None
+                    for v in data["hybcprob"].values():
+                        if v[model_type]:
+                            model = v[model_type]
+                            break
+                        else:
+                            continue
+                    if not model:
+                        logger_network.warning(f"Classifier/regressor for {node} hadn't been used.")
 
-
+                    self[node].type = re.sub(r"\([\s\S]*\)", f"({model})", self[node].type)
 
     def save_params(self, outdir: str):
         """
@@ -368,11 +369,36 @@ class BaseNetwork(object):
         Function to load the whole BN from json file
         :param input_dir: input directory
         """
+
+        class CompatibilityError(Exception):
+            def __init__(self, type: str):
+                """
+                Args:
+                    type: either use_mixture or has_logit is wrong
+                """
+                super().__init__(f"This parameter is not the same as father's parameter: {type}")
+
         with open(input_dir) as f:
             input_dict = json.load(f)
 
         self.add_nodes(input_dict['info'])
         self.set_structure(edges=input_dict['edges'])
+
+        # check compatibility with father network.
+        if not self.use_mixture:
+            for node_data in input_dict['parameters'].values():
+                if 'hybcprob' not in node_data.keys():
+                    continue
+                else:
+                    # Since we don't have information about types of nodes, we should derive it from parameters.
+                    if any(list(node_keys.keys()) == ["covars", "mean", "coef"]
+                            for node_keys in node_data['hybcprob'].values()):
+                        raise CompatibilityError("use_mixture")
+
+        if not self.has_logit:
+            if not all(ob1 ==[ob2[0], ob2[1]] for ob1, ob2 in zip(input_dict['edges'], self.edges)):
+                raise CompatibilityError("has_logit")
+
         self.set_parameters(parameters=input_dict['parameters'])
         str_keys = list(input_dict['weights'].keys())
         tuple_keys = [eval(key) for key in str_keys]
@@ -590,9 +616,10 @@ class BaseNetwork(object):
 
         if progress_bar:
             processed_list = Parallel(n_jobs=parall_count)(
-            delayed(wrapper)(self, test.loc[[i]], columns) for i in tqdm(test.index, position=0, leave=True))
+                delayed(wrapper)(self, test.loc[[i]], columns) for i in tqdm(test.index, position=0, leave=True))
         else:
-            processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(self, test.loc[[i]], columns) for i in test.index)
+            processed_list = Parallel(n_jobs=parall_count)(
+                delayed(wrapper)(self, test.loc[[i]], columns) for i in test.index)
 
         for i in range(test.shape[0]):
             curr_pred = processed_list[i]

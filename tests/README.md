@@ -1,11 +1,36 @@
 # Testing module
 <p>
-Here we have made integration tests (unit tests will be made as well) for BAMT.<br>
+We have made unit tests for BAMT!<br>
+
+Integration tests will be soon! <br>
+
 The key difference between integration test and unit test are this: 
-the first one all modules of the software are tested combined, 
-in the second - each module of the software is tested separately.
+at the first one all modules of the software are tested combined, 
+at the second - each module of the software is tested separately.
 </p>
 
+## Basic usage
+<p>
+There are two ways to use these unit tests: with <code>pytest</code> and <code>unittest</code>.
+</p>
+
+### Pytest
+<p>
+First, navigate to the BAMT directory.<br>
+Then, run pytest with verbosity mode or without: <br>
+Verbosity: <code>pytest -v -s tests</code><br>
+Without: <code>pytest -s tests</code>
+</p>
+
+### Unittest
+<p>
+First, navigate to the BAMT directory.<br>
+Then, run unittest with verbosity mode or without: <br>
+Verbosity: <code>python -m unittest discover -v -s tests</code><br>
+Without: <code>python -m unittest discover -s tests</code>
+</p>
+
+## Description of integration tests
 <p>
 The following features have been covered:
 </p>

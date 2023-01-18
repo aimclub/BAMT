@@ -1,7 +1,7 @@
 import json
 
-import bamt.Networks as Nets
-import bamt.Preprocessors as preprocessors
+import bamt.networks as Nets
+import bamt.preprocessors as preprocessors
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -24,22 +24,22 @@ discretized_data, est = p.apply(hack_data)
 bn = Nets.HybridBN(has_logit=True)
 info = p.info
 
-with open(r"C:\Users\Roman\Desktop\mymodels\mynet.json") as f:
-    net_data = json.load(f)
+# with open(r"C:\Users\Roman\Desktop\mymodels\mynet.json") as f:
+#     net_data = json.load(f)
 
-bn.add_nodes(net_data["info"])
-bn.set_structure(edges=net_data["edges"])
-bn.set_parameters(net_data["parameters"])
-
-print(bn.sample(10, models_dir=r"<new dir>"))
-
-# bn.add_nodes(info)
+# bn.add_nodes(net_data["info"])
+# bn.set_structure(edges=net_data["edges"])
+# bn.set_parameters(net_data["parameters"])
 #
-# bn.add_edges(discretized_data, scoring_function=("BIC",))
-# bn.set_classifiers(classifiers={'Structural setting': DecisionTreeClassifier(),
-#                                 'Lithology': RandomForestClassifier(),
-#                                 'Period': KNeighborsClassifier(n_neighbors=2)})
-#
+# print(bn.sample(10, models_dir=r"<new dir>"))
+
+bn.add_nodes(info)
+
+bn.add_edges(discretized_data, scoring_function=("BIC",))
+bn.set_classifiers(classifiers={'Structural setting': DecisionTreeClassifier(),
+                                'Lithology': RandomForestClassifier(),
+                                'Period': KNeighborsClassifier(n_neighbors=2)})
+
 # bn.fit_parameters(hack_data)
 #
 # bn.save("mynet.json")
