@@ -33,5 +33,13 @@ Difference from existing implementations:
 * Parametric learning implements the use of a mixture of Gaussian distributions to approximate continuous distributions;
 * The algorithm for structural training of large Bayesian networks (> 10 nodes) is based on local training of small networks with their subsequent algorithmic connection.
 
+  .. image:: img/BN_gif.gif
+     :target: img/BN_gif.gif
+     :alt: title
+
+Generating synthetic data
+=========================
+
+In terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
 
