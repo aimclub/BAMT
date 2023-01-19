@@ -312,7 +312,7 @@ class TestLogitNode(unittest.TestCase):
         pvals = [1.05, 1.95]
         params = self.node.fit_parameters(pd.DataFrame.from_records(self.data_dict))
 
-        self.assertTrue([self.node.choose(params, pvals) in params["classes"]])
+        self.assertTrue([self.node.predict(params, pvals) in params["classes"]])
 
 
 if __name__ == "__main__":

@@ -321,26 +321,22 @@ class GaussianNode(BaseNode):
         node_info: nodes info from distributions
         pvals: parent values
         """
-        flag = False
-        for el in pvals:
-            if str(el) == 'nan':
-                flag = True
-                break
-        if flag:
-            return np.nan
-        else:
-            if pvals:
-                if node_info["serialization"] == 'joblib':
-                    model = joblib.load(node_info["regressor_obj"])
-                else:
-                    # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
-                    a = node_info["regressor_obj"].encode('latin1')
-                    model = pickle.loads(a)
 
-                pred = model.predict(np.array(pvals).reshape(1, -1))[0]
-                return pred
+        if pvals:
+            for el in pvals:
+                if str(el) == 'nan':
+                    return np.nan
+            if node_info["serialization"] == 'joblib':
+                model = joblib.load(node_info["regressor_obj"])
             else:
-                return node_info['mean']
+                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                a = node_info["regressor_obj"].encode('latin1')
+                model = pickle.loads(a)
+
+            pred = model.predict(np.array(pvals).reshape(1, -1))[0]
+            return pred
+        else:
+            return node_info['mean']
 
     # @staticmethod
     # def choose(node_info: Dict[str, Union[float, List[float]]],
