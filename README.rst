@@ -42,4 +42,21 @@ Generating synthetic data
 
 In terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
+.. image:: img/synth_gen.png
+   :target: img/synth_gen.png
+   :alt: title
+
+
+Oil and Gas Reservoirs Parameters Analysis
+==========================================
+
+Bayesian networks can be used to restore gaps in reservoirs data, search for anomalous values, and also to search for analogous reservoirs.
+
+.. image:: img/concept.png
+   :target: img/concept.png
+   :alt: title
+
+
+Project structure
+=================
 
