@@ -60,3 +60,33 @@ Bayesian networks can be used to restore gaps in reservoirs data, search for ano
 Project structure
 =================
 
+Utils
+-----
+
+
+#. GraphUtils consist of functions for:
+
+
+* Finding nodes types/signs
+* Topological ordering
+
+
+#. MathUtils consist of functions for:
+
+
+* Additional function to support calculation of metrics from group1 ('MI', 'LL', 'BIC', 'AIC')
+
+Preprocessing
+-------------
+
+Preprocessor module allows user to transform data according pipeline (in analogy with pipeline in scikit-learn).
+
+Networks
+--------
+
+There are 3 general types of networks: discrete, gaussian, hybrid. All implemented in networks.py  
+
+Nodes
+-----
+
+Contains nodes' classes and their methods.
