@@ -85,4 +85,4 @@ There are 3 general types of networks: discrete, gaussian, hybrid. All implement
 Nodes
 -----
 
-Contains nodes' classes and their methods.
+Contains nodes' classes and their methods
