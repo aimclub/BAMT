@@ -10,13 +10,27 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :hidden:
+   :caption: Getting Started
 
-   intro/index
-   basics/index
-   examples/index
-   faq/index
-   about/index
+   self
+   install.rst
+   faq.rst
+
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Features
+
+   api.rst
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Models
+
+   BayesianNetworks.rst
 
 
 
