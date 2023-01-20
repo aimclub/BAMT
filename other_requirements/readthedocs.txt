@@ -1,0 +1,6 @@
+myst-parser
+sphinx
+sphinx_rtd_theme
+readthedocs-sphinx-search
+sphinxcontrib-details-directive
+autodocsumm
