@@ -30,7 +30,7 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
    :hidden:
    :caption: Models
 
-   modelsBayesianNetworks.rst
+   models/BayesianNetworks.rst
 
 
 
