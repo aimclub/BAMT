@@ -3,13 +3,13 @@
 Bayesian Networks
 =================
 
-Discrete Bayesian networks
+Discrete Bayesian Networks
 --------------------------
 
-Continuous Bayesian networks
+Continuous Bayesian Networks
 ----------------------------
 
-Hybrid Bayesian networks
+Hybrid Bayesian Networks
 ------------------------
 
 
