@@ -6,9 +6,18 @@
 Welcome to BAMT's documentation!
 ================================
 
+The site contains documentation for the `BAMT framework <https://github.com/ITMO-NSS-team/BAMT>`__.
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
+
+   intro/index
+   basics/index
+   examples/index
+   faq/index
+   about/index
+
 
 
 
