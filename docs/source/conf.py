@@ -37,7 +37,6 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.autodoc.typehints',
     'sphinx.ext.graphviz',
-    'sphinxcontrib.details.directive',
     'sphinx.ext.todo',
     'autodocsumm',
     ]
