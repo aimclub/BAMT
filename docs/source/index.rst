@@ -14,8 +14,8 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
    :caption: Getting Started
 
    self
-   install.rst
-   faq.rst
+   getting_started/install.rst
+   getting_started/faq.rst
 
 
 .. toctree::
@@ -23,14 +23,14 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
    :hidden:
    :caption: Features
 
-   api.rst
+   features/api.rst
 
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: Models
 
-   BayesianNetworks.rst
+   modelsBayesianNetworks.rst
 
 
 
