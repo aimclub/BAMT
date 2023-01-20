@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent / '../../'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'BAMT'
-copyright = '2023, Irina Deeva, Anna Bubnova, Roman Netrogolov, Karine Shakhkyan, Nikita Kovalev, Yury Kaminsky'
+copyright = '2023, NSS lab'
 author = 'NSS lab'
 release = '0.1.0'
 
