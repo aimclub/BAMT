@@ -1,5 +1,5 @@
 setuptools==65.6.3
-numpy==1.24.0
+numpy==1.21.6
 matplotlib==3.6.2
 pandas==1.5.2
 pomegranate==0.14.8
