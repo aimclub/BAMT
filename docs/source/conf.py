@@ -37,8 +37,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.autodoc.typehints',
     'sphinx.ext.graphviz',
-    'sphinx.ext.todo',
-    'autodocsumm',
+    'sphinx.ext.todo'
     ]
 
 templates_path = ['_templates']
