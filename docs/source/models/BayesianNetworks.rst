@@ -1,0 +1,4 @@
+.. _bayesiannetwork:
+
+Bayesian Networks
+=================
