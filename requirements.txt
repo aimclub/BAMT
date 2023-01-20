@@ -1,1 +1,14 @@
 myst-parser
+setuptools
+numpy
+matplotlib
+pandas
+pomegranate
+gmr
+scikit-learn
+scipy
+pyvis
+missingno
+pgmpy
+pyitlib
+pytest
