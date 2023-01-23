@@ -9,7 +9,7 @@ The three BN types are ``DiscreteBN``, ``ContinuousBN`` and ``HybridBN``.
 The ``HybridBN`` is a BN that contains both discrete and continuous variables.
 The ``DiscreteBN`` and ``ContinuousBN`` are two BN types that are used to represent the BNs that contain only discrete or continuous variables, respectively.
 
-.. autoclass:: bamt.Networks.BaseNetwork
+.. autoclass:: bamt.networks.BaseNetwork
    :members:
    :no-undoc-members:
 
