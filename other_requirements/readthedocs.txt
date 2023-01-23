@@ -9,7 +9,6 @@ matplotlib
 pandas
 numpy
 tqdm
-concurrent
 pyvis
 pyitlib
 typing
