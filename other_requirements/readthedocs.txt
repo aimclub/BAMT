@@ -9,6 +9,3 @@ matplotlib
 pandas
 numpy
 tqdm
-pyvis
-pyitlib
-typing
