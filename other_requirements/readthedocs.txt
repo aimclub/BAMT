@@ -4,3 +4,12 @@ sphinx_rtd_theme
 readthedocs-sphinx-search
 sphinxcontrib-details-directive
 autodocsumm
+networkx
+matplotlib
+pandas
+numpy
+tqdm
+concurrent
+pyvis
+pyitlib
+typing
