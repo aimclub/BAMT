@@ -10,3 +10,4 @@ pandas
 numpy
 tqdm
 pyvis
+pyitlib
