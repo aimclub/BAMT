@@ -9,3 +9,4 @@ matplotlib
 pandas
 numpy
 tqdm
+pyvis
