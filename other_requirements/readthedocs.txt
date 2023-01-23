@@ -12,3 +12,10 @@ tqdm
 pyvis
 pyitlib
 pgmpy
+pomegranate
+setuptools
+gmr
+scikit-learn
+scipy
+missingno
+pytest
