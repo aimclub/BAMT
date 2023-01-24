@@ -66,6 +66,20 @@ Hybrid Bayesian Networks
    :members:
    :no-undoc-members:
 
+Network initialization
+~~~~~~~~~~~~~~~~~~~~~~
+
+If the dataset contains both discrete and continuous variables, ``HybridBN`` is recommended to use.
+To initialize a ``HybridBN`` object, you can use the following code:
+
+.. code-block:: python
+
+    import bamt.Networks as Nets
+    
+    bn = Nets.HybridBN(has_logit=True, use_mixture=True)
+
+HybridBN has two additional parameters ``has_logit`` and ``use_mixture``.
+``has_logit`` is used to determine whether to use logit nodes, that represent 
 
 Algorithms for Large Bayesian Networks
 --------------------------------------
