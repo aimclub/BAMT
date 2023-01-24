@@ -16,6 +16,7 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
    self
    getting_started/install.rst
    getting_started/faq.rst
+   getting_started/cite_us.rst
 
 
 .. toctree::
