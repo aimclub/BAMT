@@ -1,0 +1,27 @@
+Cite us
+=======
+
+These are articles that you can use to cite us or make a reference to us:
+
+.. code-block:: bibtex
+
+    @article{deeva2023advanced,
+    title={Advanced Approach for Distributions Parameters Learning in Bayesian Networks with Gaussian Mixture Models and Discriminative Models},
+    author={Deeva, Irina and Bubnova, Anna and Kalyuzhnaya, Anna V},
+    journal={Mathematics},
+    volume={11},
+    number={2},
+    pages={343},
+    year={2023},
+    publisher={MDPI}
+    }
+
+    @article{kaminsky2022bigbravebn,
+    title={BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes},
+    author={Kaminsky, Yury and Deeva, Irina},
+    journal={Procedia Computer Science},
+    volume={212},
+    pages={191--200},
+    year={2022},
+    publisher={Elsevier}
+    }
