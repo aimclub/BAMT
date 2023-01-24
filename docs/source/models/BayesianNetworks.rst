@@ -16,6 +16,10 @@ The ``DiscreteBN`` and ``ContinuousBN`` are two BN types that are used to repres
 Discrete Bayesian Networks
 --------------------------
 
+.. autoclass:: bamt.networks.DiscreteBN
+   :members:
+   :no-undoc-members:
+
 Network initialization
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -33,6 +37,10 @@ To initialize a ``DiscreteBN`` object, you can use the following code:
 
 Continuous Bayesian Networks
 ----------------------------
+
+.. autoclass:: bamt.networks.ContinuousBN
+   :members:
+   :no-undoc-members:
 
 Network initialization
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -54,6 +62,17 @@ If ``use_mixture`` is ``True``, mixuters of Gaussian distributions are used to r
 Hybrid Bayesian Networks
 ------------------------
 
+.. autoclass:: bamt.networks.HybridBN
+   :members:
+   :no-undoc-members:
+
 
 Algorithms for Large Bayesian Networks
 --------------------------------------
+
+BigBraveBN
+~~~~~~~~~~
+
+.. autoclass:: bamt.networks.BigBraveBN
+   :members:
+   :no-undoc-members:
