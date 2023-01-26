@@ -5,6 +5,16 @@ These are articles that you can use to cite us or make a reference to us:
 
 .. code-block:: bibtex
 
+    @misc{BAMT,
+    author={BAMT},
+    title = {Repository experiments and data},
+    year = {2021},
+    publisher = {GitHub},
+    journal = {GitHub repository},
+    howpublished = {\url{https://github.com/ITMO-NSS-team/BAMT.git}},
+    url = {https://github.com/ITMO-NSS-team/BAMT.git}
+    }
+
     @article{deeva2023advanced,
     title={Advanced Approach for Distributions Parameters Learning in Bayesian Networks with Gaussian Mixture Models and Discriminative Models},
     author={Deeva, Irina and Bubnova, Anna and Kalyuzhnaya, Anna V},
