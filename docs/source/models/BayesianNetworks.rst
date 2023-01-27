@@ -38,7 +38,7 @@ To initialize a ``DiscreteBN`` object, you can use the following code:
 Data Preprocessing
 ~~~~~~~~~~~~~~~~~~
 
-If the dataset contains float values (e.g. 1.0, 2.0 etc), they should be converted to integers or discretized before using ``DiscreteBN``.
+If the dataset contains ``float`` values (e.g. 1.0, 2.0 etc), they should be converted to ``integers`` or discretized before using ``DiscreteBN``.
 Before applying any structure or parametric learning, the data should be preprocessed as follows:
 
 .. code-block:: python
@@ -55,16 +55,23 @@ Before applying any structure or parametric learning, the data should be preproc
     p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
     discretized_data, est = p.apply(data)
 
+    info = p.info
+
+
+
 Structure Learning
 ~~~~~~~~~~~~~~~~~~
 
-For structure learning of discrete BNs, ``bn.add_nodes`` and ``bn.add_edges`` should be used.
+For structure learning of discrete BNs, ``bn.add_nodes()`` and ``bn.add_edges()`` methods should be used.
 
 .. code-block:: python
 
     from pgmpy.estimators import K2Score
 
     bn.add_nodes(info) # add nodes from info obtained from preprocessing
+
+    bn.get_info() # to make sure that the network recognizes the variables as discrete
+
     params = {
                'init_nodes':[...] # Defines initial nodes of the network, list of node names
                'init_edges':[...] # Defines initial edges of the network, list of tuples (node1, node2)
@@ -81,39 +88,13 @@ For structure learning of discrete BNs, ``bn.add_nodes`` and ``bn.add_edges`` sh
 Parametric Learning
 ~~~~~~~~~~~~~~~~~~~
 
-For parametric learning of discrete BNs, ``bn.fit_parameters`` is used. 
+For parametric learning of discrete BNs, ``bn.fit_parameters()`` method is used. 
 
 .. code-block:: python
 
     bn.fit_parameters(data)
 
     bn.get_info() # get information table about the network
-
-
-
-
-Sampling with Bayesian Networks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For data sampling from discrete BNs, ``bn.sample()`` is used, but the network should be parametrically fitted first.
-
-.. code-block:: python
-
-    bn.fit_parameters(data)
-    sampled_data = bn.sample(1000) # sample 1000 data points
-
-
-
-
-Predicing with Bayesian Networks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For prediction with BNs, ``bn.predict()`` is used, but the network should be also parametrically fitted first.
-
-.. code-block:: python
-
-    bn.fit_parameters(data_train)
-    predictions = bn.predict(test=data_test, parall_count=4)
 
 
 
@@ -141,6 +122,71 @@ It is used to determine whether to use mixuters of Gaussian distributions  to re
 If ``use_mixture`` is ``True``, mixuters of Gaussian distributions are used to represent the conditional distribution of continuous variables. 
 
 
+Data Preprocessing
+~~~~~~~~~~~~~~~~~~
+
+If the dataset contains ``integer`` values that should be treated as continuous variables (e.g. 1, 2 etc), they should be converted to ``float``.
+Before applying any structure or parametric learning, the data should be preprocessed as follows:
+
+.. code-block:: python
+
+    import bamt.Preprocessor as pp
+    import pandas as pd
+    from sklearn import preprocessing
+
+    data = pd.read_csv('data.csv')
+
+    encoder = preprocessing.LabelEncoder()
+    discretizer = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='quantile')
+
+    p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
+    discretized_data, est = p.apply(data)
+
+    info = p.info
+
+
+
+Structure Learning
+~~~~~~~~~~~~~~~~~~
+
+For structure learning of continuous BNs, ``bn.add_nodes()`` and ``bn.add_edges()`` methods are used. 
+
+.. code-block:: python
+
+    from pgmpy.estimators import K2Score
+
+    bn.add_nodes(info) # add nodes from info obtained from preprocessing
+
+    bn.get_info() # to make sure that the network recognizes the variables as continuous
+
+    params = {
+               'init_nodes':[...] # Defines initial nodes of the network, list of node names
+               'init_edges':[...] # Defines initial edges of the network, list of tuples (node1, node2)
+               'white_list':[...] # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
+               'remove_init_edges':True # Allow algorithm to remove edges defined by user, bool
+              }
+
+    # Structure learning using K2Score and parameters defined above
+    bn.add_edges(discretized_data, scoring_function=('K2', K2Score), params=params) 
+
+    bn.plot('foo.html') # add nodes from info obtained from preprocessing
+
+
+Parametric Learning
+~~~~~~~~~~~~~~~~~~~
+
+For parametric learning of BNs, ``bn.fit_parameters()`` method is used. 
+
+.. code-block:: python
+
+    bn.fit_parameters(data)
+
+    bn.get_info() # get information table about the network
+
+
+
+
+
 Hybrid Bayesian Networks
 ------------------------
 
@@ -162,6 +208,94 @@ To initialize a ``HybridBN`` object, you can use the following code:
 
 HybridBN has two additional parameters ``has_logit`` and ``use_mixture``.
 ``has_logit`` is used to determine whether to use logit nodes, that represent 
+
+Data Preprocessing
+~~~~~~~~~~~~~~~~~~
+
+Before applying any structure or parametric learning, the data should be preprocessed as follows:
+
+.. code-block:: python
+
+    import bamt.Preprocessor as pp
+    import pandas as pd
+    from sklearn import preprocessing
+
+    data = pd.read_csv('data.csv')
+
+    encoder = preprocessing.LabelEncoder()
+    discretizer = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='quantile')
+
+    p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
+    discretized_data, est = p.apply(data)
+
+    info = p.info
+
+
+
+Structure Learning
+~~~~~~~~~~~~~~~~~~
+
+For structure learning of Hybrid BNs, ``bn.add_nodes()`` and ``bn.add_edges()`` methods are used. 
+
+.. code-block:: python
+
+    from pgmpy.estimators import K2Score
+
+    bn.add_nodes(info) # add nodes from info obtained from preprocessing
+
+    params = {
+               'init_nodes':[...] # Defines initial nodes of the network, list of node names
+               'init_edges':[...] # Defines initial edges of the network, list of tuples (node1, node2)
+               'white_list':[...] # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
+               'remove_init_edges':True # Allow algorithm to remove edges defined by user, bool
+              }
+
+    # Structure learning using K2Score and parameters defined above
+    bn.add_edges(discretized_data, scoring_function=('K2', K2Score), params=params) 
+
+    bn.plot('foo.html') # add nodes from info obtained from preprocessing
+
+
+Parametric Learning
+~~~~~~~~~~~~~~~~~~~
+
+For parametric learning of continuous BNs, ``bn.fit_parameters()`` method is used. 
+
+.. code-block:: python
+
+    bn.fit_parameters(data)
+
+    bn.get_info() # get information table about the network
+
+
+
+Sampling and Prediction with Bayesian Networks
+----------------------------------------------
+
+Sampling with Bayesian Networks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For data sampling from any BNs, ``bn.sample()`` method is used, but the network should be parametrically fitted first.
+
+.. code-block:: python
+
+    bn.fit_parameters(data)
+    sampled_data = bn.sample(1000) # sample 1000 data points
+
+
+
+Predicing with Bayesian Networks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For prediction with any BNs, ``bn.predict()`` method is used, but the network should be also parametrically fitted first.
+
+.. code-block:: python
+
+    bn.fit_parameters(data_train)
+
+    # parall_count is the number of parallel threads to use
+    predictions = bn.predict(test=data_test, parall_count=4) 
+
 
 Algorithms for Large Bayesian Networks
 --------------------------------------
