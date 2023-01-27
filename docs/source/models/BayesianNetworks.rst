@@ -3,6 +3,9 @@
 Bayesian Networks
 =================
 
+BaseNetwork class
+-----------------
+
 All three BN types are based on an abstract class ``BaseNetwork``. 
 This class provides the basic functions for all BN types.
 The three BN types are ``DiscreteBN``, ``ContinuousBN`` and ``HybridBN``.
