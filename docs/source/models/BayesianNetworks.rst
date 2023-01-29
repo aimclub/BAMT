@@ -306,6 +306,13 @@ Algorithms for Large Bayesian Networks
 BigBraveBN
 ~~~~~~~~~~
 
+BigBraveBN is an algorithm that is used for structure learning of large Bayesian networks.
+It restricts the search space by using Brave coefficient, that represents mutual occurrence of two variables in groups.
+These groups are formed for each variable using kNN algorithm that searches nearest neighbors for each variable.
+Mutual information score is used as metric for nearest neighbors algorithm. 
+
+
 .. autoclass:: bamt.networks.BigBraveBN
    :members:
    :no-undoc-members:
+
