@@ -208,6 +208,7 @@ To initialize a ``HybridBN`` object, you can use the following code:
 
 HybridBN has two additional parameters ``has_logit`` and ``use_mixture``.
 ``has_logit`` is used to determine whether to use logit nodes. Logit nodes use machine learning algorithms to represent variable.
+Logit nodes are discrete nodes that have continuous root nodes; classification models are used to model conditional distributions in such nodes.
 
 
 
