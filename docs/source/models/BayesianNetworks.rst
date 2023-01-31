@@ -73,10 +73,14 @@ For structure learning of discrete BNs, ``bn.add_nodes()`` and ``bn.add_edges()`
     bn.get_info() # to make sure that the network recognizes the variables as discrete
 
     params = {
-               'init_nodes':[...] # Defines initial nodes of the network, list of node names
-               'init_edges':[...] # Defines initial edges of the network, list of tuples (node1, node2)
-               'white_list':[...] # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
-               'remove_init_edges':True # Allow algorithm to remove edges defined by user, bool
+                # Defines initial nodes of the network, list of node names
+               'init_nodes':[...] 
+                # Defines initial edges of the network, list of tuples (node1, node2)
+               'init_edges':[...] 
+                # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
+               'white_list':[...] 
+                # Allow algorithm to remove edges defined by user, bool
+               'remove_init_edges':True
               }
 
     # Structure learning using K2Score and parameters defined above
@@ -160,10 +164,14 @@ For structure learning of continuous BNs, ``bn.add_nodes()`` and ``bn.add_edges(
     bn.get_info() # to make sure that the network recognizes the variables as continuous
 
     params = {
-               'init_nodes':[...] # Defines initial nodes of the network, list of node names
-               'init_edges':[...] # Defines initial edges of the network, list of tuples (node1, node2)
-               'white_list':[...] # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
-               'remove_init_edges':True # Allow algorithm to remove edges defined by user, bool
+                # Defines initial nodes of the network, list of node names
+               'init_nodes':[...]
+                # Defines initial edges of the network, list of tuples (node1, node2)
+               'init_edges':[...]
+                # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
+               'white_list':[...]
+                # Allow algorithm to remove edges defined by user, bool
+               'remove_init_edges':True
               }
 
     # Structure learning using K2Score and parameters defined above
@@ -247,10 +255,14 @@ For structure learning of Hybrid BNs, ``bn.add_nodes()`` and ``bn.add_edges()`` 
     bn.add_nodes(info) # add nodes from info obtained from preprocessing
 
     params = {
-               'init_nodes':[...] # Defines initial nodes of the network, list of node names
-               'init_edges':[...] # Defines initial edges of the network, list of tuples (node1, node2)
-               'white_list':[...] # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
-               'remove_init_edges':True # Allow algorithm to remove edges defined by user, bool
+                # Defines initial nodes of the network, list of node names
+               'init_nodes':[...]
+                # Defines initial edges of the network, list of tuples (node1, node2)
+               'init_edges':[...]
+               # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
+               'white_list':[...]
+               # Allow algorithm to remove edges defined by user, bool
+               'remove_init_edges':True
               }
 
     # Structure learning using K2Score and parameters defined above
@@ -303,6 +315,7 @@ For prediction with any BNs, ``bn.predict()`` method is used, but the network sh
 Algorithms for Large Bayesian Networks
 --------------------------------------
 
+
 BigBraveBN
 ~~~~~~~~~~
 
@@ -315,4 +328,47 @@ Mutual information score is used as metric for nearest neighbors algorithm.
 .. autoclass:: bamt.networks.BigBraveBN
    :members:
    :no-undoc-members:
+
+
+
+BigBraveBN initialization and usage
+-----------------------------------
+
+
+To use BigBraveBN, just follow typical structure learning procedure with one difference: use ``BigBraveBN`` to generate ``white_list``.
+
+First, initialize ``BigBraveBN`` object and generate possible edges list:
+
+.. code-block:: python
+
+    space_restrictor = BigBraveBN()
+
+    space_restrictor.set_possible_edges_by_brave(
+      df = data)
+
+    ps = space_restrictor.possible_edges
+
+Then, preprocess the data: 
+
+.. code-block:: python
+
+    encoder = preprocessing.LabelEncoder()
+    discretizer = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')
+
+    p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
+    discretized_data, est = p.apply(data)
+
+    info = p.info
+
+Then perform structure learning as usual, but use ``ps`` as ``white_list``:
+
+.. code-block:: python
+
+    bn = Nets.ContinuousBN()
+
+    bn.add_nodes(descriptor=info)
+
+    params = {'white_list': ps}
+
+    bn.add_edges(discretized_data, scoring_function=('K2',K2Score), params=params)
 
