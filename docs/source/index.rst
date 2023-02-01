@@ -33,6 +33,14 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
 
    models/BayesianNetworks.rst
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: BN Algorithms
+
+   bnalgs/bn_learning.rst
+   bnalgs/big_bns.rst
+   bnalgs/applied_tasks.rst
 
 
 
