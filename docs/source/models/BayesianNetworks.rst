@@ -371,4 +371,3 @@ Then perform structure learning as usual, but use ``ps`` as ``white_list``:
     params = {'white_list': ps}
 
     bn.add_edges(discretized_data, scoring_function=('K2',K2Score), params=params)
-
