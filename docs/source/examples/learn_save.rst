@@ -4,6 +4,7 @@ Learn and Save Bayesian Network
 Used imports:
 
 .. code-block:: python
+
     from bamt.preprocessors import Preprocessor
     import pandas as pd
     from sklearn import preprocessing as pp
@@ -14,6 +15,7 @@ Let's start with data loading and preprocessing:
 
 
 .. code-block:: python
+
     data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
     ['Tectonic regime', 'Period', 'Lithology', 'Structural setting',
      'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
@@ -34,6 +36,7 @@ Let's start with data loading and preprocessing:
 Then we create a network object and perform structure and parameters learning:
 
 .. code-block:: python
+
     # initialize network object
     bn = Networks.HybridBN(use_mixture=True, has_logit=True)
 
@@ -48,6 +51,7 @@ Then we create a network object and perform structure and parameters learning:
 To save structure and parameters of the network separately, we can use the following code:
 
 .. code-block:: python
+
     # saving structure
     bn.save_structure("hack_structure.json")
     # saving parameters
@@ -56,5 +60,6 @@ To save structure and parameters of the network separately, we can use the follo
 Or, if we want to save the whole network, we can use:
 
 .. code-block:: python
+    
     bn.save("hack_network.json")
 

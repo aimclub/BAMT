@@ -4,6 +4,7 @@ Read Structure and Distribution Parameters from a File
 Used imports:
 
 .. code-block:: python
+    
     from bamt.preprocessors import Preprocessor
     import pandas as pd
     from sklearn import preprocessing as pp
@@ -16,6 +17,7 @@ This is useful if you do not want to wait for the structure learning every time 
 Here is an example of how to read structure and distribution parameters from a file:
 
 .. code-block:: python
+
     bn = Networks.HybridBN(use_mixture=True, has_logit=True)
 
     bn.load("network_pretrained.json")
@@ -23,6 +25,7 @@ Here is an example of how to read structure and distribution parameters from a f
 It is also possible to read structure and distribution parameters separately, if you saved them separately:
 
 .. code-block:: python
+
     bn = Networks.HybridBN(use_mixture=True, has_logit=True)
 
     bn.load("network_pretrained_structure.json")
