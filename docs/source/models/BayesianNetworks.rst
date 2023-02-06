@@ -16,7 +16,9 @@ The ``DiscreteBN`` and ``ContinuousBN`` are two BN types that are used to repres
    :members:
    :no-undoc-members:
 
-.. rst-class:: page-break
+.. raw:: pdf
+
+   PageBreak
 
 Discrete Bayesian Networks
 --------------------------
@@ -103,7 +105,9 @@ For parametric learning of discrete BNs, ``bn.fit_parameters()`` method is used.
     bn.get_info() # get information table about the network
 
 
-.. rst-class:: page-break
+.. raw:: pdf
+
+   PageBreak
 
 Continuous Bayesian Networks
 ----------------------------
@@ -196,7 +200,9 @@ For parametric learning of BNs, ``bn.fit_parameters()`` method is used.
 
 
 
-.. rst-class:: page-break
+.. raw:: pdf
+
+   PageBreak
 
 Hybrid Bayesian Networks
 ------------------------
@@ -314,7 +320,9 @@ For prediction with any BNs, ``bn.predict()`` method is used, but the network sh
     # parall_count is the number of parallel threads to use
     predictions = bn.predict(test=data_test, parall_count=4) 
 
-.. rst-class:: page-break
+.. raw:: pdf
+
+   PageBreak
 
 Algorithms for Large Bayesian Networks
 --------------------------------------
@@ -336,7 +344,7 @@ Mutual information score is used as metric for nearest neighbors algorithm.
 
 
 BigBraveBN initialization and usage
------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 To use BigBraveBN, just follow typical structure learning procedure with one difference: use ``BigBraveBN`` to generate ``white_list``.
