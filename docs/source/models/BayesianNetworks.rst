@@ -83,6 +83,8 @@ For structure learning of discrete BNs, ``bn.add_nodes()`` and ``bn.add_edges()`
                'init_edges':[...] 
                 # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
                'white_list':[...] 
+               # blacklist edges, list of tuples (node1, node2)
+               'bl_add':[...]
                 # Allow algorithm to remove edges defined by user, bool
                'remove_init_edges':True
               }
@@ -177,6 +179,8 @@ For structure learning of continuous BNs, ``bn.add_nodes()`` and ``bn.add_edges(
                'init_edges':[...]
                 # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
                'white_list':[...]
+               # blacklist edges, list of tuples (node1, node2)
+               'bl_add':[...]
                 # Allow algorithm to remove edges defined by user, bool
                'remove_init_edges':True
               }
@@ -270,6 +274,8 @@ For structure learning of Hybrid BNs, ``bn.add_nodes()`` and ``bn.add_edges()`` 
                'init_edges':[...]
                # Strictly set edges where algoritm must learn, list of tuples (node1, node2)
                'white_list':[...]
+               # blacklist edges, list of tuples (node1, node2)
+               'bl_add':[...]
                # Allow algorithm to remove edges defined by user, bool
                'remove_init_edges':True
               }
