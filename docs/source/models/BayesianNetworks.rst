@@ -16,6 +16,8 @@ The ``DiscreteBN`` and ``ContinuousBN`` are two BN types that are used to repres
    :members:
    :no-undoc-members:
 
+.. rst-class:: page-break
+
 Discrete Bayesian Networks
 --------------------------
 
@@ -101,6 +103,7 @@ For parametric learning of discrete BNs, ``bn.fit_parameters()`` method is used.
     bn.get_info() # get information table about the network
 
 
+.. rst-class:: page-break
 
 Continuous Bayesian Networks
 ----------------------------
@@ -193,7 +196,7 @@ For parametric learning of BNs, ``bn.fit_parameters()`` method is used.
 
 
 
-
+.. rst-class:: page-break
 
 Hybrid Bayesian Networks
 ------------------------
@@ -282,7 +285,7 @@ For parametric learning of continuous BNs, ``bn.fit_parameters()`` method is use
 
     bn.get_info() # get information table about the network
 
-
+.. rst-class:: page-break
 
 Sampling and Prediction with Bayesian Networks
 ----------------------------------------------
@@ -311,6 +314,7 @@ For prediction with any BNs, ``bn.predict()`` method is used, but the network sh
     # parall_count is the number of parallel threads to use
     predictions = bn.predict(test=data_test, parall_count=4) 
 
+.. rst-class:: page-break
 
 Algorithms for Large Bayesian Networks
 --------------------------------------

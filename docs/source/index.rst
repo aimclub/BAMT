@@ -42,6 +42,17 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
    bnalgs/big_bns.rst
    bnalgs/applied_tasks.rst
 
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Examples, workflow pipelines
+
+    examples/learn_save.rst
+    examples/learn_params_vis.rst
+    examples/read_structure_param_learning.rst
+    examples/read_structure_and_params.rst
+    examples/learn_sampling_predict.rst
+
 
 
 Indices and tables
