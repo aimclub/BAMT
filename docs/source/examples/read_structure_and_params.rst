@@ -30,5 +30,3 @@ It is also possible to read structure and distribution parameters separately, if
 
     bn.load("network_pretrained_structure.json")
     bn.load("network_pretrained_distribution.json")
-
-

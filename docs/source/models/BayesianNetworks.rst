@@ -314,8 +314,8 @@ For data sampling from any BNs, ``bn.sample()`` method is used, but the network 
 
 
 
-Predicing with Bayesian Networks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Predicting with Bayesian Networks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For prediction with any BNs, ``bn.predict()`` method is used, but the network should be also parametrically fitted first.
 

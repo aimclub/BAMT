@@ -62,4 +62,3 @@ Or, if we want to save the whole network, we can use:
 .. code-block:: python
     
     bn.save("hack_network.json")
-
