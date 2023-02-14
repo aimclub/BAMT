@@ -1,18 +1,26 @@
+import bamt.networks as Networks
+from sklearn import preprocessing as pp
+import pandas as pd
+from bamt.preprocessors import Preprocessor
 import time
 
 start = time.time()
 
-from bamt.preprocessors import Preprocessor
-import pandas as pd
-from sklearn import preprocessing as pp
-import bamt.networks as Networks
 
 p1 = time.time()
 print(f"Time elapsed for importing: {p1 - start}")
 
 h = pd.read_csv("data/real data/hack_processed_with_rf.csv")
-cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting', 'Gross', 'Netpay', 'Porosity', 'Permeability',
-        'Depth']
+cols = [
+    'Tectonic regime',
+    'Period',
+    'Lithology',
+    'Structural setting',
+    'Gross',
+    'Netpay',
+    'Porosity',
+    'Permeability',
+    'Depth']
 h = h[cols]
 
 print(h.describe())
@@ -21,7 +29,10 @@ p2 = time.time()
 print(f"Time elapsed for preparing data: {p2 - p1}")
 
 encoder = pp.LabelEncoder()
-discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='quantile')
+discretizer = pp.KBinsDiscretizer(
+    n_bins=5,
+    encode='ordinal',
+    strategy='quantile')
 
 p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 

@@ -1,4 +1,6 @@
-import os,sys,inspect
+import os
+import sys
+import inspect
 # currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # parentdir = os.path.dirname(currentdir)
 # sys.path.insert(0,parentdir)
@@ -28,6 +30,7 @@ def nodes_from_edges(edges: list):
     for e in edges:
         all_nodes.extend(e)
     return list(set(all_nodes))
+
 
 def edges_to_dict(edges: list):
     """

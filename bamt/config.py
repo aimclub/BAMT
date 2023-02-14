@@ -10,7 +10,15 @@ if path.isfile(CONFIGFILE) and stat(CONFIGFILE).st_size != 0:
 else:
     open(CONFIGFILE, 'a').close()
     # config['NODES'] = {'models_storage': path.join(path.dirname(path.abspath(__file__)), 'Nodes_data')}
-    config['NODES'] = {'models_storage': path.join(path.expanduser("~"), 'BAMT', 'Nodes_data')}
-    config['LOG'] = {"log_conf_loc": path.join(path.dirname(path.abspath(__file__)), 'logging.conf')}
+    config['NODES'] = {
+        'models_storage': path.join(
+            path.expanduser("~"),
+            'BAMT',
+            'Nodes_data')}
+    config['LOG'] = {
+        "log_conf_loc": path.join(
+            path.dirname(
+                path.abspath(__file__)),
+            'logging.conf')}
     with open(CONFIGFILE, 'w') as configfile:
         config.write(configfile)

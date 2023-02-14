@@ -38,11 +38,10 @@ extensions = [
     'sphinx.ext.autodoc.typehints',
     'sphinx.ext.graphviz',
     'sphinx.ext.todo'
-    ]
+]
 
 templates_path = ['_templates']
 exclude_patterns = []
-
 
 
 # -- Options for HTML output -------------------------------------------------

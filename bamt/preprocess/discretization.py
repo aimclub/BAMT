@@ -5,7 +5,6 @@ from sklearn.preprocessing import KBinsDiscretizer
 from typing import Tuple
 
 
-
 def get_nodes_sign(data: pd.DataFrame) -> dict:
     """Function to define sign of the node
        neg - if node has negative values
@@ -16,7 +15,7 @@ def get_nodes_sign(data: pd.DataFrame) -> dict:
 
     Returns:
         dict: output dictionary where 'key' - node name and 'value' - sign of data
-    """    
+    """
     nodes_types = get_nodes_type(data)
     columns_sign = dict()
     for c in data.columns.to_list():
@@ -42,14 +41,16 @@ def get_nodes_type(data: pd.DataFrame) -> dict:
     for c in data.columns.to_list():
         if (data[c].dtypes == 'float64') | (data[c].dtypes == 'float32'):
             column_type[c] = 'cont'
-        if (data[c].dtypes == 'str') | (data[c].dtypes == 'O') | (data[c].dtypes == 'b'):
+        if (data[c].dtypes == 'str') | (
+                data[c].dtypes == 'O') | (data[c].dtypes == 'b'):
             column_type[c] = 'disc'
         if ((data[c].dtypes == 'int64') | (data[c].dtypes == 'int32')):
             column_type[c] = 'disc'
     return column_type
 
 
-def discretization(data: pd.DataFrame, method: str, columns: list, bins: int = 5) -> Tuple[pd.DataFrame, KBinsDiscretizer]:
+def discretization(data: pd.DataFrame, method: str, columns: list,
+                   bins: int = 5) -> Tuple[pd.DataFrame, KBinsDiscretizer]:
     """Discretization of continuous parameters
 
     Args:
@@ -67,15 +68,24 @@ def discretization(data: pd.DataFrame, method: str, columns: list, bins: int = 5
     d_data = copy(data)
     est = KBinsDiscretizer(n_bins=bins, encode='ordinal', strategy='uniform')
     if method == "equal_intervals":
-        est = KBinsDiscretizer(n_bins=bins, encode='ordinal', strategy='uniform')
+        est = KBinsDiscretizer(
+            n_bins=bins,
+            encode='ordinal',
+            strategy='uniform')
         data_discrete = est.fit_transform(d_data.loc[:, columns].values)
         d_data[columns] = data_discrete.astype('int')
     elif method == "equal_frequency":
-        est = KBinsDiscretizer(n_bins=bins, encode='ordinal', strategy='quantile')
+        est = KBinsDiscretizer(
+            n_bins=bins,
+            encode='ordinal',
+            strategy='quantile')
         data_discrete = est.fit_transform(d_data.loc[:, columns].values)
         d_data[columns] = data_discrete.astype('int')
     elif method == "kmeans":
-        est = KBinsDiscretizer(n_bins=bins, encode='ordinal', strategy='kmeans')
+        est = KBinsDiscretizer(
+            n_bins=bins,
+            encode='ordinal',
+            strategy='kmeans')
         data_discrete = est.fit_transform(d_data.loc[:, columns].values)
         d_data[columns] = data_discrete.astype('int')
     else:
@@ -84,7 +94,8 @@ def discretization(data: pd.DataFrame, method: str, columns: list, bins: int = 5
     return d_data, est
 
 
-def code_categories(data: pd.DataFrame, method: str, columns: list) -> Tuple[pd.DataFrame, dict]:
+def code_categories(data: pd.DataFrame, method: str,
+                    columns: list) -> Tuple[pd.DataFrame, dict]:
     """Encoding categorical parameters
 
     Args:
@@ -114,7 +125,10 @@ def code_categories(data: pd.DataFrame, method: str, columns: list) -> Tuple[pd.
     return d_data, encoder_dict
 
 
-def inverse_discretization(data: pd.DataFrame, columns: list, discretizer: KBinsDiscretizer) -> pd.DataFrame:
+def inverse_discretization(
+        data: pd.DataFrame,
+        columns: list,
+        discretizer: KBinsDiscretizer) -> pd.DataFrame:
     """Inverse discretization for numeric params
 
     Args:
@@ -131,7 +145,8 @@ def inverse_discretization(data: pd.DataFrame, columns: list, discretizer: KBins
     return new_data
 
 
-def decode(data: pd.DataFrame, columns: list, encoder_dict: dict) -> pd.DataFrame:
+def decode(data: pd.DataFrame, columns: list,
+           encoder_dict: dict) -> pd.DataFrame:
     """Decoding categorical params to initial labels
 
     Args:

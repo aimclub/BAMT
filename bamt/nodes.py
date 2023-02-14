@@ -19,7 +19,10 @@ import os
 from bamt.log import logger_nodes
 from bamt.config import config
 
-STORAGE = config.get('NODES', 'models_storage', fallback='models_storage is not defined')
+STORAGE = config.get(
+    'NODES',
+    'models_storage',
+    fallback='models_storage is not defined')
 
 
 class DiscreteParams(TypedDict):
@@ -56,10 +59,10 @@ class BaseNode(object):
             return NotImplemented
 
         return self.name == other.name and \
-               self.type == other.type and \
-               self.disc_parents == other.disc_parents and \
-               self.cont_parents == other.cont_parents and \
-               self.children == other.children
+            self.type == other.type and \
+            self.disc_parents == other.disc_parents and \
+            self.cont_parents == other.cont_parents and \
+            self.children == other.children
 
     @staticmethod
     def choose_serialization(model) -> Union[str, Exception]:
@@ -99,13 +102,18 @@ class DiscreteNode(BaseNode):
         def worker(node: Type[BaseNode]) -> DiscreteParams:
             parents = node.disc_parents + node.cont_parents
             if not parents:
-                dist = DiscreteDistribution.from_samples(data[node.name].values)
+                dist = DiscreteDistribution.from_samples(
+                    data[node.name].values)
                 cprob = list(dict(sorted(dist.items())).values())
-                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
+                vals = sorted([str(x)
+                              for x in list(dist.parameters[0].keys())])
             else:
-                dist = DiscreteDistribution.from_samples(data[node.name].values)
-                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
-                dist = ConditionalProbabilityTable.from_samples(data[parents + [node.name]].values)
+                dist = DiscreteDistribution.from_samples(
+                    data[node.name].values)
+                vals = sorted([str(x)
+                              for x in list(dist.parameters[0].keys())])
+                dist = ConditionalProbabilityTable.from_samples(
+                    data[parents + [node.name]].values)
                 params = dist.parameters[0]
                 cprob = dict()
                 for i in range(0, len(params), len(vals)):
@@ -121,7 +129,8 @@ class DiscreteNode(BaseNode):
         return future.result()
 
     @staticmethod
-    def choose(node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
+    def choose(node_info: Dict[str, Union[float, str]],
+               pvals: List[str]) -> str:
         """
         Return value from discrete node
         params:
@@ -150,7 +159,8 @@ class DiscreteNode(BaseNode):
         return vals[rindex]
 
     @staticmethod
-    def predict(node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
+    def predict(node_info: Dict[str, Union[float, str]],
+                pvals: List[str]) -> str:
         """function for prediction based on evidence values in discrete node
 
         Args:
@@ -166,7 +176,7 @@ class DiscreteNode(BaseNode):
         # else:
         #     # noinspection PyTypeChecker
         #     dist = node_info['cprob'][str(pvals)]
-        # index_max = 0    
+        # index_max = 0
         # g = itertools.groupby(dist)
         # if next(g, True) and not next(g, False):
         #     index_max = random.randint(0, len(dist))
@@ -182,7 +192,9 @@ class DiscreteNode(BaseNode):
             # noinspection PyTypeChecker
             dist = node_info['cprob'][str(pvals)]
         max_value = max(dist)
-        indices = [index for index, value in enumerate(dist) if value == max_value]
+        indices = [
+            index for index,
+            value in enumerate(dist) if value == max_value]
         max_ind = 0
         if len(indices) == 1:
             max_ind = indices[0]
@@ -220,7 +232,8 @@ class GaussianNode(BaseNode):
         if parents:
             self.regressor.fit(data[parents].values, data[self.name].values)
             predicted_value = self.regressor.predict(data[parents].values)
-            variance = mse(data[self.name].values, predicted_value, squared=False)
+            variance = mse(data[self.name].values,
+                           predicted_value, squared=False)
             serialization = self.choose_serialization(self.regressor)
 
             if serialization == 'pickle':
@@ -236,12 +249,22 @@ class GaussianNode(BaseNode):
                 logger_nodes.warning(
                     f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
                 index = str(int(os.listdir(STORAGE)[-1]))
-                if not os.path.isdir(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}")):
-                    os.makedirs(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}"))
-                path = os.path.abspath(os.path.join(STORAGE,
-                                                    index,
-                                                    f"{self.name.replace(' ', '_')}",
-                                                    f"{self.name.replace(' ', '_')}.joblib.compressed"))
+                if not os.path.isdir(
+                    os.path.join(
+                        STORAGE,
+                        index,
+                        f"{self.name.replace(' ', '_')}")):
+                    os.makedirs(
+                        os.path.join(
+                            STORAGE,
+                            index,
+                            f"{self.name.replace(' ', '_')}"))
+                path = os.path.abspath(
+                    os.path.join(
+                        STORAGE,
+                        index,
+                        f"{self.name.replace(' ', '_')}",
+                        f"{self.name.replace(' ', '_')}.joblib.compressed"))
 
                 joblib.dump(self.regressor, path, compress=True, protocol=4)
                 return {'mean': np.nan,
@@ -312,7 +335,9 @@ class GaussianNode(BaseNode):
             var = node_info['variance']
             return random.gauss(cond_mean, var)
         else:
-            return random.gauss(node_info['mean'], math.sqrt(node_info['variance']))
+            return random.gauss(
+                node_info['mean'], math.sqrt(
+                    node_info['variance']))
 
     def predict(self, node_info: GaussianParams, pvals: List[float]) -> float:
         """
@@ -392,9 +417,11 @@ class ConditionalGaussianNode(BaseNode):
         if regressor is None:
             regressor = linear_model.LinearRegression()
         self.regressor = regressor
-        self.type = 'ConditionalGaussian' + f" ({type(self.regressor).__name__})"
+        self.type = 'ConditionalGaussian' + \
+            f" ({type(self.regressor).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
+    def fit_parameters(
+            self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
         """
         Train params for Conditional Gaussian Node.
         Return:
@@ -417,9 +444,12 @@ class ConditionalGaussianNode(BaseNode):
                 if self.cont_parents:
                     model = self.regressor
                     values = set(new_data[self.name])
-                    model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
-                    predicted_value = model.predict(new_data[self.cont_parents].values)
-                    variance = mse(new_data[self.name].values, predicted_value, squared=False)
+                    model.fit(new_data[self.cont_parents].values,
+                              new_data[self.name].values)
+                    predicted_value = model.predict(
+                        new_data[self.cont_parents].values)
+                    variance = mse(
+                        new_data[self.name].values, predicted_value, squared=False)
                     serialization = self.choose_serialization(model)
 
                     if serialization == 'pickle':
@@ -436,12 +466,22 @@ class ConditionalGaussianNode(BaseNode):
                         logger_nodes.warning(
                             f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
                         index = str(int(os.listdir(STORAGE)[-1]))
-                        if not os.path.isdir(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}")):
-                            os.makedirs(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}"))
-                        path = os.path.abspath(os.path.join(STORAGE,
-                                                            index,
-                                                            f"{self.name.replace(' ', '_')}",
-                                                            f"{comb}.joblib.compressed"))
+                        if not os.path.isdir(
+                            os.path.join(
+                                STORAGE,
+                                index,
+                                f"{self.name.replace(' ', '_')}")):
+                            os.makedirs(
+                                os.path.join(
+                                    STORAGE,
+                                    index,
+                                    f"{self.name.replace(' ', '_')}"))
+                        path = os.path.abspath(
+                            os.path.join(
+                                STORAGE,
+                                index,
+                                f"{self.name.replace(' ', '_')}",
+                                f"{comb}.joblib.compressed"))
 
                         joblib.dump(model, path, compress=True, protocol=4)
                         hycprob[str(key_comb)] = {'variance': variance,
@@ -458,11 +498,19 @@ class ConditionalGaussianNode(BaseNode):
                                               'regressor': None,
                                               'serialization': None}
             else:
-                hycprob[str(key_comb)] = {'variance': np.nan, 'regressor': None,
-                                          'regressor_obj': None, 'serialization': None, 'mean': np.nan}
+                hycprob[str(key_comb)] = {'variance': np.nan,
+                                          'regressor': None,
+                                          'regressor_obj': None,
+                                          'serialization': None,
+                                          'mean': np.nan}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
+    def choose(self,
+               node_info: Dict[str,
+                               Dict[str,
+                                    CondGaussParams]],
+               pvals: List[Union[str,
+                                 float]]) -> float:
         """
         Return value from ConditionalLogit node
         params:
@@ -496,21 +544,28 @@ class ConditionalGaussianNode(BaseNode):
                         model = joblib.load(lgdistribution["regressor_obj"])
                     else:
                         # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
-                        bytes_model = lgdistribution["regressor_obj"].encode('latin1')
+                        bytes_model = lgdistribution["regressor_obj"].encode(
+                            'latin1')
                         model = pickle.loads(bytes_model)
 
-                    cond_mean = model.predict(np.array(lgpvals).reshape(1, -1))[0]
+                    cond_mean = model.predict(
+                        np.array(lgpvals).reshape(1, -1))[0]
                     variance = lgdistribution['variance']
                     return random.gauss(cond_mean, variance)
                 else:
                     return np.nan
 
-
-
         else:
-            return random.gauss(lgdistribution['mean'], math.sqrt(lgdistribution['variance']))
+            return random.gauss(
+                lgdistribution['mean'], math.sqrt(
+                    lgdistribution['variance']))
 
-    def predict(self, node_info: Dict[str, Dict[str, CondGaussParams]], pvals: List[Union[str, float]]) -> float:
+    def predict(self,
+                node_info: Dict[str,
+                                Dict[str,
+                                     CondGaussParams]],
+                pvals: List[Union[str,
+                                  float]]) -> float:
         """
         Return value from ConditionalLogit node
         params:
@@ -543,7 +598,8 @@ class ConditionalGaussianNode(BaseNode):
                         model = joblib.load(lgdistribution["regressor_obj"])
                     else:
                         # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
-                        bytes_model = lgdistribution["regressor_obj"].encode('latin1')
+                        bytes_model = lgdistribution["regressor_obj"].encode(
+                            'latin1')
                         model = pickle.loads(bytes_model)
                     return model.predict(np.array(lgpvals).reshape(1, -1))[0]
                 else:
@@ -620,11 +676,14 @@ class MixtureGaussianNode(BaseNode):
         """
         parents = self.disc_parents + self.cont_parents
         if not parents:
-            n_comp = int((component(data, [self.name], 'aic') + component(data, [self.name],
-                                                                          'bic')) / 2)  # component(data, [node], 'LRTS')#
+            n_comp = int((component(data,
+                                    [self.name],
+                                    'aic') + component(data,
+                                                       [self.name],
+                                                       'bic')) / 2)  # component(data, [node], 'LRTS')#
             # n_comp = 3
-            gmm = GMM(n_components=n_comp).from_samples(np.transpose([data[self.name].values]), n_iter=500,
-                                                        init_params='kmeans++')
+            gmm = GMM(n_components=n_comp).from_samples(np.transpose(
+                [data[self.name].values]), n_iter=500, init_params='kmeans++')
             means = gmm.means.tolist()
             cov = gmm.covariances.tolist()
             # weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
@@ -637,10 +696,22 @@ class MixtureGaussianNode(BaseNode):
                 nodes = [self.name] + self.cont_parents
                 new_data = data[nodes]
                 new_data.reset_index(inplace=True, drop=True)
-                n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
-                                                                            'bic')) / 2)  # component(new_data, nodes, 'LRTS')#
+                n_comp = int(
+                    (component(
+                        new_data,
+                        nodes,
+                        'aic') +
+                        component(
+                        new_data,
+                        nodes,
+                        'bic')) /
+                    2)  # component(new_data, nodes, 'LRTS')#
                 # n_comp = 3
-                gmm = GMM(n_components=n_comp).from_samples(new_data[nodes].values, n_iter=500, init_params='kmeans++')
+                gmm = GMM(
+                    n_components=n_comp).from_samples(
+                    new_data[nodes].values,
+                    n_iter=500,
+                    init_params='kmeans++')
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
                 # weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
@@ -652,7 +723,8 @@ class MixtureGaussianNode(BaseNode):
                         "covars": cov}
 
     @staticmethod
-    def choose(node_info: MixtureGaussianParams, pvals: List[Union[str, float]]) -> Optional[float]:
+    def choose(node_info: MixtureGaussianParams,
+               pvals: List[Union[str, float]]) -> Optional[float]:
         """
         Func to get value from current node
         node_info: nodes info from distributions
@@ -667,20 +739,29 @@ class MixtureGaussianNode(BaseNode):
             if pvals:
                 indexes = [i for i in range(1, len(pvals) + 1)]
                 if not np.isnan(np.array(pvals)).all():
-                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                    gmm = GMM(
+                        n_components=n_comp,
+                        priors=w,
+                        means=mean,
+                        covariances=covariance)
                     cond_gmm = gmm.condition(indexes, [pvals])
                     sample = cond_gmm.sample(1)[0][0]
                 else:
                     sample = np.nan
             else:
-                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                gmm = GMM(
+                    n_components=n_comp,
+                    priors=w,
+                    means=mean,
+                    covariances=covariance)
                 sample = gmm.sample(1)[0][0]
         else:
             sample = np.nan
         return sample
 
     @staticmethod
-    def predict(node_info: MixtureGaussianParams, pvals: List[Union[str, float]]) -> Optional[float]:
+    def predict(node_info: MixtureGaussianParams,
+                pvals: List[Union[str, float]]) -> Optional[float]:
         """
         Func to get prediction from current node
         node_info: nodes info from distributions
@@ -695,7 +776,11 @@ class MixtureGaussianNode(BaseNode):
             if pvals:
                 indexes = [i for i in range(1, len(pvals) + 1)]
                 if not np.isnan(np.array(pvals)).all():
-                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                    gmm = GMM(
+                        n_components=n_comp,
+                        priors=w,
+                        means=mean,
+                        covariances=covariance)
                     sample = gmm.predict(indexes, [pvals])[0][0]
                 else:
                     sample = np.nan
@@ -724,7 +809,8 @@ class ConditionalMixtureGaussianNode(BaseNode):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
         self.type = 'ConditionalMixtureGaussian'
 
-    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondMixtureGaussParams]]:
+    def fit_parameters(
+            self, data: DataFrame) -> Dict[str, Dict[str, CondMixtureGaussParams]]:
         """
         Train params for Conditional Mixture Gaussian Node.
         Return:
@@ -747,43 +833,68 @@ class ConditionalMixtureGaussianNode(BaseNode):
             nodes = [self.name] + self.cont_parents
             if new_data.shape[0] > 5:
                 if self.cont_parents:
-                    n_comp = int((component(new_data, nodes, 'aic') + component(new_data, nodes,
-                                                                                'bic')) / 2)  # component(new_data, nodes, 'LRTS')#int((component(new_data, nodes, 'aic') + component(new_data, nodes, 'bic')) / 2)
+                    # component(new_data, nodes,
+                    # 'LRTS')#int((component(new_data, nodes, 'aic') +
+                    # component(new_data, nodes, 'bic')) / 2)
+                    n_comp = int(
+                        (component(
+                            new_data,
+                            nodes,
+                            'aic') +
+                            component(
+                            new_data,
+                            nodes,
+                            'bic')) /
+                        2)
                     # n_comp = 3
-                    gmm = GMM(n_components=n_comp).from_samples(new_data[nodes].values, n_iter=500,
-                                                                init_params='kmeans++')
+                    gmm = GMM(
+                        n_components=n_comp).from_samples(
+                        new_data[nodes].values,
+                        n_iter=500,
+                        init_params='kmeans++')
                 else:
-                    n_comp = int((component(new_data, [self.name], 'aic') + component(new_data, [self.name],
-                                                                                      'bic')) / 2)  # component(new_data, [node], 'LRTS')#int((component(new_data, [node], 'aic') + component(new_data, [node], 'bic')) / 2)
+                    # component(new_data, [node],
+                    # 'LRTS')#int((component(new_data, [node], 'aic') +
+                    # component(new_data, [node], 'bic')) / 2)
+                    n_comp = int((component(new_data,
+                                            [self.name],
+                                            'aic') + component(new_data,
+                                                               [self.name],
+                                                               'bic')) / 2)
                     # n_comp = 3
-                    gmm = GMM(n_components=n_comp).from_samples(np.transpose([new_data[self.name].values]), n_iter=500,
-                                                                init_params='kmeans++')
+                    gmm = GMM(n_components=n_comp).from_samples(np.transpose(
+                        [new_data[self.name].values]), n_iter=500, init_params='kmeans++')
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
                 # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
                 w = gmm.priors.tolist()  # []
                 # for row in weigts:
                 #     w.append(np.mean(row))
-                hycprob[str(key_comb)] = {'covars': cov, 'mean': means, 'coef': w}
+                hycprob[str(key_comb)] = {
+                    'covars': cov, 'mean': means, 'coef': w}
             elif new_data.shape[0] != 0:
                 n_comp = 1
                 gmm = GMM(n_components=n_comp)
                 if self.cont_parents:
                     gmm.from_samples(new_data[nodes].values)
                 else:
-                    gmm.from_samples(np.transpose([new_data[self.name].values]))
+                    gmm.from_samples(np.transpose(
+                        [new_data[self.name].values]))
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
                 # weigts = np.transpose(gmm.to_responsibilities(np.transpose([new_data[node].values])))
                 w = gmm.priors.tolist()  # []
                 # for row in weigts:
                 #     w.append(np.mean(row))
-                hycprob[str(key_comb)] = {'covars': cov, 'mean': means, 'coef': w}
+                hycprob[str(key_comb)] = {
+                    'covars': cov, 'mean': means, 'coef': w}
             else:
                 if self.cont_parents:
-                    hycprob[str(key_comb)] = {'covars': np.nan, 'mean': np.nan, 'coef': []}
+                    hycprob[str(key_comb)] = {
+                        'covars': np.nan, 'mean': np.nan, 'coef': []}
                 else:
-                    hycprob[str(key_comb)] = {'covars': np.nan, 'mean': np.nan, 'coef': []}
+                    hycprob[str(key_comb)] = {
+                        'covars': np.nan, 'mean': np.nan, 'coef': []}
         return {"hybcprob": hycprob}
 
     @staticmethod
@@ -811,14 +922,22 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 indexes = [i for i in range(1, (len(lgpvals) + 1), 1)]
                 if not np.isnan(np.array(lgpvals)).all():
                     n_comp = len(w)
-                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                    gmm = GMM(
+                        n_components=n_comp,
+                        priors=w,
+                        means=mean,
+                        covariances=covariance)
                     cond_gmm = gmm.condition(indexes, [lgpvals])
                     sample = cond_gmm.sample(1)[0][0]
                 else:
                     sample = np.nan
             else:
                 n_comp = len(w)
-                gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                gmm = GMM(
+                    n_components=n_comp,
+                    priors=w,
+                    means=mean,
+                    covariances=covariance)
                 sample = gmm.sample(1)[0][0]
         else:
             sample = np.nan
@@ -850,7 +969,11 @@ class ConditionalMixtureGaussianNode(BaseNode):
                 indexes = [i for i in range(1, (len(lgpvals) + 1), 1)]
                 if not np.isnan(np.array(lgpvals)).all():
                     n_comp = len(w)
-                    gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
+                    gmm = GMM(
+                        n_components=n_comp,
+                        priors=w,
+                        means=mean,
+                        covariances=covariance)
                     sample = gmm.predict(indexes, [lgpvals])[0][0]
                 else:
                     sample = np.nan
@@ -880,7 +1003,8 @@ class LogitNode(BaseNode):
     def __init__(self, name, classifier: Optional[object] = None):
         super(LogitNode, self).__init__(name)
         if classifier is None:
-            classifier = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+            classifier = linear_model.LogisticRegression(
+                multi_class='multinomial', solver='newton-cg', max_iter=100)
         self.classifier = classifier
         self.type = 'Logit' + f" ({type(self.classifier).__name__})"
 
@@ -898,14 +1022,25 @@ class LogitNode(BaseNode):
             model_ser = ex_b.decode('latin1')
             serialization_name = 'pickle'
         else:
-            logger_nodes.warning(f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
+            logger_nodes.warning(
+                f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
             index = str(int(os.listdir(STORAGE)[-1]))
-            if not os.path.isdir(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}")):
-                os.makedirs(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}"))
-            path = os.path.abspath(os.path.join(STORAGE,
-                                                index,
-                                                f"{self.name.replace(' ', '_')}",
-                                                f"{self.name.replace(' ', '_')}.joblib.compressed"))
+            if not os.path.isdir(
+                os.path.join(
+                    STORAGE,
+                    index,
+                    f"{self.name.replace(' ', '_')}")):
+                os.makedirs(
+                    os.path.join(
+                        STORAGE,
+                        index,
+                        f"{self.name.replace(' ', '_')}"))
+            path = os.path.abspath(
+                os.path.join(
+                    STORAGE,
+                    index,
+                    f"{self.name.replace(' ', '_')}",
+                    f"{self.name.replace(' ', '_')}.joblib.compressed"))
 
             joblib.dump(self.classifier, path, compress=True, protocol=4)
             serialization_name = 'joblib'
@@ -931,7 +1066,8 @@ class LogitNode(BaseNode):
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                 a = node_info["classifier_obj"].encode('latin1')
                 model = pickle.loads(a)
-            distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
+            distribution = model.predict_proba(
+                np.array(pvals).reshape(1, -1))[0]
 
             # choose
             rand = random.random()
@@ -950,7 +1086,8 @@ class LogitNode(BaseNode):
         else:
             return str(node_info["classes"][0])
 
-    def predict(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
+    def predict(self, node_info: LogitParams,
+                pvals: List[Union[float]]) -> str:
         """
         Return prediction from Logit node
         params:
@@ -982,11 +1119,13 @@ class ConditionalLogitNode(BaseNode):
     def __init__(self, name: str, classifier: Optional[object] = None):
         super(ConditionalLogitNode, self).__init__(name)
         if classifier is None:
-            classifier = linear_model.LogisticRegression(multi_class='multinomial', solver='newton-cg', max_iter=100)
+            classifier = linear_model.LogisticRegression(
+                multi_class='multinomial', solver='newton-cg', max_iter=100)
         self.classifier = classifier
         self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
+    def fit_parameters(
+            self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
         """
         Train params on data
         Return:
@@ -1011,7 +1150,8 @@ class ConditionalLogitNode(BaseNode):
                 model = self.classifier
                 values = set(new_data[self.name])
                 if len(values) > 1:
-                    model.fit(new_data[self.cont_parents].values, new_data[self.name].values)
+                    model.fit(new_data[self.cont_parents].values,
+                              new_data[self.name].values)
                     classes = list(model.classes_)
                     serialization = self.choose_serialization(model)
 
@@ -1028,12 +1168,22 @@ class ConditionalLogitNode(BaseNode):
                         logger_nodes.warning(
                             f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
                         index = str(int(os.listdir(STORAGE)[-1]))
-                        if not os.path.isdir(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}")):
-                            os.makedirs(os.path.join(STORAGE, index, f"{self.name.replace(' ', '_')}"))
-                        path = os.path.abspath(os.path.join(STORAGE,
-                                                            index,
-                                                            f"{self.name.replace(' ', '_')}",
-                                                            f"{comb}.joblib.compressed"))
+                        if not os.path.isdir(
+                            os.path.join(
+                                STORAGE,
+                                index,
+                                f"{self.name.replace(' ', '_')}")):
+                            os.makedirs(
+                                os.path.join(
+                                    STORAGE,
+                                    index,
+                                    f"{self.name.replace(' ', '_')}"))
+                        path = os.path.abspath(
+                            os.path.join(
+                                STORAGE,
+                                index,
+                                f"{self.name.replace(' ', '_')}",
+                                f"{comb}.joblib.compressed"))
 
                         joblib.dump(model, path, compress=True, protocol=4)
                         hycprob[str(key_comb)] = {'classes': classes,
@@ -1042,15 +1192,20 @@ class ConditionalLogitNode(BaseNode):
                                                   'serialization': 'joblib'}
                 else:
                     classes = list(values)
-                    hycprob[str(key_comb)] = {'classes': classes, 'classifier': type(self.classifier).__name__,
-                                              'classifier_obj': None, 'serialization': None}
+                    hycprob[str(key_comb)] = {'classes': classes, 'classifier': type(
+                        self.classifier).__name__, 'classifier_obj': None, 'serialization': None}
 
             else:
-                hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(self.classifier).__name__,
-                                          'classifier_obj': None, 'serialization': None}
+                hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(
+                    self.classifier).__name__, 'classifier_obj': None, 'serialization': None}
         return {"hybcprob": hycprob}
 
-    def choose(self, node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]) -> str:
+    def choose(self,
+               node_info: Dict[str,
+                               Dict[str,
+                                    LogitParams]],
+               pvals: List[Union[str,
+                                 float]]) -> str:
         """
         Return value from ConditionalLogit node
         params:
@@ -1080,7 +1235,8 @@ class ConditionalLogitNode(BaseNode):
                 bytes_model = lgdistribution["classifier_obj"].encode('latin1')
                 model = pickle.loads(bytes_model)
 
-            distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
+            distribution = model.predict_proba(
+                np.array(lgpvals).reshape(1, -1))[0]
 
             rand = random.random()
             rindex = 0
@@ -1098,7 +1254,12 @@ class ConditionalLogitNode(BaseNode):
         else:
             return str(lgdistribution["classes"][0])
 
-    def predict(self, node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]) -> str:
+    def predict(self,
+                node_info: Dict[str,
+                                Dict[str,
+                                     LogitParams]],
+                pvals: List[Union[str,
+                                  float]]) -> str:
         """
         Return value from ConditionalLogit node
         params:

@@ -8,7 +8,7 @@ Code for Searching through the space of
 possible Bayesian Network structures.
 
 Various optimization procedures are employed,
-from greedy search to simulated annealing, and 
+from greedy search to simulated annealing, and
 so on - mostly using scipy.optimize.
 
 Local search - possible moves:
@@ -32,8 +32,16 @@ from bamt.redef_info_scores import log_lik_local, BIC_local, AIC_local
 from bamt.mi_entropy_gauss import mi_gauss
 
 
-def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restriction=None,
-       init_edges=None, remove_geo_edges=True, black_list=None):
+def hc(
+        data,
+        metric='MI',
+        max_iter=200,
+        debug=False,
+        init_nodes=None,
+        restriction=None,
+        init_edges=None,
+        remove_geo_edges=True,
+        black_list=None):
     """
     Greedy Hill Climbing search proceeds by choosing the move
     which maximizes the increase in fitness of the
@@ -45,7 +53,7 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
     best at the current iteration only, and thus does not
     look ahead to what may be better later on in the search.
 
-    For computational saving, a Priority Queue (python's heapq) 
+    For computational saving, a Priority Queue (python's heapq)
     can be used	to maintain the best operators and reduce the
     complexity of picking the best operator from O(n^2) to O(nlogn).
     This works by maintaining the heapq of operators sorted by their
@@ -54,7 +62,7 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
     the operator delta-scores are not affected.
 
     For additional computational efficiency, we can cache the
-    sufficient statistics for various families of distributions - 
+    sufficient statistics for various families of distributions -
     therefore, computing the mutual information for a given family
     only needs to happen once.
 
@@ -137,20 +145,24 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
         ### TEST ARC ADDITIONS ###
         for u in bn.nodes():
             for v in bn.nodes():
-                if v not in c_dict[u] and u != v and not would_cause_cycle(c_dict, u, v) and len(p_dict[v]) != 3:
+                if v not in c_dict[u] and u != v and not would_cause_cycle(
+                        c_dict, u, v) and len(p_dict[v]) != 3:
                     # FOR MMHC ALGORITHM -> Edge Restrictions
                     if (init_nodes is None or not (v in init_nodes)) and (
                             restriction is None or (u, v) in restriction) and (
                             black_list is None or not ((u, v) in black_list)):
                         # SCORE FOR 'V' -> gaining a parent
-                        old_cols = (v,) + tuple(p_dict[v])  # without 'u' as parent
-                        if not old_cols in cache:
-                            cache[old_cols] = mutual_information(data[:, old_cols])
+                        # without 'u' as parent
+                        old_cols = (v,) + tuple(p_dict[v])
+                        if old_cols not in cache:
+                            cache[old_cols] = mutual_information(
+                                data[:, old_cols])
                         mi_old = cache[old_cols]
                         # mi_old = mutual_information(data[:,old_cols])
                         new_cols = old_cols + (u,)  # with'u' as parent
-                        if not new_cols in cache:
-                            cache[new_cols] = mutual_information(data[:, new_cols])
+                        if new_cols not in cache:
+                            cache[new_cols] = mutual_information(
+                                data[:, new_cols])
                         mi_new = cache[new_cols]
                         # mi_new = mutual_information(data[:,new_cols])
                         delta_score = nrow * (mi_old - mi_new)
@@ -169,19 +181,20 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                 if v in c_dict[u]:
                     # SCORE FOR 'V' -> losing a parent
                     old_cols = (v,) + tuple(p_dict[v])  # with 'u' as parent
-                    if not old_cols in cache:
+                    if old_cols not in cache:
                         cache[old_cols] = mutual_information(data[:, old_cols])
                     mi_old = cache[old_cols]
                     # mi_old = mutual_information(data[:,old_cols])
-                    new_cols = tuple([i for i in old_cols if i != u])  # without 'u' as parent
-                    if not new_cols in cache:
+                    # without 'u' as parent
+                    new_cols = tuple([i for i in old_cols if i != u])
+                    if new_cols not in cache:
                         cache[new_cols] = mutual_information(data[:, new_cols])
                     mi_new = cache[new_cols]
                     # mi_new = mutual_information(data[:,new_cols])
                     delta_score = nrow * (mi_old - mi_new)
 
                     if (delta_score > max_delta):
-                        if init_edges == None:
+                        if init_edges is None:
                             if debug:
                                 print('Improved Arc Deletion: ', (u, v))
                                 print('Delta Score: ', delta_score)
@@ -192,7 +205,8 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                             if (u, v) in init_edges:
                                 if remove_geo_edges:
                                     if debug:
-                                        print('Improved Arc Deletion: ', (u, v))
+                                        print(
+                                            'Improved Arc Deletion: ', (u, v))
                                         print('Delta Score: ', delta_score)
                                     max_delta = delta_score
                                     max_operation = 'Deletion'
@@ -208,30 +222,36 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
         # ### TEST ARC REVERSALS ###
         for u in bn.nodes():
             for v in bn.nodes():
-                if v in c_dict[u] and not would_cause_cycle(c_dict, v, u, reverse=True) and len(p_dict[u]) != 3 and (
-                        init_nodes is None or not (u in init_nodes)) and (
-                        restriction is None or (v, u) in restriction) and (
-                        black_list is None or not ((v, u) in black_list)):
+                if v in c_dict[u] and not would_cause_cycle(
+                    c_dict, v, u, reverse=True) and len(
+                    p_dict[u]) != 3 and (
+                    init_nodes is None or not (
+                        u in init_nodes)) and (
+                    restriction is None or (
+                        v, u) in restriction) and (
+                            black_list is None or not (
+                                (v, u) in black_list)):
                     # SCORE FOR 'U' -> gaining 'v' as parent
                     old_cols = (u,) + tuple(p_dict[v])  # without 'v' as parent
-                    if not old_cols in cache:
+                    if old_cols not in cache:
                         cache[old_cols] = mutual_information(data[:, old_cols])
                     mi_old = cache[old_cols]
                     # mi_old = mutual_information(data[:,old_cols])
                     new_cols = old_cols + (v,)  # with 'v' as parent
-                    if not new_cols in cache:
+                    if new_cols not in cache:
                         cache[new_cols] = mutual_information(data[:, new_cols])
                     mi_new = cache[new_cols]
                     # mi_new = mutual_information(data[:,new_cols])
                     delta1 = -1 * nrow * (mi_old - mi_new)
                     # SCORE FOR 'V' -> losing 'u' as parent
                     old_cols = (v,) + tuple(p_dict[v])  # with 'u' as parent
-                    if not old_cols in cache:
+                    if old_cols not in cache:
                         cache[old_cols] = mutual_information(data[:, old_cols])
                     mi_old = cache[old_cols]
                     # mi_old = mutual_information(data[:,old_cols])
-                    new_cols = tuple([u for i in old_cols if i != u])  # without 'u' as parent
-                    if not new_cols in cache:
+                    # without 'u' as parent
+                    new_cols = tuple([u for i in old_cols if i != u])
+                    if new_cols not in cache:
                         cache[new_cols] = mutual_information(data[:, new_cols])
                     mi_new = cache[new_cols]
                     # mi_new = mutual_information(data[:,new_cols])
@@ -240,7 +260,7 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                     delta_score = delta1 + delta2
 
                     if (delta_score > max_delta):
-                        if init_edges == None:
+                        if init_edges is None:
                             if debug:
                                 print('Improved Arc Reversal: ', (u, v))
                                 print('Delta Score: ', delta_score)
@@ -251,7 +271,8 @@ def hc(data, metric='MI', max_iter=200, debug=False, init_nodes=None, restrictio
                             if (u, v) in init_edges:
                                 if remove_geo_edges:
                                     if debug:
-                                        print('Improved Arc Reversal: ', (u, v))
+                                        print(
+                                            'Improved Arc Reversal: ', (u, v))
                                         print('Delta Score: ', delta_score)
                                     max_delta = delta_score
                                     max_operation = 'Reversal'

@@ -68,7 +68,11 @@ class TestBaseNetwork(TestCaseBase):
                 self.name = name
 
         # set without mapping
-        self.assertIsNone(self.bn.set_nodes(nodes=[GaussianNode(name="Node0")]))
+        self.assertIsNone(
+            self.bn.set_nodes(
+                nodes=[
+                    GaussianNode(
+                        name="Node0")]))
 
         map = {"types": {"Node0": "cont", "Node1": "disc", "Node2": "cont"},
                "signs": {}}
@@ -167,19 +171,32 @@ class TestBaseNetwork(TestCaseBase):
                              3, 2, 2, 2, 4, 4, 3, 0, 4, 4, 0],
             'Depth': [1, 4, 3, 4, 1, 3, 1, 3, 1, 4, 3, 4, 1, 2, 1, 4, 0, 4, 0, 0, 3, 2, 3, 2, 2, 3, 4, 2, 2, 4, 1, 0, 2,
                       0, 4, 0, 1, 2, 0, 0, 3]}
-        nodes = [DiscreteNode(name='Tectonic regime'), DiscreteNode(name='Period'),
-                 DiscreteNode(name='Lithology'), DiscreteNode(name='Structural setting'),
-                 DiscreteNode(name='Gross'), DiscreteNode(name='Netpay'),
-                 DiscreteNode(name='Porosity'), DiscreteNode(name='Permeability'),
-                 DiscreteNode(name='Depth')]
+        nodes = [
+            DiscreteNode(
+                name='Tectonic regime'), DiscreteNode(
+                name='Period'), DiscreteNode(
+                name='Lithology'), DiscreteNode(
+                    name='Structural setting'), DiscreteNode(
+                        name='Gross'), DiscreteNode(
+                            name='Netpay'), DiscreteNode(
+                                name='Porosity'), DiscreteNode(
+                                    name='Permeability'), DiscreteNode(
+                                        name='Depth')]
 
-        self.bn.set_nodes(nodes, info={"types": {k.name: "disc" for k in nodes}})
+        self.bn.set_nodes(
+            nodes, info={
+                "types": {
+                    k.name: "disc" for k in nodes}})
         self.bn.set_edges([["Tectonic regime", "Period"],
                            ["Structural setting", "Period"],
-                           ["Tectonic regime","Lithology"],
-                           ["Lithology","Structural setting"]])
+                           ["Tectonic regime", "Lithology"],
+                           ["Lithology", "Structural setting"]])
         self.bn.fit_parameters(pd.DataFrame.from_records(data))
-        self.assertIsNotNone(self.bn.sample(50, as_df=False, progress_bar=False))
+        self.assertIsNotNone(
+            self.bn.sample(
+                50,
+                as_df=False,
+                progress_bar=False))
 
     def test_predict(self):
         seq = {
@@ -202,17 +219,25 @@ class TestBaseNetwork(TestCaseBase):
             'Depth': [1, 4, 3, 4, 1, 3, 1, 3, 1, 4, 3, 4, 1, 2, 1, 4, 0, 4, 0, 0, 3, 2, 3, 2, 2, 3, 4, 2, 2, 4, 1, 0, 2,
                       0, 4, 0, 1, 2, 0, 0, 3]}
         data = pd.DataFrame.from_records(seq)
-        nodes = [DiscreteNode(name='Tectonic regime'), DiscreteNode(name='Period'),
-                 DiscreteNode(name='Lithology'), DiscreteNode(name='Structural setting')]
+        nodes = [
+            DiscreteNode(
+                name='Tectonic regime'), DiscreteNode(
+                name='Period'), DiscreteNode(
+                name='Lithology'), DiscreteNode(
+                    name='Structural setting')]
 
-        self.bn.set_nodes(nodes, info={"types": {k.name: "disc" for k in nodes}})
+        self.bn.set_nodes(
+            nodes, info={
+                "types": {
+                    k.name: "disc" for k in nodes}})
         self.bn.set_edges([["Tectonic regime", "Period"],
                            ["Structural setting", "Period"],
                            ["Tectonic regime", "Lithology"],
-                           ["Lithology","Structural setting"]])
+                           ["Lithology", "Structural setting"]])
         self.bn.fit_parameters(data)
 
-        result = self.bn.predict(data.iloc[:, :3], parall_count=2, progress_bar=False)
+        result = self.bn.predict(
+            data.iloc[:, :3], parall_count=2, progress_bar=False)
         self.assertNotEqual(result, {})
 
         for v in result.values():

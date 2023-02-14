@@ -48,10 +48,27 @@ class NetworkTest(object):
         failed = False
 
         if self.case_id == 0:
-            self.discrete_cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting']
-            self.cont_cols = ['Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']
-            self.hybrid_cols = ['Tectonic regime', 'Period', 'Lithology', 'Structural setting',
-                                'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']
+            self.discrete_cols = [
+                'Tectonic regime',
+                'Period',
+                'Lithology',
+                'Structural setting']
+            self.cont_cols = [
+                'Gross',
+                'Netpay',
+                'Porosity',
+                'Permeability',
+                'Depth']
+            self.hybrid_cols = [
+                'Tectonic regime',
+                'Period',
+                'Lithology',
+                'Structural setting',
+                'Gross',
+                'Netpay',
+                'Porosity',
+                'Permeability',
+                'Depth']
             # Base of standards
             self.base = "hack_" + self.type
         else:
@@ -67,7 +84,8 @@ class NetworkTest(object):
             data = pd.read_csv(self.directory)[self.hybrid_cols]
 
         encoder = pp.LabelEncoder()
-        discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')
+        discretizer = pp.KBinsDiscretizer(
+            n_bins=5, encode='ordinal', strategy='uniform')
 
         p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
@@ -83,8 +101,12 @@ class NetworkTest(object):
             )
 
         try:
-            assert_frame_equal(discretized_data, pd.read_csv(f"{self.base}/hack_data.csv", index_col=0),
-                               check_dtype=False)
+            assert_frame_equal(
+                discretized_data,
+                pd.read_csv(
+                    f"{self.base}/hack_data.csv",
+                    index_col=0),
+                check_dtype=False)
         except Exception as ex:
             failed = True
             self.verboseprint(self._tabularize_output("ERROR", str(ex)))
@@ -144,14 +166,18 @@ class NetworkTest(object):
         if self.type == "continuous":
             # cols: ['Porosity', 'Permeability', 'Depth']
             for node in preds.keys():
-                right_val = json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node]
-                test_val = np.mean([mx for mx in preds[node] if not np.isnan(mx)])
-                assert np.all(np.isclose(test_val, right_val, rtol=.4)), f"Predict failed: {node, right_val, test_val}"
+                right_val = json.load(
+                    open(f"{self.base}/hack_predict.json"))[self.sf][node]
+                test_val = np.mean(
+                    [mx for mx in preds[node] if not np.isnan(mx)])
+                assert np.all(np.isclose(test_val, right_val, rtol=.4)
+                              ), f"Predict failed: {node, right_val, test_val}"
         elif self.type == "discrete":
             # cols: ['Lithology', 'Structural setting']
             for node in preds.keys():
                 test_vals = pd.Series(preds[node]).value_counts().to_dict()
-                for category, right_val in json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node].items():
+                for category, right_val in json.load(
+                        open(f"{self.base}/hack_predict.json"))[self.sf][node].items():
                     try:
                         assert np.all(np.isclose(test_vals[category], right_val, atol=5)), \
                             f"Predict failed: {node, test_vals[category], right_val}"
@@ -159,11 +185,14 @@ class NetworkTest(object):
                         print("Unknown preds category: ", ex.args[0])
                         continue
         elif self.type == "hybrid":
-            cont_nodes = [node for node in self.bn.nodes_names if self.info["types"][node] == "cont"]
+            cont_nodes = [
+                node for node in self.bn.nodes_names if self.info["types"][node] == "cont"]
             for node in preds.keys():
                 if node in cont_nodes:
-                    right_val = json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node]
-                    test_val = np.mean([mx for mx in preds[node] if not np.isnan(mx)])
+                    right_val = json.load(
+                        open(f"{self.base}/hack_predict.json"))[self.sf][node]
+                    test_val = np.mean(
+                        [mx for mx in preds[node] if not np.isnan(mx)])
                     # p[self.sf][node] = test_val
                     s = [right_val, test_val]
                     assert np.all(np.isclose(min(s), max(s), atol=5, rtol=.6)), \
@@ -171,7 +200,8 @@ class NetworkTest(object):
                 else:
                     test_vals = pd.Series(preds[node]).value_counts().to_dict()
                     # p[self.sf][node] = test_vals
-                    for category, right_val in json.load(open(f"{self.base}/hack_predict.json"))[self.sf][node].items():
+                    for category, right_val in json.load(
+                            open(f"{self.base}/hack_predict.json"))[self.sf][node].items():
                         try:
                             assert np.all(np.isclose(min(test_vals[category], right_val),
                                                      max(right_val, test_vals[category]),
@@ -212,15 +242,23 @@ class TestDiscreteBN(NetworkTest):
         bn.add_nodes(descriptor=self.info)
 
         try:
-            assert bn.nodes_names == ['Tectonic regime', 'Period', 'Lithology', 'Structural setting']
+            assert bn.nodes_names == [
+                'Tectonic regime',
+                'Period',
+                'Lithology',
+                'Structural setting']
         except AssertionError:
             failed = True
-            self.verboseprint(self._tabularize_output("ERROR", "first stage failed (wrong init nodes)."))
+            self.verboseprint(
+                self._tabularize_output(
+                    "ERROR",
+                    "first stage failed (wrong init nodes)."))
 
         bn.add_edges(self.data, (self.sf,), progress_bar=False)
 
         try:
-            assert bn.edges == json.load(open(f"{self.base}/hack_edges.json"))[self.sf]
+            assert bn.edges == json.load(
+                open(f"{self.base}/hack_edges.json"))[self.sf]
         except AssertionError:
             failed = True
             self.verboseprint(f"Stage 2 failed with {self.sf}.")
@@ -240,10 +278,14 @@ class TestDiscreteBN(NetworkTest):
         self.bn.fit_parameters(pd.read_csv(self.directory)[self.discrete_cols])
 
         try:
-            assert self.bn.distributions == json.load(open(f"{self.base}/hack_params.json"))[self.sf]
+            assert self.bn.distributions == json.load(
+                open(f"{self.base}/hack_params.json"))[self.sf]
         except AssertionError:
             failed = True
-            self.verboseprint(self._tabularize_output(f"Parameters ({self.sf})", "bad distributions"))
+            self.verboseprint(
+                self._tabularize_output(
+                    f"Parameters ({self.sf})",
+                    "bad distributions"))
 
         if not failed:
             status = "OK"
@@ -261,7 +303,10 @@ class TestDiscreteBN(NetworkTest):
             t1 = time.time()
             self.test_structure_learning()
             if not self.bn:
-                print(self._tabularize_output(f"Error on {sf}", "No structure"))
+                print(
+                    self._tabularize_output(
+                        f"Error on {sf}",
+                        "No structure"))
                 print("-" * 8)
                 continue
             self.test_parameters_learning()
@@ -283,13 +328,21 @@ class TestContinuousBN(NetworkTest):
 
         bn = Networks.ContinuousBN()
         ns = []
-        for d in [Nodes.GaussianNode(name="Node" + str(id)) for id in range(0, 4)]:
+        for d in [
+            Nodes.GaussianNode(
+                name="Node" +
+                str(id)) for id in range(
+                0,
+                4)]:
             ns.append(d)
 
         bn.set_structure(nodes=ns)
-        bn.set_classifiers(classifiers={'Node0': DecisionTreeClassifier(),
-                                        'Node1': RandomForestClassifier(),
-                                        'Node2': KNeighborsClassifier(n_neighbors=2)})
+        bn.set_classifiers(
+            classifiers={
+                'Node0': DecisionTreeClassifier(),
+                'Node1': RandomForestClassifier(),
+                'Node2': KNeighborsClassifier(
+                    n_neighbors=2)})
 
         assert [str(bn[node].classifier) for node in ["Node0", "Node1", "Node2"]] == \
                ["DecisionTreeClassifier()", "RandomForestClassifier()",
@@ -310,16 +363,20 @@ class TestContinuousBN(NetworkTest):
         bn.add_nodes(descriptor=self.info)
 
         try:
-            assert bn.nodes_names == json.load(open(f"{self.base}/hack_nodes.json"))[f"use_mixture={use_mixture}"][
-                self.sf]
+            assert bn.nodes_names == json.load(
+                open(f"{self.base}/hack_nodes.json"))[f"use_mixture={use_mixture}"][self.sf]
         except AssertionError:
             failed = True
-            self.verboseprint(self._tabularize_output("ERROR", "first stage failed (wrong init nodes)."))
+            self.verboseprint(
+                self._tabularize_output(
+                    "ERROR",
+                    "first stage failed (wrong init nodes)."))
 
         bn.add_edges(self.data, (self.sf,), progress_bar=False)
 
         try:
-            assert bn.edges == json.load(open(f"{self.base}/hack_edges.json"))[f"use_mixture={use_mixture}"][self.sf]
+            assert bn.edges == json.load(
+                open(f"{self.base}/hack_edges.json"))[f"use_mixture={use_mixture}"][self.sf]
         except AssertionError:
             failed = True
             self.verboseprint(f"Stage 2 failed with {self.sf}.")
@@ -330,7 +387,10 @@ class TestContinuousBN(NetworkTest):
         else:
             status = "Failed"
 
-        print(self._tabularize_output(f"Structure ({self.sf}, use_mixture={self.use_mixture})", status))
+        print(
+            self._tabularize_output(
+                f"Structure ({self.sf}, use_mixture={self.use_mixture})",
+                status))
 
     def test_parameters_learning(self):
         failed = False
@@ -340,22 +400,29 @@ class TestContinuousBN(NetworkTest):
             if self.use_mixture:
                 empty_data = {"mean": [], "covars": [], "coef": []}
                 for k, v in self.bn.distributions.items():
-                    assert all([v[obj] != empty for obj, empty in empty_data.items()]), f"Empty data in {k}."
-                    assert .9 <= sum(v["coef"]) <= 1.1, f"{sum(v['coef'])} || {k}'s: coefs are wrong."
+                    assert all(
+                        [v[obj] != empty for obj, empty in empty_data.items()]), f"Empty data in {k}."
+                    assert .9 <= sum(
+                        v["coef"]) <= 1.1, f"{sum(v['coef'])} || {k}'s: coefs are wrong."
             else:
-                assert self.bn.distributions == json.load(
-                    open(f"{self.base}/hack_params.json"))["use_mixture=False"][self.sf], "Bad distributions."
+                assert self.bn.distributions == json.load(open(
+                    f"{self.base}/hack_params.json"))["use_mixture=False"][self.sf], "Bad distributions."
         except AssertionError as ex:
             failed = True
-            self.verboseprint(self._tabularize_output(
-                f"Parameters ({self.sf}, use_mixture={self.use_mixture})", ex.args[0]))
+            self.verboseprint(
+                self._tabularize_output(
+                    f"Parameters ({self.sf}, use_mixture={self.use_mixture})",
+                    ex.args[0]))
 
         if not failed:
             status = "OK"
         else:
             status = "Failed"
 
-        print(self._tabularize_output(f"Parameters ({self.sf}, use_mixture={self.use_mixture})", status))
+        print(
+            self._tabularize_output(
+                f"Parameters ({self.sf}, use_mixture={self.use_mixture})",
+                status))
 
     def apply(self):
         print(f"Executing {self.type} BN tests.")
@@ -369,7 +436,10 @@ class TestContinuousBN(NetworkTest):
                 t1 = time.time()
                 self.test_structure_learning(use_mixture=use_mixture)
                 if not self.bn:
-                    print(self._tabularize_output(f"Error on {sf}", "No structure"))
+                    print(
+                        self._tabularize_output(
+                            f"Error on {sf}",
+                            "No structure"))
                     print("-" * 8)
                     continue
                 self.test_parameters_learning()
@@ -396,10 +466,20 @@ class TestHybridBN(NetworkTest):
                 [Nodes.DiscreteNode(name="Node" + str(id)) for id in range(3, 6)]):
             ns.append(d)
             ns.append(g)
-        edges = [('Node0', 'Node3'), ('Node3', 'Node1'), ('Node1', 'Node4'), ('Node4', 'Node2'), ('Node2', 'Node5')]
-        test_info = {'types': {'Node0': 'cont', 'Node1': 'cont', 'Node2': 'cont',
-                               'Node3': 'disc', 'Node4': 'disc', 'Node5': 'disc'},
-                     'signs': {'Node0': 'pos', 'Node1': 'pos', 'Node2': 'pos'}}
+        edges = [('Node0', 'Node3'), ('Node3', 'Node1'),
+                 ('Node1', 'Node4'), ('Node4', 'Node2'), ('Node2', 'Node5')]
+        test_info = {
+            'types': {
+                'Node0': 'cont',
+                'Node1': 'cont',
+                'Node2': 'cont',
+                'Node3': 'disc',
+                'Node4': 'disc',
+                'Node5': 'disc'},
+            'signs': {
+                'Node0': 'pos',
+                'Node1': 'pos',
+                'Node2': 'pos'}}
 
         # Structure setter
         bn.set_structure(info=test_info,
@@ -409,14 +489,17 @@ class TestHybridBN(NetworkTest):
         assert ['Gaussian (LinearRegression)', 'Logit (LogisticRegression)', 'ConditionalGaussian (LinearRegression)',
                 'Logit (LogisticRegression)', 'ConditionalGaussian (LinearRegression)',
                 'Logit (LogisticRegression)'] == \
-               [node.type for node in bn.nodes], "Setter | Nodes are not the same."
+            [node.type for node in bn.nodes], "Setter | Nodes are not the same."
         assert edges == bn.edges, "Setter | Edges are not the same."
 
         # Classifiers setters
 
-        bn.set_classifiers(classifiers={'Node3': DecisionTreeClassifier(),
-                                        'Node4': RandomForestClassifier(),
-                                        'Node5': KNeighborsClassifier(n_neighbors=2)})
+        bn.set_classifiers(
+            classifiers={
+                'Node3': DecisionTreeClassifier(),
+                'Node4': RandomForestClassifier(),
+                'Node5': KNeighborsClassifier(
+                    n_neighbors=2)})
 
         assert [str(bn[node].classifier) for node in ["Node3", "Node4", "Node5"]] == \
                ["DecisionTreeClassifier()", "RandomForestClassifier()",
@@ -437,7 +520,10 @@ class TestHybridBN(NetworkTest):
 
         print(self._tabularize_output("Setters", status))
 
-    def test_structure_learning(self, use_mixture: bool = False, has_logit: bool = False):
+    def test_structure_learning(
+            self,
+            use_mixture: bool = False,
+            has_logit: bool = False):
         self.use_mixture = use_mixture
         self.has_logit = has_logit
         failed = False
@@ -446,17 +532,20 @@ class TestHybridBN(NetworkTest):
         bn.add_nodes(descriptor=self.info)
 
         try:
-            assert bn.nodes_names == json.load(open(f"{self.base}/hack_nodes.json")) \
-                [f"use_mixture={use_mixture}"][f"has_logit={has_logit}"][self.sf]
+            assert bn.nodes_names == json.load(open(f"{self.base}/hack_nodes.json"))[
+                f"use_mixture={use_mixture}"][f"has_logit={has_logit}"][self.sf]
         except AssertionError:
             failed = True
-            self.verboseprint(self._tabularize_output("ERROR", "first stage failed (wrong init nodes)."))
+            self.verboseprint(
+                self._tabularize_output(
+                    "ERROR",
+                    "first stage failed (wrong init nodes)."))
 
         bn.add_edges(self.data, (self.sf,), progress_bar=False)
 
         try:
-            assert bn.edges == json.load(open(f"{self.base}/hack_edges.json")) \
-                [f"use_mixture={use_mixture}"][f"has_logit={has_logit}"][self.sf]
+            assert bn.edges == json.load(open(f"{self.base}/hack_edges.json"))[
+                f"use_mixture={use_mixture}"][f"has_logit={has_logit}"][self.sf]
         except AssertionError:
             failed = True
             self.verboseprint(f"Stage 2 failed with {self.sf}.")
@@ -467,50 +556,69 @@ class TestHybridBN(NetworkTest):
         else:
             status = "Failed"
 
-        print(self._tabularize_output(
-            f"Structure ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})", status))
+        print(
+            self._tabularize_output(
+                f"Structure ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})",
+                status))
 
     @staticmethod
     def non_empty_gaussian_nodes(name, node_params):
         empty_data = {"mean": [], "covars": [], "coef": []}
-        assert all([node_params[obj] != empty for obj, empty in empty_data.items()]), f"Empty data in {name}."
+        assert all([node_params[obj] != empty for obj,
+                   empty in empty_data.items()]), f"Empty data in {name}."
 
     @staticmethod
     def non_empty_logit_nodes(name, node_params):
         empty_data = {"classes": [], "classifier_obj": None}
-        assert all([node_params[obj] != empty for obj, empty in empty_data.items()]), f"Empty data in {name}."
+        assert all([node_params[obj] != empty for obj,
+                   empty in empty_data.items()]), f"Empty data in {name}."
 
     @staticmethod
     def sum_equals_to_1(name, node_params):
-        assert .9 <= sum(node_params["coef"]) <= 1.1, f"{name}'s: coefs are wrong."
+        assert .9 <= sum(
+            node_params["coef"]) <= 1.1, f"{name}'s: coefs are wrong."
 
     def _validate_node(self, name, type, node_params, true_vals):
         try:
             if type == "MixtureGaussian":
-                self.use_rules(self.non_empty_gaussian_nodes, self.sum_equals_to_1,
-                               name=name, node_params=node_params)
+                self.use_rules(
+                    self.non_empty_gaussian_nodes,
+                    self.sum_equals_to_1,
+                    name=name,
+                    node_params=node_params)
             elif type == "ConditionalMixtureGaussian":
                 for comb, data in node_params["hybcprob"].items():
-                    self.use_rules(self.non_empty_gaussian_nodes, self.sum_equals_to_1,
-                                   name=name, node_params=data)
+                    self.use_rules(
+                        self.non_empty_gaussian_nodes,
+                        self.sum_equals_to_1,
+                        name=name,
+                        node_params=data)
             elif type.startswith("Logit"):
-                self.use_rules(self.non_empty_logit_nodes, name=name, node_params=node_params)
+                self.use_rules(
+                    self.non_empty_logit_nodes,
+                    name=name,
+                    node_params=node_params)
             elif type.startswith("ConditionalLogit"):
                 for comb, data in node_params["hybcprob"].items():
-                    self.use_rules(self.non_empty_logit_nodes, name=name, node_params=data)
+                    self.use_rules(
+                        self.non_empty_logit_nodes,
+                        name=name,
+                        node_params=data)
             else:
                 assert node_params == true_vals, f"Parameters error on  {name}, {type}"
         except AssertionError as ex:
-            self.verboseprint(self._tabularize_output(
-                f"Parameters ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})", ex.args[0]))
+            self.verboseprint(
+                self._tabularize_output(
+                    f"Parameters ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})",
+                    ex.args[0]))
 
     def test_parameters_learning(self):
         failed = False
 
         self.bn.fit_parameters(pd.read_csv(self.directory)[self.hybrid_cols])
         try:
-            true_params = json.load(open(f"{self.base}/hack_params.json")) \
-                [f"use_mixture={self.use_mixture}"][f"has_logit={self.has_logit}"][self.sf]
+            true_params = json.load(open(f"{self.base}/hack_params.json"))[
+                f"use_mixture={self.use_mixture}"][f"has_logit={self.has_logit}"][self.sf]
 
             node_type_dict = {node.name: node.type for node in self.bn.nodes}
             for name, type in node_type_dict.items():
@@ -518,16 +626,20 @@ class TestHybridBN(NetworkTest):
                 self._validate_node(name, type, node_params, true_params[name])
         except AssertionError as ex:
             failed = True
-            self.verboseprint(self._tabularize_output(
-                f"Parameters ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})", ex.args[0]))
+            self.verboseprint(
+                self._tabularize_output(
+                    f"Parameters ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})",
+                    ex.args[0]))
 
         if not failed:
             status = "OK"
         else:
             status = "Failed"
 
-        print(self._tabularize_output(
-            f"Parameters ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})", status))
+        print(
+            self._tabularize_output(
+                f"Parameters ({self.sf}, use_mixture={self.use_mixture}, has_logit={self.has_logit})",
+                status))
 
     def apply(self):
         print(f"Executing {self.type} BN tests.")
@@ -535,14 +647,19 @@ class TestHybridBN(NetworkTest):
         self.test_setters()
         t0 = time.time()
 
-        for use_mixture, has_logit in itertools.product([True, False], repeat=2):
+        for use_mixture, has_logit in itertools.product(
+                [True, False], repeat=2):
             for sf in ["MI", "K2", "BIC"]:
                 self.sf = sf
                 t1 = time.time()
-                self.test_structure_learning(use_mixture=use_mixture, has_logit=has_logit)
+                self.test_structure_learning(
+                    use_mixture=use_mixture, has_logit=has_logit)
                 self.test_parameters_learning()
                 if not self.bn:
-                    print(self._tabularize_output(f"Error on {sf}", "No structure"))
+                    print(
+                        self._tabularize_output(
+                            f"Error on {sf}",
+                            "No structure"))
                     print("-" * 8)
                     continue
                 self.test_sampling()

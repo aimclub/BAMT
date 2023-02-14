@@ -1,11 +1,12 @@
-import os,sys,inspect
+import os
+import sys
+import inspect
 # currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # parentdir = os.path.dirname(currentdir)
 # sys.path.insert(0,parentdir)
 import numpy as np
 import pandas as pd
 from copy import copy
-
 
 
 def loc_to_DataFrame(data: np.array):
@@ -31,7 +32,8 @@ def loc_to_DataFrame(data: np.array):
     df.columns = df.columns.map(str)
     return df
 
-def get_type_numpy (data: np.array):
+
+def get_type_numpy(data: np.array):
     """Function to define the type of the columns of array
        disc - discrete node
        cont - continuous
@@ -44,7 +46,7 @@ def get_type_numpy (data: np.array):
     -- You may have problems with confusing rows and columns
     """
     arr = data.T
-    
+
     column_type = dict()
     for i in range(len(arr)):
         if (arr[i].ndim == 0) | (arr[i].T.ndim == 0):
