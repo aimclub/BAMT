@@ -90,6 +90,20 @@ Publications about BAMT
 Project structure
 ^^^^^^^^^^^^^^^^^
 
+The latest stable version of the library is available in the master branch.
+
+It includes the following modules and direcotries:
+
+* `bamt <https://github.com/ITMO-NSS-team/BAMT/tree/master/bamt>`__ - directory with the framework code:
+    * Preprocessing - module for data preprocessing
+    * Networks - module for building and training Bayesian networks
+    * Nodes - module for nodes support of Bayesian networks
+    * Utilities - module for mathematical and graph utilities
+* `data <https://github.com/ITMO-NSS-team/BAMT/tree/master/data>`__  - directory with data for experiments and tests
+* `tests <https://github.com/ITMO-NSS-team/BAMT/tree/master/tests>`__  - directory with unit and integration tests
+* `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  - directory with tutorials
+* `docs <https://github.com/ITMO-NSS-team/BAMT/tree/master/docs>`__ - directory with RTD documentation
+
 Preprocessing
 =============
 
@@ -109,24 +123,13 @@ They are inherited from the abstract class BaseNetwork.
 Nodes
 =====
 
-Contains nodes, classes and their methods.
+Contains classes for nodes of Bayesian networks.
 
 Utilities
 =========
 
 Utilities module contains mathematical and graph utilities to support the main functionality of the library.
 
-#. GraphUtils consist of functions for:
-
-
-    * Finding nodes types/signs
-    * Topological ordering
-
-
-#. MathUtils consist of functions for:
-
-
-    * Additional function to support calculation of metrics from group1 ('MI', 'LL', 'BIC', 'AIC')
 
 Web-BAMT
 ^^^^^^^^
