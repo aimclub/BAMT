@@ -13,7 +13,7 @@
    * - license
      - | |license|
    * - stats
-     - | |downloads_stats| |downloads_monthly|
+     - | |downloads_stats| |downloads_monthly| |downloads_weekly|
 
 Repository of a data modeling and analysis tool based on Bayesian networks
 
@@ -172,4 +172,7 @@ publisher={Elsevier}
  :target: https://pepy.tech/project/bamt
  
 .. |downloads_monthly| image:: https://static.pepy.tech/personalized-badge/bamt?period=month&units=international_system&left_color=grey&right_color=blue&left_text=downloads/month
+ :target: https://pepy.tech/project/bamt
+
+.. |downloads_weekly| image:: https://static.pepy.tech/personalized-badge/bamt?period=week&units=international_system&left_color=grey&right_color=blue&left_text=downloads/week
  :target: https://pepy.tech/project/bamt
