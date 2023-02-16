@@ -1,6 +1,19 @@
+.. image:: /docs/images/BAMT_white_bg.png
+   :align: center
+   :alt: BAMT framework logo
 
-BAMT
-====
+.. start-badges
+.. list-table::
+   :stub-columns: 1
+
+   * - package
+     - | |pypi| |py_7| |py_8| |py_9|
+   * - docs
+     - |docs|
+   * - license
+     - | |license|
+   * - stats
+     - | |downloads_stats|
 
 Repository of a data modeling and analysis tool based on Bayesian networks
 
@@ -91,3 +104,70 @@ Nodes
 ^^^^^
 
 Contains nodes' classes and their methods.
+
+Contacts
+========
+
+
+
+Citation
+========
+
+@misc{BAMT,
+author={BAMT},
+title = {Repository experiments and data},
+year = {2021},
+publisher = {GitHub},
+journal = {GitHub repository},
+howpublished = {\url{https://github.com/ITMO-NSS-team/BAMT.git}},
+url = {https://github.com/ITMO-NSS-team/BAMT.git}
+}
+
+@article{deeva2023advanced,
+title={Advanced Approach for Distributions Parameters Learning in Bayesian Networks with Gaussian Mixture Models and Discriminative Models},
+author={Deeva, Irina and Bubnova, Anna and Kalyuzhnaya, Anna V},
+journal={Mathematics},
+volume={11},
+number={2},
+pages={343},
+year={2023},
+publisher={MDPI}
+}
+
+@article{kaminsky2022bigbravebn,
+title={BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes},
+author={Kaminsky, Yury and Deeva, Irina},
+journal={Procedia Computer Science},
+volume={212},
+pages={191--200},
+year={2022},
+publisher={Elsevier}
+}
+
+
+.. |docs| image:: https://readthedocs.org/projects/bamt/badge/?version=latest
+    :target: https://bamt.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+.. |pypi| image:: https://badge.fury.io/py/fedot.svg
+   :alt: Supported Python Versions
+   :target: https://badge.fury.io/py/fedot
+
+.. |py_7| image:: https://img.shields.io/badge/python_3.7-passing-success
+   :alt: Supported Python Versions
+   :target: https://img.shields.io/badge/python_3.7-passing-success
+
+.. |py_8| image:: https://img.shields.io/badge/python_3.8-passing-success
+   :alt: Supported Python Versions
+   :target: https://img.shields.io/badge/python_3.8-passing-success
+
+.. |py_9| image:: https://img.shields.io/badge/python_3.9-passing-success
+   :alt: Supported Python Versions
+   :target: https://img.shields.io/badge/python_3.9-passing-success
+
+.. |license| image:: https://img.shields.io/github/license/ITMO-NSS-team/BAMT
+   :alt: Supported Python Versions
+   :target: https://github.com/ITMO-NSS-team/BAMT/blob/master/LICENCE
+
+.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/bamt?period=month&units=international_system&left_color=grey&right_color=blue&left_text=Downloads
+ :target: https://pepy.tech/project/bamt
