@@ -382,7 +382,6 @@ class BaseNetwork(object):
         }
         return self.save_to_file(outdir, outdict)
 
-
     def load(self, input_dir: str):
         """
         Function to load the whole BN from json file
