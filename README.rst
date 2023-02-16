@@ -13,7 +13,7 @@
    * - license
      - | |license|
    * - stats
-     - | |downloads_stats|
+     - | |downloads_stats| |downloads_monthly|
 
 Repository of a data modeling and analysis tool based on Bayesian networks
 
@@ -168,5 +168,8 @@ publisher={Elsevier}
    :alt: Supported Python Versions
    :target: https://github.com/ITMO-NSS-team/BAMT/blob/master/LICENCE
 
-.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/bamt?period=month&units=international_system&left_color=grey&right_color=blue&left_text=Downloads
+.. |downloads_stats| image:: https://static.pepy.tech/personalized-badge/bamt?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads
+ :target: https://pepy.tech/project/bamt
+ 
+.. |downloads_monthly| image:: https://static.pepy.tech/personalized-badge/bamt?period=month&units=international_system&left_color=grey&right_color=blue&left_text=downloads/month
  :target: https://pepy.tech/project/bamt
