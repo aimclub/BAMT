@@ -30,7 +30,7 @@ BAMT package is available via PyPi:
    pip install bamt
 
 Bayesian network learning
-=========================
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In terms of training Bayesian networks on data, the following algorithms are implemented:
 
@@ -52,7 +52,7 @@ Difference from existing implementations:
      :alt: title
 
 Generating synthetic data
-=========================
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
@@ -62,7 +62,7 @@ In terms of data analysis and modeling using Bayesian networks, a pipeline has b
 
 
 Oil and Gas Reservoirs Parameters Analysis
-==========================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Bayesian networks can be used to restore gaps in reservoirs data, search for anomalous values, and also to search for analogous reservoirs.
 
@@ -72,10 +72,10 @@ Bayesian networks can be used to restore gaps in reservoirs data, search for ano
 
 
 Project structure
-=================
+^^^^^^^^^^^^^^^^^
 
 Utils
-^^^^^
+=====
 
 
 #. GraphUtils consist of functions for:
@@ -91,17 +91,17 @@ Utils
 * Additional function to support calculation of metrics from group1 ('MI', 'LL', 'BIC', 'AIC')
 
 Preprocessing
-^^^^^^^^^^^^^
+=============
 
 Preprocessor module allows user to transform data according pipeline (in analogy with pipeline in scikit-learn).
 
 Networks
-^^^^^^^^
+========
 
 There are 3 general types of networks: discrete, gaussian, hybrid. All implemented in networks.py  
 
 Nodes
-^^^^^
+=====
 
 Contains nodes' classes and their methods.
 
