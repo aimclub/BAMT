@@ -342,47 +342,46 @@ class BaseNetwork(object):
                     self[node].type = re.sub(
                         r"\([\s\S]*\)", f"({model})", self[node].type)
 
+    def save_to_file(self, outdir: str, data: dict):
+        """
+        Function to save data to json file
+        :param outdir: output directory
+        :param data: dictionary to be saved
+        """
+        if not outdir.endswith('.json'):
+            return None
+        with open(outdir, 'w+') as out:
+            json.dump(data, out)
+        return True
+
     def save_params(self, outdir: str):
         """
         Function to save BN params to json file
         outdir: output directory
         """
-        if not outdir.endswith('.json'):
-            return None
-        with open(outdir, 'w+') as out:
-            json.dump(self.distributions, out)
-        return True
+        return self.save_to_file(outdir, self.distributions)
 
     def save_structure(self, outdir: str):
         """
         Function to save BN edges to json file
         outdir: output directory
         """
-        if not outdir.endswith('.json'):
-            return None
-        with open(outdir, 'w+') as out:
-            json.dump(self.edges, out)
-        return True
+        return self.save_to_file(outdir, self.edges)
 
     def save(self, outdir: str):
         """
         Function to save the whole BN to json file
         :param outdir: output directory
         """
-        if not outdir.endswith('.json'):
-            return None
-        new_weights = dict()
-        for key in self.weights:
-            new_weights[str(key)] = self.weights[key]
+        new_weights = {str(key): self.weights[key] for key in self.weights}
         outdict = {
             'info': self.descriptor,
             'edges': self.edges,
             'parameters': self.distributions,
             'weights': new_weights
         }
-        with open(outdir, 'w+') as out:
-            json.dump(outdict, out)
-        return True
+        return self.save_to_file(outdir, outdict)
+
 
     def load(self, input_dir: str):
         """
