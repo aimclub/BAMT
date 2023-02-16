@@ -14,27 +14,17 @@ from bamt.preprocess.graph import edges_to_dict
 
 
 def info_score(edges: list, data: pd.DataFrame, method='LL'):
-    if method.upper() == 'LL':
-        score = log_lik_local
-    elif method.upper() == 'BIC':
-        score = BIC_local
-    elif method.upper() == 'AIC':
-        score = AIC_local
-    else:
-        score = BIC_local
+    score_funcs = {'LL': log_lik_local, 'BIC': BIC_local, 'AIC': AIC_local}
+    score = score_funcs.get(method.upper(), BIC_local)
 
     parents_dict = edges_to_dict(edges)
-    sum_score = 0.0
     nodes_with_edges = parents_dict.keys()
-    for var in nodes_with_edges:
-        child_parents = [var]
-        child_parents.extend(parents_dict[var])
-        sum_score += score(copy(data[child_parents]), method)
-    nodes_without_edges = list(
-        set(data.columns).difference(set(nodes_with_edges)))
-    for var in nodes_without_edges:
-        sum_score += score(copy(data[[var]]), method)
-    return sum_score
+    scores = [score(data[child_parents].copy(), method)
+              for var in nodes_with_edges
+              for child_parents in ([var] + parents_dict[var],)]
+    scores += [score(data[[var]].copy(), method) for var in
+               set(data.columns).difference(set(nodes_with_edges))]
+    return sum(scores)
 
 
 ##### INFORMATION-THEORETIC SCORING FUNCTIONS #####
@@ -104,17 +94,9 @@ def log_likelihood(bn, data, method='LL'):
     """
 
     NROW = data.shape[0]
-    mi_score = 0
-    ent_score = 0
-    for rv in bn.nodes():
-        l1 = (bn.V.index(rv),)
-        l = tuple([bn.V.index(p) for p in bn.parents(rv)])
-
-        cols = l1 + l
-        mi_score += mutual_information(data[:, cols], method=method)
-        ent_score += entropy(data[:, bn.V.index(rv)], method=method)
-
-    return (NROW * (mi_score - ent_score))
+    mi_scores = [mutual_information(data[:, (bn.V.index(rv),) + tuple([bn.V.index(p) for p in bn.parents(rv)])], method=method) for rv in bn.nodes()]
+    ent_scores = [entropy(data[:, bn.V.index(rv)], method=method) for rv in bn.nodes()]
+    return NROW * (sum(mi_scores) - sum(ent_scores))
     # return ((1/nrow)*(np.sum(np.log((1e+7+bn.flat_cpt())))))
 
 
@@ -146,37 +128,38 @@ def BIC_local(data, method='BIC'):
 
 
 def num_params(data):
+    # Convert pandas DataFrame to numpy array
     if isinstance(data, pd.DataFrame):
-        return num_params(data.values)
+        data = data.values
+    # Convert pandas Series to numpy array
     if isinstance(data, pd.Series):
-        # print(np.array(data))
-        return num_params(np.array(copy(data)))
+        data = np.array(copy(data))
+
+    # Calculate number of parameters for numpy array
     if isinstance(data, np.ndarray):
         node_type = get_type_numpy(data)
-        columns_for_discrete = []
-        columns_for_code = []
-        for param in node_type.keys():
-            if node_type[param] == 'cont':
-                columns_for_discrete.append(param)
-            if node_type[param] == 'disc':
-                columns_for_code.append(param)
+        columns_for_discrete = [param for param,
+                                node in node_type.items() if node == 'cont']
+        columns_for_code = [param for param,
+                            node in node_type.items() if node == 'disc']
+
         prod = 1
+        for var in columns_for_code:
+            prod *= len(np.unique(data[:, var])
+                        ) if data.ndim != 1 else len(np.unique(data))
+        if columns_for_discrete:
+            prod *= len(columns_for_discrete)
+
+        # Handle overflow error
         try:
-            for var in columns_for_code:
-                if data.ndim == 1:
-                    prod *= len(np.unique(np.array(data)))
-                else:
-                    prod *= len(np.unique(np.array(data[:, var])))
-            if columns_for_discrete != []:
-                k = len(columns_for_discrete)
-                prod *= k
             return prod
-        except OverflowError as err:
+        except OverflowError:
             return sys.float_info.max
-    else:
-        print('Num_params: Unexpected data type')
-        print(data)
-        pass
+
+    # Raise an error if data type is unexpected
+    print('Num_params: Unexpected data type')
+    print(data)
+    return None
 
 
 def AIC_local(data, method='AIC'):
