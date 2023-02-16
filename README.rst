@@ -36,8 +36,9 @@ In terms of training Bayesian networks on data, the following algorithms are imp
 
 
 * Building the structure of a Bayesian network based on expert knowledge by directly specifying the structure of the network;
-* Building the structure of a Bayesian network on data using three algorithms - Hill Climbing, evolutionary and PC. For Hill Climbing, the following score functions are implemented - MI, K2, BIC, AIC. The algorithms work on both discrete and mixed data.
+* Building the structure of a Bayesian network on data using three algorithms - Hill Climbing, evolutionary and PC (evolutionary and PC are currently under development). For Hill Climbing, the following score functions are implemented - MI, K2, BIC, AIC. The algorithms work on both discrete and mixed data.
 * Training the parameters of distributions in the nodes of the network on the basis of data.
+* BigBraveBN - algorithm for structural learning of Bayesian networks with a large number of nodes. Tested on networks with up to 500 nodes.
 
 Difference from existing implementations:
 
