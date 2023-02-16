@@ -149,9 +149,8 @@ publisher={Elsevier}
     :target: https://bamt.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. |pypi| image:: https://badge.fury.io/py/fedot.svg
-   :alt: Supported Python Versions
-   :target: https://badge.fury.io/py/fedot
+.. |pypi| image:: https://badge.fury.io/py/bamt.svg
+    :target: https://badge.fury.io/py/bamt
 
 .. |py_7| image:: https://img.shields.io/badge/python_3.7-passing-success
    :alt: Supported Python Versions
