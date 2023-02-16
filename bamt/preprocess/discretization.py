@@ -66,32 +66,36 @@ def discretization(data: pd.DataFrame, method: str, columns: list,
     data = data.dropna()
     data.reset_index(inplace=True, drop=True)
     d_data = copy(data)
-    est = KBinsDiscretizer(n_bins=bins, encode='ordinal', strategy='uniform')
-    if method == "equal_intervals":
-        est = KBinsDiscretizer(
-            n_bins=bins,
-            encode='ordinal',
-            strategy='uniform')
-        data_discrete = est.fit_transform(d_data.loc[:, columns].values)
-        d_data[columns] = data_discrete.astype('int')
-    elif method == "equal_frequency":
-        est = KBinsDiscretizer(
-            n_bins=bins,
-            encode='ordinal',
-            strategy='quantile')
-        data_discrete = est.fit_transform(d_data.loc[:, columns].values)
-        d_data[columns] = data_discrete.astype('int')
-    elif method == "kmeans":
-        est = KBinsDiscretizer(
-            n_bins=bins,
-            encode='ordinal',
-            strategy='kmeans')
+    est = KBinsDiscretizer(n_bins=bins, encode='ordinal')
+    strategy_dict = {
+        'equal_intervals': 'uniform',
+        'equal_frequency': 'quantile',
+        'kmeans': 'kmeans'
+    }
+    if method in strategy_dict:
+        est.strategy = strategy_dict[method]
         data_discrete = est.fit_transform(d_data.loc[:, columns].values)
         d_data[columns] = data_discrete.astype('int')
     else:
         raise Exception('This discretization method is not supported')
 
     return d_data, est
+
+
+def label_encoding(data, columns):
+    d_data = copy(data)
+    encoder_dict = dict()
+    for column in columns:
+        le = preprocessing.LabelEncoder()
+        d_data[column] = le.fit_transform(d_data[column].values)
+        mapping = dict(zip(le.classes_, range(len(le.classes_))))
+        encoder_dict[column] = mapping
+    return d_data, encoder_dict
+
+
+def onehot_encoding(data, columns):
+    d_data = pd.get_dummies(data, columns=columns)
+    return d_data, None
 
 
 def code_categories(data: pd.DataFrame, method: str,
@@ -109,16 +113,12 @@ def code_categories(data: pd.DataFrame, method: str,
     """
     data = data.dropna()
     data.reset_index(inplace=True, drop=True)
-    d_data = copy(data)
-    encoder_dict = dict()
-    if method == 'label':
-        for column in columns:
-            le = preprocessing.LabelEncoder()
-            d_data[column] = le.fit_transform(d_data[column].values)
-            mapping = dict(zip(le.classes_, range(len(le.classes_))))
-            encoder_dict[column] = mapping
-    elif method == 'onehot':
-        d_data = pd.get_dummies(d_data, columns=columns)
+    encoding_func_dict = {
+        'label': label_encoding,
+        'onehot': onehot_encoding
+    }
+    if method in encoding_func_dict:
+        d_data, encoder_dict = encoding_func_dict[method](data, columns)
     else:
         raise Exception('This encoding method is not supported')
 
