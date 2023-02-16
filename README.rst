@@ -77,7 +77,7 @@ Next, a network instance is created and training (structure and parameters) is p
 
 
 
-Examamples & Tutorials
+Examples & Tutorials
 ^^^^^^^^^^^^^^^^^^^^^^
 
 More examples can be found in `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  and `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>` .
@@ -90,9 +90,31 @@ Publications about BAMT
 Project structure
 ^^^^^^^^^^^^^^^^^
 
-Utils
+Preprocessing
+=============
+
+Preprocessor module allows user to transform data according pipeline (similar to pipeline in scikit-learn).
+
+Networks
+========
+
+Three types of networks are implemented:
+
+* HybridBN - Bayesian network with mixed data
+* DiscreteBN - Bayesian network with discrete data
+* ContinuousBN - Bayesian network with continuous data
+
+They are inherited from the abstract class BaseNetwork.
+
+Nodes
 =====
 
+Contains nodes, classes and their methods.
+
+Utilities
+=========
+
+Utilities module contains mathematical and graph utilities to support the main functionality of the library.
 
 #. GraphUtils consist of functions for:
 
@@ -105,21 +127,6 @@ Utils
 
 
     * Additional function to support calculation of metrics from group1 ('MI', 'LL', 'BIC', 'AIC')
-
-Preprocessing
-=============
-
-Preprocessor module allows user to transform data according pipeline (in analogy with pipeline in scikit-learn).
-
-Networks
-========
-
-There are 3 general types of networks: discrete, gaussian, hybrid. All implemented in networks.py  
-
-Nodes
-=====
-
-Contains nodes' classes and their methods.
 
 Web-BAMT
 ^^^^^^^^
