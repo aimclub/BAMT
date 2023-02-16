@@ -29,8 +29,8 @@ BAMT package is available via PyPi:
 
    pip install bamt
 
-Bayesian network learning
-^^^^^^^^^^^^^^^^^^^^^^^^^
+BAMT Features
+^^^^^^^^^^^^^
 
 In terms of training Bayesian networks on data, the following algorithms are implemented:
 
@@ -51,9 +51,6 @@ Difference from existing implementations:
      :target: img/BN_gif.gif
      :alt: title
 
-Generating synthetic data
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
 In terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
 .. image:: img/synth_gen.png
@@ -61,14 +58,33 @@ In terms of data analysis and modeling using Bayesian networks, a pipeline has b
    :alt: title
 
 
-Oil and Gas Reservoirs Parameters Analysis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use
+^^^^^^^^^^
 
-Bayesian networks can be used to restore gaps in reservoirs data, search for anomalous values, and also to search for analogous reservoirs.
+Then the necessary classes are imported from the library:
 
-.. image:: img/concept.png
-   :target: img/concept.png
-   :alt: title
+.. code-block:: python
+
+   import bamt.Networks as Nets
+
+Next, a network instance is created and training (structure and parameters) is performed:
+
+.. code-block:: python
+
+   bn = Nets.HybridBN(has_logit=False, use_mixture=True)
+   bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
+   bn.fit_parameters(data)
+
+
+
+Examamples & Tutorials
+^^^^^^^^^^^^^^^^^^^^^^
+
+More examples can be found in `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  and `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>` .
+
+Publications about BAMT
+^^^^^^^^^^^^^^^^^^^^^^^
+
 
 
 Project structure
@@ -81,14 +97,14 @@ Utils
 #. GraphUtils consist of functions for:
 
 
-* Finding nodes types/signs
-* Topological ordering
+    * Finding nodes types/signs
+    * Topological ordering
 
 
 #. MathUtils consist of functions for:
 
 
-* Additional function to support calculation of metrics from group1 ('MI', 'LL', 'BIC', 'AIC')
+    * Additional function to support calculation of metrics from group1 ('MI', 'LL', 'BIC', 'AIC')
 
 Preprocessing
 =============
@@ -105,13 +121,19 @@ Nodes
 
 Contains nodes' classes and their methods.
 
+Web-BAMT
+^^^^^^^^
+
+A web interface for BAMT is currently under development. 
+The repository is available at `web-BAMT <https://github.com/aimclub/Web-BAMT>`__ 
+
 Contacts
-========
+^^^^^^^^
 
-
+If you have questions or suggestions, you can contact us at the following address: ideeva@itmo.ru (Irina Deeva)
 
 Citation
-========
+^^^^^^^^
 
 @misc{BAMT,
 author={BAMT},
