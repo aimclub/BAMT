@@ -66,7 +66,7 @@ Then the necessary classes are imported from the library:
 
 .. code-block:: python
 
-   import bamt.Networks as Nets
+   import bamt.networks as Nets
 
 Next, a network instance is created and training (structure and parameters) is performed:
 
