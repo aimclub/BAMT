@@ -87,7 +87,7 @@ Next, a network instance is created and training (structure and parameters) is p
 .. code-block:: python
 
    bn = Nets.HybridBN(has_logit=False, use_mixture=True)
-   bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
+   bn.add_edges(discretized_data, scoring_function=('K2',K2Score))
    bn.fit_parameters(data)
 
 
