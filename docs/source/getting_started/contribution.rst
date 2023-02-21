@@ -111,7 +111,7 @@ automodule:: <module_name> section which describes all the code in the module.
 
 -  If a new module to the existed package:
 
-    Most of the sections are already described in `docs/source/api <https://github.com/nccr-itmo/FEDOT/tree/master/docs/source/api>`__ , so you can:
+    Most of the sections are already described in `docs/source/api <https://github.com/ITMO-NSS-team/BAMT/blob/master/docs/source/api>`__ , so you can:
 
    -  choose the most appropriate and repeat 3-d step from the previous section.
    -  or create a new one and repeat 2-3 steps from the previous section.
