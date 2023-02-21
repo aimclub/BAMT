@@ -89,11 +89,11 @@ automodule:: <module_name> section which describes all the code in the module.
 
 -  If a new package with several scripts:
 
-   1. Go to `docs/source/api <https://github.com/ITMO-NSS-team/BAMT/blob/master/docs/source/api>`__ and create new your_name_for_file.rst file.
+   #. Go to `docs/source/api <https://github.com/ITMO-NSS-team/BAMT/blob/master/docs/source/api>`__ and create new your_name_for_file.rst file.
 
-   2. Add a Header underlined with “=” sign. It’s crucial.
+   #. Add a Header underlined with “=” sign. It’s crucial.
 
-   3. Add automodule description for each of your scripts
+   #. Add automodule description for each of your scripts
 
       .. code-block::
 
@@ -107,7 +107,7 @@ automodule:: <module_name> section which describes all the code in the module.
          $   :undoc-members:
          $   :show-inheritance:
 
-   4. Add your_name_for_file to the toctree at docs/index.rst
+   #. Add your_name_for_file to the toctree at docs/index.rst
 
 -  If a new module to the existed package:
 
