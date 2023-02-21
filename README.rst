@@ -165,24 +165,24 @@ Citation
 ^^^^^^^^
 
 @misc{BAMT,
-author={BAMT},
-title = {Repository experiments and data},
-year = {2021},
-publisher = {GitHub},
-journal = {GitHub repository},
-howpublished = {\url{https://github.com/ITMO-NSS-team/BAMT.git}},
-url = {https://github.com/ITMO-NSS-team/BAMT.git}
+  author={BAMT},
+  title = {Repository experiments and data},
+  year = {2021},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/ITMO-NSS-team/BAMT.git}},
+  url = {https://github.com/ITMO-NSS-team/BAMT.git}
 }
 
 @article{deeva2023advanced,
-title={Advanced Approach for Distributions Parameters Learning in Bayesian Networks with Gaussian Mixture Models and Discriminative Models},
-author={Deeva, Irina and Bubnova, Anna and Kalyuzhnaya, Anna V},
-journal={Mathematics},
-volume={11},
-number={2},
-pages={343},
-year={2023},
-publisher={MDPI}
+  title={Advanced Approach for Distributions Parameters Learning in Bayesian Networks with Gaussian Mixture Models and Discriminative Models},
+  author={Deeva, Irina and Bubnova, Anna and Kalyuzhnaya, Anna V},
+  journal={Mathematics},
+  volume={11},
+  number={2},
+  pages={343},
+  year={2023},
+  publisher={MDPI}
 }
 
 @inproceedings{deeva2021oil,
