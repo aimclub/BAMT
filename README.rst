@@ -19,6 +19,11 @@ Repository of a data modeling and analysis tool based on Bayesian networks
 
 BAMT - Bayesian Analytical and Modelling Toolkit. This repository contains a data modeling and analysis tool based on Bayesian networks. It can be divided into two main parts - algorithms for constructing and training Bayesian networks on data and algorithms for applying Bayesian networks for filling gaps, generating synthetic data, assessing edges strength e.t.c.
 
+.. image:: docs/images/bamt_readme_scheme.pdf
+     :target: docs/images/bamt_readme_scheme.pdf
+     :align: center
+     :alt: bamt readme scheme
+
 Installation
 ^^^^^^^^^^^^
 
@@ -49,15 +54,17 @@ Difference from existing implementations:
 * Non-parametric learning of distributions with various user-specified regression and classification models;
 * The algorithm for structural training of large Bayesian networks (> 10 nodes) is based on local training of small networks with their subsequent algorithmic connection.
 
-  .. image:: img/BN_gif.gif
+.. image:: img/BN_gif.gif
      :target: img/BN_gif.gif
-     :alt: title
+     :align: center
+     :alt: bn example gif
 
 For example, in terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
 .. image:: img/synth_gen.png
    :target: img/synth_gen.png
-   :alt: title
+   :align: center
+   :alt: synthetics generation
 
 
 How to use
