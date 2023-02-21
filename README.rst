@@ -62,14 +62,13 @@ Difference from existing implementations:
 For example, in terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
 
-.. figure:: img/synth_gen.png
-   :align: center
-   :scale: 60%
-   :alt: synthetics generation
 
-    .. image:: img/synth_gen.png
-        :target: img/synth_gen.png
-        :alt: synthetics generation
+.. image:: img/synth_gen.png
+   :target: img/synth_gen.png
+   :height: 200px
+   :width: 400px
+   :align: center
+   :alt: synthetics generation
 
 
 How to use
