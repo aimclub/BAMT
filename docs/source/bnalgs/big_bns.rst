@@ -11,8 +11,8 @@ To limit the search space, we propose our algorithm based on the Brave coefficie
 This coefficient measures the mutual occurrence of variables when clustering is applied to the data set. 
 The algorithm of Brave coefficient calculation is shown in the following figure.
 
-.. image:: brave_coefficient_calculation.png
-    :target:: images/brave_coefficient_calculation.png
+.. image:: docs/images/brave_coefficient_calculation.png
+    :target:: docs/images/brave_coefficient_calculation.png
     :align: center
 
 In the first step, we initialize a matrix that represents $n$ nearest neighbours for every variable (groups).
@@ -26,8 +26,8 @@ In this formula, $a$ is the number of groups in which both features fell, $b$ an
 
 Here is the workflow of the algorithm on the figure below.
 
-.. image:: BigBraveBN_workflow.png
-    :target: images/BigBraveBN_workflow.png
+.. image:: docs/images/BigBraveBN_workflow.png
+    :target: docs/images/BigBraveBN_workflow.png
     :align: center
 
 
