@@ -15,6 +15,7 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
 
    self
    getting_started/install.rst
+   getting_started/contribution.rst
    getting_started/faq.rst
    getting_started/cite_us.rst
 
@@ -22,9 +23,15 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: Features
+   :caption: API
 
-   features/api.rst
+   api/builders.rst
+   api/mi_entropy_gauss.rst
+   api/networks.rst
+   api/nodes.rst
+   api/preprocessors.rst
+   api/redef_HC.rst
+   api/redef_info_scores.rst
 
 .. toctree::
    :maxdepth: 1
