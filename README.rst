@@ -92,11 +92,18 @@ Next, a network instance is created and training (structure and parameters) is p
 Examples & Tutorials
 ^^^^^^^^^^^^^^^^^^^^^^
 
-More examples can be found in `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  and `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>` .
+More examples can be found in `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  and `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>`__ .
 
 Publications about BAMT
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+We have published several articles about BAMT:
+
+* `Advanced Approach for Distributions Parameters Learning in Bayesian Networks with Gaussian Mixture Models and Discriminative Models <https://www.mdpi.com/2227-7390/11/2/343>`__ (2023)
+* `MIxBN: Library for learning Bayesian networks from mixed data <https://www.sciencedirect.com/science/article/pii/S1877050921020925>`__ (2021)
+* `Oil and Gas Reservoirs Parameters Analysis Using Mixed Learning of Bayesian Networks <https://link.springer.com/chapter/10.1007/978-3-030-77961-0_33>`__ (2021)
+* `BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes <https://www.sciencedirect.com/science/article/pii/S1877050922016945>`__ (2022)
+* `Bayesian Networks-based personal data synthesis <https://dl.acm.org/doi/abs/10.1145/3411170.3411243>`__ (2020)
 
 
 Project structure
@@ -176,6 +183,37 @@ number={2},
 pages={343},
 year={2023},
 publisher={MDPI}
+}
+
+@inproceedings{deeva2021oil,
+  title={Oil and Gas Reservoirs Parameters Analysis Using Mixed Learning of Bayesian Networks},
+  author={Deeva, Irina and Bubnova, Anna and Andriushchenko, Petr and Voskresenskiy, Anton and Bukhanov, Nikita and Nikitin, Nikolay O and Kalyuzhnaya, Anna V},
+  booktitle={Computational Science--ICCS 2021: 21st International Conference, Krakow, Poland, June 16--18, 2021, Proceedings, Part I},
+  pages={394--407},
+  year={2021},
+  organization={Springer}
+}
+
+
+
+@article{bubnova2021mixbn,
+  title={MIxBN: Library for learning Bayesian networks from mixed data},
+  author={Bubnova, Anna V and Deeva, Irina and Kalyuzhnaya, Anna V},
+  journal={Procedia Computer Science},
+  volume={193},
+  pages={494--503},
+  year={2021},
+  publisher={Elsevier}
+}
+
+
+
+@inproceedings{deeva2020bayesian,
+  title={Bayesian Networks-based personal data synthesis},
+  author={Deeva, Irina and Andriushchenko, Petr D and Kalyuzhnaya, Anna V and Boukhanovsky, Alexander V},
+  booktitle={Proceedings of the 6th EAI International Conference on Smart Objects and Technologies for Social Good},
+  pages={6--11},
+  year={2020}
 }
 
 @article{kaminsky2022bigbravebn,
