@@ -61,13 +61,15 @@ Difference from existing implementations:
 
 For example, in terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
-.. image:: img/synth_gen.png
-   :target: img/synth_gen.png
-   :height: 200px
-   :width: 400px
+
+.. figure:: img/synth_gen.png
    :align: center
-   :scale: 30%
+   :scale: 60%
    :alt: synthetics generation
+
+    .. image:: img/synth_gen.png
+        :target: img/synth_gen.png
+        :alt: synthetics generation
 
 
 How to use
@@ -100,9 +102,9 @@ Publications about BAMT
 We have published several articles about BAMT:
 
 * `Advanced Approach for Distributions Parameters Learning in Bayesian Networks with Gaussian Mixture Models and Discriminative Models <https://www.mdpi.com/2227-7390/11/2/343>`__ (2023)
+* `BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes <https://www.sciencedirect.com/science/article/pii/S1877050922016945>`__ (2022)
 * `MIxBN: Library for learning Bayesian networks from mixed data <https://www.sciencedirect.com/science/article/pii/S1877050921020925>`__ (2021)
 * `Oil and Gas Reservoirs Parameters Analysis Using Mixed Learning of Bayesian Networks <https://link.springer.com/chapter/10.1007/978-3-030-77961-0_33>`__ (2021)
-* `BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes <https://www.sciencedirect.com/science/article/pii/S1877050922016945>`__ (2022)
 * `Bayesian Networks-based personal data synthesis <https://dl.acm.org/doi/abs/10.1145/3411170.3411243>`__ (2020)
 
 
