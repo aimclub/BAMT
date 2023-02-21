@@ -5,4 +5,4 @@ coverage:
         threshold: 1%
     patch: false
 ignore:
-  - "fedot/external"  # external cannot be fully tested
+  - "bamt/external"  # external cannot be fully tested
