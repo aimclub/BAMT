@@ -9,7 +9,7 @@
    * - package
      - | |pypi| |py_8| |py_9| |py_10|
    * - tests
-     - | |coverage|
+     - | |Build| |coverage|
    * - docs
      - |docs|
    * - license
@@ -268,6 +268,9 @@ publisher={Elsevier}
 
 .. |downloads_weekly| image:: https://static.pepy.tech/personalized-badge/bamt?period=week&units=international_system&left_color=grey&right_color=blue&left_text=downloads/week
  :target: https://pepy.tech/project/bamt
+
+.. |Build| image:: https://github.com/jrzkaminski/BAMT/actions/workflows/bamtcodecov.yml/badge.svg
+    :target: https://github.com/jrzkaminski/BAMT/actions/workflows/bamtcodecov.yml
 
 .. |coverage| image:: https://codecov.io/gh/jrzkaminski/BAMT/branch/master/graph/badge.svg?token=DWDKGJ1RET 
  :target: https://codecov.io/gh/jrzkaminski/BAMT
