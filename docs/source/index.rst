@@ -29,9 +29,11 @@ The site contains documentation for the `BAMT framework <https://github.com/ITMO
    api/mi_entropy_gauss.rst
    api/networks.rst
    api/nodes.rst
+   api/preprocess.rst
    api/preprocessors.rst
    api/redef_HC.rst
    api/redef_info_scores.rst
+   api/utils.rst
 
 .. toctree::
    :maxdepth: 1
