@@ -94,8 +94,12 @@ def log_likelihood(bn, data, method='LL'):
     """
 
     NROW = data.shape[0]
-    mi_scores = [mutual_information(data[:, (bn.V.index(rv),) + tuple([bn.V.index(p) for p in bn.parents(rv)])], method=method) for rv in bn.nodes()]
-    ent_scores = [entropy(data[:, bn.V.index(rv)], method=method) for rv in bn.nodes()]
+    mi_scores = [mutual_information(data[:,
+                                         (bn.V.index(rv),
+                                          ) + tuple([bn.V.index(p) for p in bn.parents(rv)])],
+                                    method=method) for rv in bn.nodes()]
+    ent_scores = [entropy(data[:, bn.V.index(rv)], method=method)
+                  for rv in bn.nodes()]
     return NROW * (sum(mi_scores) - sum(ent_scores))
     # return ((1/nrow)*(np.sum(np.log((1e+7+bn.flat_cpt())))))
 
