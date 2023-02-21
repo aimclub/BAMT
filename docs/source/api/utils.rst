@@ -4,12 +4,10 @@ Utilities
 Math Utilities
 --------------
 
-.. code-block::
-
-    .. automodule:: bamt.utils.MathUtils
-        :members:
-        :undoc-members:
-        :show-inheritance:
+.. automodule:: bamt.utils.MathUtils
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Graph Utilities
 --------------
