@@ -164,6 +164,13 @@ Contacts
 
 If you have questions or suggestions, you can contact us at the following address: ideeva@itmo.ru (Irina Deeva)
 
+Our resources:
+
+* `Natural Systems Simulation Team <https://itmo-nss-team.github.io/>`__
+* `NSS team Telegram channel <https://t.me/NSS_group>`__
+* `NSS lab YouTube channel <https://www.youtube.com/@nsslab/videos>`__
+
+
 Citation
 ^^^^^^^^
 
