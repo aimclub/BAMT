@@ -92,7 +92,7 @@ Next, a network instance is created and training (structure and parameters) is p
 Examples & Tutorials
 ^^^^^^^^^^^^^^^^^^^^^^
 
-More examples can be found in `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  and `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>`__ .
+More examples can be found in `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  and `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>`__.
 
 Publications about BAMT
 ^^^^^^^^^^^^^^^^^^^^^^^
