@@ -67,8 +67,8 @@ For example, in terms of data analysis and modeling using Bayesian networks, a p
 
 .. image:: img/synth_gen.png
    :target: img/synth_gen.png
-   :height: 200px
-   :width: 400px
+   :height: 300px
+   :width: 600px
    :align: center
    :alt: synthetics generation
 
