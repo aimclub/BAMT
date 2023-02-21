@@ -1,7 +1,7 @@
 Networks Module
 ===============
 
-.. automodule:: bamt.preprocess.networks
+.. automodule:: bamt.networks
    :members:
    :undoc-members:
    :show-inheritance:
