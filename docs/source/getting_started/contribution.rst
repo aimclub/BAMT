@@ -77,7 +77,7 @@ If your contribution changes BAMT code in any way, please follow the check list 
 
  -  Double-check that the new dependency is easy to install via ``pip`` or ``conda`` and supports Python 3. If the dependency requires a complicated installation, then we most likely won't merge your changes because we want to keep BAMT easy to install.
 
--  Add the required version of the library to `requirements.txt <https://github.com/ITMO-NSS-team/BAMT/blob/master/requirements.txt>`__
+ -  Add the required version of the library to `requirements.txt <https://github.com/ITMO-NSS-team/BAMT/blob/master/requirements.txt>`__
 
 
 Contribute to the documentation

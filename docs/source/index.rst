@@ -8,6 +8,16 @@ Welcome to BAMT's documentation!
 
 The site contains documentation for the `BAMT framework <https://github.com/ITMO-NSS-team/BAMT>`__.
 
+BAMT - Bayesian Analytical and Modelling Toolkit.
+This repository contains a data modeling and analysis tool based on Bayesian networks.
+It can be divided into two main parts -
+algorithms for constructing and training Bayesian networks on data and algorithms for applying Bayesian networks for filling gaps,
+generating synthetic data, assessing edges strength e.t.c.
+
+.. image:: ../images/bamt_readme_scheme.png
+   :target: ../images/bamt_readme_scheme.png
+   :align: center
+
 .. toctree::
    :maxdepth: 1
    :hidden:
