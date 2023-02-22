@@ -51,7 +51,7 @@ If you are new to GitHub, here is a step-by-step guide on how to contribute to t
 
       git push origin my-new-feature
 
-Finally, go to the web page of your fork of the FEDOT repo, and click 'Pull Request' (PR) to send your changes to the maintainers for review.
+Finally, go to the web page of your fork of the BAMT repo, and click 'Pull Request' (PR) to send your changes to the maintainers for review.
 
 If the following instructions look confusing, check `git documentation <https://git-scm.com/doc>`__ or use GitHub Desktop with GUI. 
 Using GitHUb extension for Visual Studio Code, PyCharm or whatever IDE you use is also a good option.
