@@ -227,13 +227,13 @@ Citation
 }
 
 @article{kaminsky2022bigbravebn,
-title={BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes},
-author={Kaminsky, Yury and Deeva, Irina},
-journal={Procedia Computer Science},
-volume={212},
-pages={191--200},
-year={2022},
-publisher={Elsevier}
+  title={BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes},
+  author={Kaminsky, Yury and Deeva, Irina},
+  journal={Procedia Computer Science},
+  volume={212},
+  pages={191--200},
+  year={2022},
+  publisher={Elsevier}
 }
 
 
