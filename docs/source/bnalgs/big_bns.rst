@@ -14,6 +14,7 @@ The algorithm of Brave coefficient calculation is shown in the following figure.
 
 .. image:: ../../images/brave_coefficient_calculation.png
     :target:: ../../images/brave_coefficient_calculation.png
+    :width: 500 px
     :align: center
 
 
