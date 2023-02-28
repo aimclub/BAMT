@@ -13,7 +13,6 @@ The algorithm of Brave coefficient calculation is shown in the following figure.
 
 
 .. image:: ../../images/brave_coefficient_calculation.png
-    :target:: ../../images/brave_coefficient_calculation.png
     :width: 500 px
     :align: center
 
@@ -33,7 +32,6 @@ Here is the workflow of the algorithm on the figure below.
 
 
 .. image:: ../../images/BigBraveBN_workflow.png
-    :target: ../../images/BigBraveBN_workflow.png
     :align: center
 
 

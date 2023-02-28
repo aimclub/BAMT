@@ -4,9 +4,7 @@ Bayesian Networks Learning Algorithms
 A Bayesian network is a graphical probabilistic model that is a directed acyclic graph in which nodes are features in the data and edges are conditional dependencies between features.
 
 
-.. image::
-    .. image:: ../../images/bnla_model.png
-    :target:: ../../images/bnla_model.png
+.. image:: ../../images/bnla_model.png
     :align: center
 
 
@@ -27,9 +25,8 @@ Moreover, the *BIC*, *AIC* and *MI* metrics can be used both on discretized data
 As an optimization algorithm, the greedy Hill Climbing algorithm is used, which iteratively changes the structure and remembers the change that leads to the greatest increase in score:
 
 
-.. image::
-    .. image:: ../../images/HC_scheme_disser.png
-    :target:: ../../images/HC_scheme_disser.png
+
+.. image:: ../../images/HC_scheme_disser.png
     :align: center
 
 
@@ -56,9 +53,7 @@ In addition to structural learning in Bayesian networks, there is learning of di
 By default, distributions at network nodes are modeled using Gaussian distributions and linear regression for continuous nodes and conditional probability tables (CPT) for discrete nodes.
 
 
-.. image::
-    .. image:: ../../images/params_learning.png
-    :target:: ../../images/params_learning.png
+.. image:: ../../images/params_learning.png
     :align: center
 
 
@@ -67,9 +62,7 @@ For such cases, it is proposed, for example, to use mixtures of Gaussian distrib
 In the framework for parametric learning, automatic selection of the number of components is implemented.
 
 
-.. image::
-    .. image:: ../../images/mixture_edge.png
-    :target:: ../../images/mixture_edge.png
+.. image:: ../../images/mixture_edge.png
     :align: center
 
 
@@ -79,8 +72,6 @@ You can choose this method with the help of the ``set_classifier()`` and ``set_r
 Now the user must choose the model himself, but in the future an algorithm for automatic selection of models will be added. 
 
 
-.. image::
-    .. image:: ../../images/logit_net.png
-    :target:: ../../images/logit_net.png
+.. image:: ../../images/logit_net.png
     :align: center
 
