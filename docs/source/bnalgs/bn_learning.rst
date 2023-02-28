@@ -58,7 +58,7 @@ By default, distributions at network nodes are modeled using Gaussian distributi
 
 
 However, this approach does not model real data very well, in which there is a clear non-Gaussianity and non-linearity.
-For such cases, it is proposed, for example, to use mixtures of Gaussian distributions, since with a sufficiently large number of components, the mixture can describe a distribution of any shape (parameter use_mixture).
+For such cases, it is proposed, for example, to use mixtures of Gaussian distributions, since with a sufficiently large number of components, the mixture can describe a distribution of any shape (parameter ``use_mixture``).
 In the framework for parametric learning, automatic selection of the number of components is implemented.
 
 
