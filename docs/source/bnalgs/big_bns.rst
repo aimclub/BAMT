@@ -52,3 +52,5 @@ MI metric was chosen as a default metric due to its versatility and efficiency.
 Here, when we run the Hill-Climbing algorithm, we limit the search space by giving the algorithm a so-called white list.
 The white list is a predefined manually or by a certain algorithm list of edges, that limits the solution space by restricting any other connection except itemized in the white list.
 Thus, the Bayesian Network can only consist of edges that are included in a specific white list.
+
+For more information about the algorithm, please, refer to the following `paper <https://www.sciencedirect.com/science/article/pii/S1877050922016945>`__.
