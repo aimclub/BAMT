@@ -30,8 +30,9 @@ In this formula, *a* is the number of groups in which both features fell,
 
 Here is the workflow of the algorithm on the figure below.
 
+
 .. image:: ../../images/BigBraveBN_workflow.png
-    :target: ../../mages/BigBraveBN_workflow.png
+    :target: ../../images/BigBraveBN_workflow.png
     :align: center
 
 
