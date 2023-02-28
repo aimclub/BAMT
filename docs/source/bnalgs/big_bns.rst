@@ -13,8 +13,7 @@ The algorithm of Brave coefficient calculation is shown in the following figure.
 
 
 .. image:: ../../images/brave_coefficient_calculation.png
-    :width: 450 px
-    :height: 150 px
+    :scale: 60 %
     :align: center
 
 
