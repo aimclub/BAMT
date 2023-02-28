@@ -24,7 +24,9 @@ In the second step for every pair of variables Brave coefficient is calculated u
     Br = \frac{a \times n + (a + c) \times (a + b)}{\sqrt{(a + c) \times (b + d)} + \sqrt{(a + b) \times (c + d)}}
 
 
-In this formula, a is the number of groups in which both features fell, b and c are the numbers of groups in which one feature fell, but the second did not fall, d is the number of groups in which none of the features fell, n - dataset size.
+In this formula, *a* is the number of groups in which both features fell,
+*b* and *c* are the numbers of groups in which one feature fell, but the second did not fall,
+*d* is the number of groups in which none of the features fell, *n* - dataset size.
 
 Here is the workflow of the algorithm on the figure below.
 

@@ -3,8 +3,6 @@ Cite us
 
 These are articles that you can use to cite us or make a reference to us:
 
-.. code-block:: bibtex
-
 
 @misc{BAMT,
   author={BAMT},
