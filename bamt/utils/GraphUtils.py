@@ -30,7 +30,8 @@ def nodes_types(data: DataFrame) -> Dict[str, str]:
         elif data[c].dtype.name in disc_numerical:
             column_type[c] = 'disc_num'
         else:
-            logger_preprocessor.error(f'Unsupported data type. Dtype: {data[c].dtypes}')
+            logger_preprocessor.error(
+                f'Unsupported data type. Dtype: {data[c].dtypes}')
 
     return column_type
 
@@ -64,7 +65,8 @@ def get_descriptor(data) -> Dict[str, Dict[str, str]]:
             'signs': nodes_signs(nodes_types(data), data)}
 
 
-def toporder(nodes: List[Type[BaseNode]], edges: List[Tuple]) -> List[List[str]]:
+def toporder(nodes: List[Type[BaseNode]],
+             edges: List[Tuple]) -> List[List[str]]:
     """
     Function for topological sorting
     """

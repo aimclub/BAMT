@@ -9,6 +9,7 @@ class BasePreprocessor(object):
     """
     Base for Preprocessor
     """
+
     def __init__(self):
         self.nodes_signs = {}
         self.nodes_types = {}
@@ -20,7 +21,8 @@ class BasePreprocessor(object):
     def get_nodes_signs(self, data):
         return gru.nodes_signs(nodes_types=self.nodes_types, data=data)
 
-    def code_categories(self, data: DataFrame, encoder) -> Tuple[DataFrame, Dict[str, Dict]]:
+    def code_categories(self, data: DataFrame,
+                        encoder) -> Tuple[DataFrame, Dict[str, Dict]]:
         """Encoding categorical parameters
 
             Args:
@@ -31,7 +33,8 @@ class BasePreprocessor(object):
                 pd.DataFrame: output dataset with encoded parameters
                 dict: dictionary with values and codes
             """
-        columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'disc']
+        columns = [col for col in data.columns.to_list(
+        ) if self.nodes_types[col] == 'disc']
         df = data.copy()  # INPUT DF. Debugging SettingWithCopyWarning
         if not columns:
             return df, None
@@ -43,16 +46,19 @@ class BasePreprocessor(object):
             try:
                 df[col_name] = encoder.fit_transform(column.values)
             except TypeError as exc:
-                logger_preprocessor.error(f"Wrond data types on {col_name} ({df[col_name].dtypes}). Message: {exc}")
+                logger_preprocessor.error(
+                    f"Wrond data types on {col_name} ({df[col_name].dtypes}). Message: {exc}")
             try:
-                mapping = dict(zip(encoder.classes_, range(len(encoder.classes_))))
+                mapping = dict(
+                    zip(encoder.classes_, range(len(encoder.classes_))))
                 encoder_dict[col_name] = mapping
-            except:
+            except BaseException:
                 pass
         return df, encoder_dict
 
     def discretize(self, data: DataFrame, discretizer) -> tuple:
-        columns = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
+        columns = [col for col in data.columns.to_list(
+        ) if self.nodes_types[col] == 'cont']
         df = data.copy()
         if not columns:
             return df, None
@@ -82,15 +88,18 @@ class Preprocessor(BasePreprocessor):
         """
         Function to scan data. If something is wrong, it will be send to log file
         """
-        columns_cont = [col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
+        columns_cont = [
+            col for col in data.columns.to_list() if self.nodes_types[col] == 'cont']
         if not columns_cont:
             logger_preprocessor.info("No one column is continuous")
 
-        columns_disc = [col for col in data.columns.to_list() if self.nodes_types[col] in ['disc', 'disc_num']]
+        columns_disc = [col for col in data.columns.to_list(
+        ) if self.nodes_types[col] in ['disc', 'disc_num']]
         if not columns_disc:
             logger_preprocessor.info("No one column is discrete")
 
-    def apply(self, data: DataFrame, dropna:bool = True) -> Tuple[DataFrame, Dict]:
+    def apply(self, data: DataFrame,
+              dropna: bool = True) -> Tuple[DataFrame, Dict]:
         """
         Apply pipeline
         data: data to apply on
@@ -108,7 +117,8 @@ class Preprocessor(BasePreprocessor):
         self.scan(df)
         for name, instrument in self.pipeline:
             if name == 'encoder':
-                df, self.coder = self.code_categories(data=data, encoder=instrument)
+                df, self.coder = self.code_categories(
+                    data=data, encoder=instrument)
             if name == 'discretizer':
                 df, est = self.discretize(data=df, discretizer=instrument)
         return df, self.coder

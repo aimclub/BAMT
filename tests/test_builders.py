@@ -37,8 +37,9 @@ class TestStructureBuilder(unittest.TestCase):
                          init_nodes=None,
                          bl_add=None)
 
-        self.assertEqual(self.SB.black_list, [('Node0', 'Node1'), ('Node0', 'Node2')],
-                         msg="Restricted edges are allowed.")
+        self.assertEqual(
+            self.SB.black_list, [
+                ('Node0', 'Node1'), ('Node0', 'Node2')], msg="Restricted edges are allowed.")
 
     def test_get_family(self):
         self.assertIsNone(self.SB.get_family())
@@ -48,7 +49,8 @@ class TestStructureBuilder(unittest.TestCase):
                                  DiscreteNode(name="Node2")]
         self.assertIsNone(self.SB.get_family())
         # Note that the method get_family is not supposed to be used by user (only developer),
-        # so we don't cover a case with restricted edges here (we did this in the previous test).
+        # so we don't cover a case with restricted edges here (we did this in
+        # the previous test).
         self.SB.skeleton['E'] = [("Node1", "Node0"), ("Node2", "Node1"),
                                  ("Node2", "Node0")]
         self.SB.get_family()
@@ -84,43 +86,91 @@ class TestVerticesDefiner(unittest.TestCase):
         self.VD = builders.VerticesDefiner(descriptor=self.descriptor)
 
     def test_first_level(self):
-        self.assertEqual(self.VD.vertices,
-                         [GaussianNode(name="Node0"), GaussianNode(name="Node1"),
-                          GaussianNode(name="Node2"), GaussianNode(name="Node3"),
-                          DiscreteNode(name="Node4"), DiscreteNode(name="Node5"),
-                          DiscreteNode(name="Node6"), DiscreteNode(name="Node7")])
+        self.assertEqual(
+            self.VD.vertices, [
+                GaussianNode(
+                    name="Node0"), GaussianNode(
+                    name="Node1"), GaussianNode(
+                    name="Node2"), GaussianNode(
+                        name="Node3"), DiscreteNode(
+                            name="Node4"), DiscreteNode(
+                                name="Node5"), DiscreteNode(
+                                    name="Node6"), DiscreteNode(
+                                        name="Node7")])
 
     def test_overwrite_vetrex(self):
         self.assertEqual(self.VD.skeleton, {'V': None, 'E': None})
 
         def reload():
             self.VD.skeleton['V'] = self.VD.vertices
-            self.VD.skeleton['E'] = [("Node0", "Node7"), ("Node0", "Node1"), ("Node0", "Node2"), ("Node0", "Node5"),
-                                     ("Node4", "Node2"), ("Node4", "Node5"), ("Node4", "Node6"), ("Node4", "Node3")]
+            self.VD.skeleton['E'] = [
+                ("Node0",
+                 "Node7"),
+                ("Node0",
+                 "Node1"),
+                ("Node0",
+                 "Node2"),
+                ("Node0",
+                 "Node5"),
+                ("Node4",
+                 "Node2"),
+                ("Node4",
+                 "Node5"),
+                ("Node4",
+                 "Node6"),
+                ("Node4",
+                 "Node3")]
             self.VD.get_family()
 
-        data = {"True, True": {'Node0': 'MixtureGaussian', 'Node4': 'Discrete', 'Node7': 'Logit (LogisticRegression)',
-                               'Node1': 'MixtureGaussian', 'Node2': 'ConditionalMixtureGaussian',
-                               'Node5': 'ConditionalLogit (LogisticRegression)', 'Node6': 'Discrete',
-                               'Node3': 'ConditionalMixtureGaussian'},
-                "True, False": {'Node0': 'MixtureGaussian', 'Node4': 'Discrete', 'Node7': 'Discrete',
-                                'Node1': 'MixtureGaussian', 'Node2': 'ConditionalMixtureGaussian', 'Node5': 'Discrete',
-                                'Node6': 'Discrete', 'Node3': 'ConditionalMixtureGaussian'},
-                "False, True": {'Node0': 'Gaussian (LinearRegression)', 'Node4': 'Discrete', 'Node7': 'Logit (LogisticRegression)',
-                                'Node1': 'Gaussian (LinearRegression)', 'Node2': 'ConditionalGaussian (LinearRegression)',
-                                'Node5': 'ConditionalLogit (LogisticRegression)', 'Node6': 'Discrete',
-                                'Node3': 'ConditionalGaussian (LinearRegression)'},
-                "False, False": {'Node0': 'Gaussian (LinearRegression)', 'Node4': 'Discrete', 'Node7': 'Discrete', 'Node1': 'Gaussian (LinearRegression)',
-                                 'Node2': 'ConditionalGaussian (LinearRegression)', 'Node5': 'Discrete', 'Node6': 'Discrete',
-                                 'Node3': 'ConditionalGaussian (LinearRegression)'}
-                }
+        data = {
+            "True, True": {
+                'Node0': 'MixtureGaussian',
+                'Node4': 'Discrete',
+                'Node7': 'Logit (LogisticRegression)',
+                'Node1': 'MixtureGaussian',
+                'Node2': 'ConditionalMixtureGaussian',
+                'Node5': 'ConditionalLogit (LogisticRegression)',
+                'Node6': 'Discrete',
+                'Node3': 'ConditionalMixtureGaussian'},
+            "True, False": {
+                'Node0': 'MixtureGaussian',
+                'Node4': 'Discrete',
+                'Node7': 'Discrete',
+                'Node1': 'MixtureGaussian',
+                'Node2': 'ConditionalMixtureGaussian',
+                'Node5': 'Discrete',
+                'Node6': 'Discrete',
+                'Node3': 'ConditionalMixtureGaussian'},
+            "False, True": {
+                'Node0': 'Gaussian (LinearRegression)',
+                'Node4': 'Discrete',
+                'Node7': 'Logit (LogisticRegression)',
+                'Node1': 'Gaussian (LinearRegression)',
+                'Node2': 'ConditionalGaussian (LinearRegression)',
+                'Node5': 'ConditionalLogit (LogisticRegression)',
+                'Node6': 'Discrete',
+                'Node3': 'ConditionalGaussian (LinearRegression)'},
+            "False, False": {
+                'Node0': 'Gaussian (LinearRegression)',
+                'Node4': 'Discrete',
+                'Node7': 'Discrete',
+                'Node1': 'Gaussian (LinearRegression)',
+                'Node2': 'ConditionalGaussian (LinearRegression)',
+                'Node5': 'Discrete',
+                'Node6': 'Discrete',
+                'Node3': 'ConditionalGaussian (LinearRegression)'}}
 
-        for use_mixture, has_logit in itertools.product([True, False], repeat=2):
+        for use_mixture, has_logit in itertools.product(
+                [True, False], repeat=2):
             reload()
-            self.VD.overwrite_vertex(has_logit=has_logit, use_mixture=use_mixture)
-            self.assertEqual({node.name: node.type for node in self.VD.skeleton["V"]},
-                             data[f"{use_mixture}, {has_logit}"],
-                             msg=f"failed on use_mixture={use_mixture} and has_logit={has_logit}")
+            self.VD.overwrite_vertex(
+                has_logit=has_logit,
+                use_mixture=use_mixture)
+            self.assertEqual(
+                {
+                    node.name: node.type for node in self.VD.skeleton["V"]},
+                data[f"{use_mixture}, {has_logit}"],
+                msg=f"failed on use_mixture={use_mixture} and has_logit={has_logit}")
 
 
 class TestHillClimbDefiner(unittest.TestCase):
@@ -170,12 +220,23 @@ class TestHillClimbDefiner(unittest.TestCase):
                      remove_init_edges=False,
                      white_list=None)
 
-        right_edges = [['Tectonic regime', 'Structural setting'], ['Tectonic regime', 'Depth'],
-                       ['Tectonic regime', 'Netpay'], ['Period', 'Porosity'], ['Period', 'Tectonic regime'],
-                       ['Period', 'Netpay'], ['Lithology', 'Permeability'], ['Lithology', 'Period'],
-                       ['Lithology', 'Tectonic regime'], ['Structural setting', 'Netpay'], ['Netpay', 'Gross'],
-                       ['Porosity', 'Permeability'], ['Porosity', 'Depth'], ['Porosity', 'Netpay'],
-                       ['Permeability', 'Netpay']]
+        right_edges = [
+            [
+                'Tectonic regime', 'Structural setting'], [
+                'Tectonic regime', 'Depth'], [
+                'Tectonic regime', 'Netpay'], [
+                    'Period', 'Porosity'], [
+                        'Period', 'Tectonic regime'], [
+                            'Period', 'Netpay'], [
+                                'Lithology', 'Permeability'], [
+                                    'Lithology', 'Period'], [
+                                        'Lithology', 'Tectonic regime'], [
+                                            'Structural setting', 'Netpay'], [
+                                                'Netpay', 'Gross'], [
+                                                    'Porosity', 'Permeability'], [
+                                                        'Porosity', 'Depth'], [
+                                                            'Porosity', 'Netpay'], [
+                                                                'Permeability', 'Netpay']]
 
         self.assertEqual(hcd.skeleton["E"], right_edges)
 
@@ -184,14 +245,34 @@ class TestHillClimbDefiner(unittest.TestCase):
                                         descriptor=self.descriptor,
                                         scoring_function=("MI",))
 
-        hcd.restrict(data=pd.DataFrame(self.data), bl_add=None, init_nodes=None)
-        hcd.apply_group1(data=pd.DataFrame(self.data), progress_bar=False,
-                         init_edges=None, remove_init_edges=False, white_list=None)
+        hcd.restrict(
+            data=pd.DataFrame(
+                self.data),
+            bl_add=None,
+            init_nodes=None)
+        hcd.apply_group1(
+            data=pd.DataFrame(
+                self.data),
+            progress_bar=False,
+            init_edges=None,
+            remove_init_edges=False,
+            white_list=None)
 
-        right_edges = [['Lithology', 'Depth'], ['Period', 'Gross'], ['Netpay', 'Gross'], ['Period', 'Netpay'],
-                       ['Depth', 'Period'], ['Depth', 'Permeability'], ['Netpay', 'Permeability'],
-                       ['Period', 'Porosity'], ['Netpay', 'Porosity'], ['Permeability', 'Structural setting'],
-                       ['Netpay', 'Structural setting'], ['Period', 'Tectonic regime'], ['Netpay', 'Tectonic regime']]
+        right_edges = [
+            [
+                'Lithology', 'Depth'], [
+                'Period', 'Gross'], [
+                'Netpay', 'Gross'], [
+                    'Period', 'Netpay'], [
+                        'Depth', 'Period'], [
+                            'Depth', 'Permeability'], [
+                                'Netpay', 'Permeability'], [
+                                    'Period', 'Porosity'], [
+                                        'Netpay', 'Porosity'], [
+                                            'Permeability', 'Structural setting'], [
+                                                'Netpay', 'Structural setting'], [
+                                                    'Period', 'Tectonic regime'], [
+                                                        'Netpay', 'Tectonic regime']]
 
         self.assertEqual(hcd.skeleton["E"], right_edges)
 

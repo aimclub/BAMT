@@ -3,17 +3,24 @@ import os
 from bamt.config import config
 import warnings
 
-log_file_path = config.get('LOG', 'log_conf_loc', fallback='log_conf_path is not defined')
+log_file_path = config.get(
+    'LOG',
+    'log_conf_loc',
+    fallback='log_conf_path is not defined')
 
 if not os.path.isdir(os.path.join(os.path.expanduser("~"), 'BAMT')):
     os.mkdir(os.path.join(os.path.expanduser("~"), 'BAMT'))
 
 try:
     logging.config.fileConfig(log_file_path)
-except:
-    log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logging.conf')
+except BaseException:
+    log_file_path = os.path.join(
+        os.path.dirname(
+            os.path.abspath(__file__)),
+        'logging.conf')
     logging.config.fileConfig(log_file_path)
-    warnings.warn("Reading log path location from config file failed. Default location will be used instead.")
+    warnings.warn(
+        "Reading log path location from config file failed. Default location will be used instead.")
 
 logger_builder = logging.getLogger('builder')
 logger_network = logging.getLogger('network')

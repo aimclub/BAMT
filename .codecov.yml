@@ -1,0 +1,8 @@
+coverage:
+  status:
+    project:
+      default:
+        threshold: 1%
+    patch: false
+ignore:
+  - "bamt/external"  # external cannot be fully tested

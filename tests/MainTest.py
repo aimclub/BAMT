@@ -43,7 +43,8 @@ disc_bn.add_edges(data=discretized_data, scoring_function=('K2', K2Score))
 disc_bn.fit_parameters(data=disc_data)
 disc_bn.calculate_weights(discretized_data)
 disc_predicted_values = disc_bn.predict(test=disc_test_data)
-disc_predicted_values = pd.DataFrame.from_dict(disc_predicted_values, orient='columns')
+disc_predicted_values = pd.DataFrame.from_dict(
+    disc_predicted_values, orient='columns')
 synth_disc_data = disc_bn.sample(50)
 
 disc_bn.save('./disc_bn.json')
@@ -66,7 +67,8 @@ cont_bn.add_edges(data=discretized_data, scoring_function=('K2', K2Score))
 cont_bn.fit_parameters(data=cont_data)
 cont_bn.calculate_weights(discretized_data)
 cont_predicted_values = cont_bn.predict(test=cont_test_data)
-cont_predicted_values = pd.DataFrame.from_dict(cont_predicted_values, orient='columns')
+cont_predicted_values = pd.DataFrame.from_dict(
+    cont_predicted_values, orient='columns')
 synth_cont_data = cont_bn.sample(50)
 
 cont_bn.save('./cont_bn.json')
@@ -96,7 +98,8 @@ hybrid_bn2.fit_parameters(data=hybrid_data)
 hybrid_bn.calculate_weights(discretized_data)
 hybrid_bn2.calculate_weights(discretized_data)
 hybrid_predicted_values = hybrid_bn.predict(test=hybrid_test_data)
-hybrid_predicted_values = pd.DataFrame.from_dict(hybrid_predicted_values, orient='columns')
+hybrid_predicted_values = pd.DataFrame.from_dict(
+    hybrid_predicted_values, orient='columns')
 synth_hybrid_data = hybrid_bn.sample(50)
 synth_hybrid_data2 = hybrid_bn2.sample(50)
 

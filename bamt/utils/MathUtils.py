@@ -187,7 +187,10 @@ def get_proximity_matrix(df, proximity_metric) -> pd.DataFrame:
     return df_distance
 
 
-def get_brave_matrix(df_columns, proximity_matrix, n_nearest=5) -> pd.DataFrame:
+def get_brave_matrix(
+        df_columns,
+        proximity_matrix,
+        n_nearest=5) -> pd.DataFrame:
     """Returns matrix Brave coeffitients of the DataFrame, requires proximity measure to be calculated
 
     Args:
@@ -228,8 +231,8 @@ def get_brave_matrix(df_columns, proximity_matrix, n_nearest=5) -> pd.DataFrame:
 
                 if (a + c) * (b + d) != 0 and (a + b) * (c + d) != 0:
 
-                    br = (a * len(groups) + (a + c) * (a + b)) / ((math.sqrt((a + c) *
-                                                                             (b + d))) * (math.sqrt((a + b) * (c + d))))
+                    br = (a * len(groups) + (a + c) * (a + b)) / \
+                        ((math.sqrt((a + c) * (b + d))) * (math.sqrt((a + b) * (c + d))))
                 else:
                     br = (a * len(groups) + (a + c) * (a + b)) / 0.0000000001
                 brave_matrix.loc[c1, c2] = br

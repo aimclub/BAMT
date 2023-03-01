@@ -9,7 +9,8 @@ hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
      'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
 
 encoder = pp.LabelEncoder()
-discretizer = pp.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='uniform')
+discretizer = pp.KBinsDiscretizer(
+    n_bins=5, encode='ordinal', strategy='uniform')
 
 p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
 
