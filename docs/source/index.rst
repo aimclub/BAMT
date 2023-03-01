@@ -46,11 +46,17 @@ generating synthetic data, assessing edges strength e.t.c.
    api/utils.rst
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :hidden:
    :caption: Models
 
-   models/BayesianNetworks.rst
+   models/bayesiannetworks/base_network.rst
+   models/bayesiannetworks/discrete_bn.rst
+   models/bayesiannetworks/continuous_bn.rst
+   models/bayesiannetworks/hybrid_bn.rst
+   models/bayesiannetworks/sampling_predicting.rst
+   models/bayesiannetworks/large_bn_algs.rst
+   models/bayesiannetworks/models_storing.rst
 
 .. toctree::
    :maxdepth: 1
