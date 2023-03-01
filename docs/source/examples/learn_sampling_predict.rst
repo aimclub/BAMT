@@ -51,19 +51,25 @@ Prepocessing data, encode categorical features and discretize numerical features
     info
     bn.add_nodes(info)
 
-Learinig BN structure and with HillClimbing algorithm:
+Learning BN structure with HillClimbing algorithm:
 
 .. code-block:: python 
 
 
     bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
 
-Leatning distribution parameters and sampling data:
+Learning distribution parameters and sampling data:
 
 .. code-block:: python
 
     bn.fit_parameters(data)
     sampled_data = bn.sample(1000) # sample 1000 data points
+
+It is also possible to set where model should stores the data:
+
+.. code-block:: python
+
+    bn.sample(1000, models_dir = 'path/to/dir')
 
 Splitting data into train and test sets and droping target column:
 

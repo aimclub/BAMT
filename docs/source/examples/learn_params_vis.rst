@@ -13,11 +13,9 @@ Used imports:
     import matplotlib.pyplot as plt
 
     from sklearn import preprocessing
-    from sklearn.metrics import accuracy_score, mean_squared_error
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.tree import DecisionTreeClassifier
-    from sklearn.model_selection import train_test_split
 
     from pgmpy.estimators import K2Score
 
@@ -51,12 +49,16 @@ Prepocessing data, encode categorical features and discretize numerical features
     info
     bn.add_nodes(info)
 
-Learinig BN structure and with HillClimbing algorithm:
+Learinig BN structure and parameters with HillClimbing algorithm:
 
 .. code-block:: python 
 
 
     bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
+    bn_1.set_classifiers(classifiers={'age': DecisionTreeClassifier(),
+                                 'relation': RandomForestClassifier(),
+                                 'is_driver': KNeighborsClassifier(n_neighbors=2)})
+    bn.fit_parameters(data)
 
 Visualize BN structure:
 
