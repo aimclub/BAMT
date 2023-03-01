@@ -55,7 +55,7 @@ generating synthetic data, assessing edges strength e.t.c.
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: BN Algorithms
+   :caption: BN Theory
 
    bnalgs/bn_learning.rst
    bnalgs/big_bns.rst
