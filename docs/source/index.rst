@@ -46,7 +46,7 @@ generating synthetic data, assessing edges strength e.t.c.
    api/utils.rst
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :hidden:
    :caption: Models
 
