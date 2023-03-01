@@ -64,6 +64,13 @@ generating synthetic data, assessing edges strength e.t.c.
 .. toctree::
     :maxdepth: 1
     :hidden:
+    :caption: Data
+    
+    data_section/data_management.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
     :caption: Examples, workflow pipelines
 
     examples/learn_save.rst
