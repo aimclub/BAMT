@@ -31,7 +31,7 @@ The second one is to set it maually using list of edges:
 
     bn.set_structure(edges=structure)
 
-The next step is to learn parameters from data, to do this we need to read the data:
+The next step is to learn parameters from data, to do this we need to read the data and perform parameters learning:
 
 .. code-block:: python
     

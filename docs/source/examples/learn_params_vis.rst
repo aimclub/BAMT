@@ -55,7 +55,7 @@ Learinig BN structure and parameters with HillClimbing algorithm:
 
 
     bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
-    bn_1.set_classifiers(classifiers={'age': DecisionTreeClassifier(),
+    bn.set_classifiers(classifiers={'age': DecisionTreeClassifier(),
                                  'relation': RandomForestClassifier(),
                                  'is_driver': KNeighborsClassifier(n_neighbors=2)})
     bn.fit_parameters(data)
