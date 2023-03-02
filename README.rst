@@ -195,46 +195,7 @@ Citation
   publisher={MDPI}
 }
 
-@inproceedings{deeva2021oil,
-  title={Oil and Gas Reservoirs Parameters Analysis Using Mixed Learning of Bayesian Networks},
-  author={Deeva, Irina and Bubnova, Anna and Andriushchenko, Petr and Voskresenskiy, Anton and Bukhanov, Nikita and Nikitin, Nikolay O and Kalyuzhnaya, Anna V},
-  booktitle={Computational Science--ICCS 2021: 21st International Conference, Krakow, Poland, June 16--18, 2021, Proceedings, Part I},
-  pages={394--407},
-  year={2021},
-  organization={Springer}
-}
 
-
-
-@article{bubnova2021mixbn,
-  title={MIxBN: Library for learning Bayesian networks from mixed data},
-  author={Bubnova, Anna V and Deeva, Irina and Kalyuzhnaya, Anna V},
-  journal={Procedia Computer Science},
-  volume={193},
-  pages={494--503},
-  year={2021},
-  publisher={Elsevier}
-}
-
-
-
-@inproceedings{deeva2020bayesian,
-  title={Bayesian Networks-based personal data synthesis},
-  author={Deeva, Irina and Andriushchenko, Petr D and Kalyuzhnaya, Anna V and Boukhanovsky, Alexander V},
-  booktitle={Proceedings of the 6th EAI International Conference on Smart Objects and Technologies for Social Good},
-  pages={6--11},
-  year={2020}
-}
-
-@article{kaminsky2022bigbravebn,
-  title={BigBraveBN: algorithm of structural learning for bayesian networks with a large number of nodes},
-  author={Kaminsky, Yury and Deeva, Irina},
-  journal={Procedia Computer Science},
-  volume={212},
-  pages={191--200},
-  year={2022},
-  publisher={Elsevier}
-}
 
 
 .. |docs| image:: https://readthedocs.org/projects/bamt/badge/?version=latest
