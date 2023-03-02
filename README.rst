@@ -269,8 +269,8 @@ Citation
 .. |downloads_weekly| image:: https://static.pepy.tech/personalized-badge/bamt?period=week&units=international_system&left_color=grey&right_color=blue&left_text=downloads/week
  :target: https://pepy.tech/project/bamt
 
-.. |Build| image:: https://github.com/NSS-lab-team/BAMT/actions/workflows/bamtcodecov.yml/badge.svg
-    :target: https://github.com/NSS-lab-team/BAMT/actions/workflows/bamtcodecov.yml
+.. |Build| image:: https://github.com/ITMO-NSS-team/BAMT/actions/workflows/bamtcodecov.yml/badge.svg
+   :target: https://github.com/ITMO-NSS-team/BAMT/actions/workflows/bamtcodecov.yml
 
-.. |coverage| image:: https://codecov.io/gh/NSS-lab-team/BAMT/branch/master/graph/badge.svg
- :target: https://codecov.io/gh/NSS-lab-team/BAMT
+.. |coverage| image:: https://codecov.io/github/ITMO-NSS-team/BAMT/branch/master/graph/badge.svg?token=9ZX37JNIYZ 
+   :target: https://codecov.io/github/ITMO-NSS-team/BAMT
