@@ -95,7 +95,7 @@ class BaseNetwork(object):
             return None
         self.descriptor = descriptor
         # LEVEL 1
-        worker_1 = Builders.VerticesDefiner(descriptor)
+        worker_1 = Builders.VerticesDefiner(descriptor, regressor=None)
         self.nodes = worker_1.vertices
 
     def add_edges(self,
@@ -105,14 +105,15 @@ class BaseNetwork(object):
                                           Tuple[str]],
                   progress_bar: bool = True,
                   classifier: Optional[object] = None,
+                  regressor: Optional[object] = None,
                   params: Optional[ParamDict] = None,
                   optimizer: str = 'HC'):
         """
         Base function for Structure learning
-        scoring_function: tuple with following format (NAME, scoring_function) or (NAME,)
+        scoring_function: tuple with the following format (NAME, scoring_function) or (NAME,)
         Params:
         init_edges: list of tuples, a graph to start learning with
-        remove_init_edges: allows changes in model defined by user
+        remove_init_edges: allows changes in a model defined by user
         white_list: list of allowed edges
         """
         if not self.has_logit and classifier:
@@ -150,7 +151,8 @@ class BaseNetwork(object):
                 descriptor=self.descriptor,
                 scoring_function=scoring_function,
                 has_logit=self.has_logit,
-                use_mixture=self.use_mixture)
+                use_mixture=self.use_mixture,
+                regressor=regressor)
 
             self.sf_name = scoring_function[0]
 
@@ -158,6 +160,7 @@ class BaseNetwork(object):
                 data=data,
                 params=params,
                 classifier=classifier,
+                regressor=regressor,
                 progress_bar=progress_bar)
 
             # update family
@@ -284,13 +287,13 @@ class BaseNetwork(object):
             self.set_edges(edges=edges)
             if overwrite:
                 builder = Builders.VerticesDefiner(
-                    descriptor=self.descriptor)  # init worker
+                    descriptor=self.descriptor, regressor=None)  # init worker
                 builder.skeleton['V'] = builder.vertices  # 1 stage
                 builder.skeleton['E'] = self.edges
                 builder.get_family()
                 if self.edges:
                     builder.overwrite_vertex(
-                        has_logit=self.has_logit, use_mixture=self.use_mixture)
+                        has_logit=self.has_logit, use_mixture=self.use_mixture, classifier=None, regressor=None)
                     self.set_nodes(nodes=builder.skeleton['V'])
                 else:
                     logger_network.error("Empty set of edges")
@@ -435,25 +438,24 @@ class BaseNetwork(object):
 
     def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
         """
-        Base function for parameters learning
+        Base function for parameter learning
         """
         if dropna:
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)
 
-        if self.has_logit:
-            if any(['Logit' or "Gaussian" in node.type for node in self.nodes]):
-                if not os.path.isdir(STORAGE):
-                    os.makedirs(STORAGE)
 
-                # init folder
-                if not os.listdir(STORAGE):
-                    os.makedirs(os.path.join(STORAGE, "0"))
+        if not os.path.isdir(STORAGE):
+            os.makedirs(STORAGE)
 
-                index = sorted(
-                    [int(id) for id in os.listdir(STORAGE)]
-                )[-1] + 1
-                os.makedirs(os.path.join(STORAGE, str(index)))
+        # init folder
+        if not os.listdir(STORAGE):
+            os.makedirs(os.path.join(STORAGE, "0"))
+
+        index = sorted(
+            [int(id) for id in os.listdir(STORAGE)]
+        )[-1] + 1
+        os.makedirs(os.path.join(STORAGE, str(index)))
 
         # Turn all discrete values to str for learning algorithm
         if 'disc_num' in self.descriptor['types'].values():
@@ -713,7 +715,7 @@ class BaseNetwork(object):
     def plot(self, output: str):
         """
         Visualize a Bayesian Network. Result will be saved
-        in parent directory in folder visualization_result.
+        in the parent directory in folder visualization_result.
         output: str name of output file
         """
         if not output.endswith('.html'):
