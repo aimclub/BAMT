@@ -4,7 +4,7 @@ from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 from bamt.redef_HC import hc as hc_method
 
-from bamt import nodes
+from bamt.nodes import *
 from bamt.log import logger_builder
 from pandas import DataFrame
 from bamt.utils import GraphUtils as gru
@@ -30,11 +30,10 @@ class StructureBuilder(object):
         """
         :param descriptor: a dict with types and signs of nodes
         Attributes:
-        Skeleton: dict;
         black_list: a list with restricted connections;
         """
-        self.skeleton = {'V': None,
-                         'E': None}
+        self.skeleton = {'V': [],
+                         'E': []}
         self.descriptor = descriptor
 
         self.has_logit = bool
@@ -54,7 +53,6 @@ class StructureBuilder(object):
         datacol = data.columns.to_list()
 
         if not self.has_logit:
-
             # Has_logit flag allows BN building edges between cont and disc
             RESTRICTIONS = [('cont', 'disc'), ('cont', 'disc_num')]
             for x, y in itertools.product(datacol, repeat=2):
@@ -120,23 +118,23 @@ class VerticesDefiner(StructureBuilder):
         Automatically creates a list of nodes
         """
         super(VerticesDefiner, self).__init__(descriptor=descriptor)
-        # Notice that vertices is used only by Builders
+        # Notice that vertices are used only by Builders
         self.vertices = []
 
-        Node = None
+        node = None
         # LEVEL 1: Define a general type of node: Discrete or Gaussian
         for vertex, type in self.descriptor['types'].items():
             if type in ['disc_num', 'disc']:
-                Node = nodes.DiscreteNode(name=vertex)
+                node = discrete_node.DiscreteNode(name=vertex)
             elif type == 'cont':
-                Node = nodes.GaussianNode(name=vertex)
+                node = gaussian_node.GaussianNode(name=vertex)
             else:
                 msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
                 logger_builder.error(msg)
                 continue
 
-            self.vertices.append(Node)
+            self.vertices.append(node)
 
     def overwrite_vertex(
             self,
@@ -155,27 +153,27 @@ class VerticesDefiner(StructureBuilder):
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
                         if not node_instance.disc_parents:
-                            Node = nodes.LogitNode(
+                            Node = logit_node.LogitNode(
                                 name=node_instance.name, classifier=classifier)
 
                         elif node_instance.disc_parents:
-                            Node = nodes.ConditionalLogitNode(
+                            Node = conditional_logit_node.ConditionalLogitNode(
                                 name=node_instance.name, classifier=classifier)
 
             if use_mixture:
                 if 'Gaussian' in node_instance.type:
                     if not node_instance.disc_parents:
-                        Node = nodes.MixtureGaussianNode(
+                        Node = mixture_gaussian_node.MixtureGaussianNode(
                             name=node_instance.name)
                     elif node_instance.disc_parents:
-                        Node = nodes.ConditionalMixtureGaussianNode(
+                        Node = conditional_mixture_gaussian_node.ConditionalMixtureGaussianNode(
                             name=node_instance.name)
                     else:
                         continue
             else:
                 if 'Gaussian' in node_instance.type:
                     if node_instance.disc_parents:
-                        Node = nodes.ConditionalGaussianNode(
+                        Node = conditional_gaussian_node.ConditionalGaussianNode(
                             name=node_instance.name)
                     else:
                         continue
@@ -205,9 +203,9 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
         """
         :param scoring_function: a tuple with following format (Name, scoring_function)
         """
-        # if len(scoring_function) == 2:
-        #     if callable(scoring_function[1]):
-        #         logger_builder.error("Cannot call scoring function")
+        if len(scoring_function) == 2:
+            if not callable(scoring_function[1]):
+                logger_builder.error("Cannot call scoring function")
 
         self.scoring_function = scoring_function
         self.optimizer = HillClimbSearch(data)
@@ -221,20 +219,21 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
     def apply_K2(self,
                  data: DataFrame,
                  init_edges: Optional[List[Tuple[str,
-                                                 str]]],
+                 str]]],
                  progress_bar: bool,
                  remove_init_edges: bool,
                  white_list: Optional[List[Tuple[str,
-                                                 str]]]):
+                 str]]]):
         """
         :param init_edges: list of tuples, a graph to start learning with
-        :param remove_init_edges: allows changes in model defined by user
+        :param remove_init_edges: allows changes in a model defined by user
+        :param data: user's data
         :param progress_bar: verbose regime
         :param white_list: list of allowed edges
         """
         import bamt.utils.GraphUtils as gru
         if not all([i in ['disc', 'disc_num']
-                   for i in gru.nodes_types(data).values()]):
+                    for i in gru.nodes_types(data).values()]):
             logger_builder.error(
                 f"K2 deals only with discrete data. Continuous data: {[col for col, type in gru.nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
             return None
@@ -278,13 +277,13 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                      data: DataFrame,
                      progress_bar: bool,
                      init_edges: Optional[List[Tuple[str,
-                                                     str]]],
+                     str]]],
                      remove_init_edges: bool,
                      white_list: Optional[List[Tuple[str,
-                                                     str]]]):
+                     str]]]):
         # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
         column_name_dict = dict([(n.name, i)
-                                for i, n in enumerate(self.vertices)])
+                                 for i, n in enumerate(self.vertices)])
         blacklist_new = []
         for pair in self.black_list:
             blacklist_new.append(

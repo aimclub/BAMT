@@ -9,7 +9,10 @@ import logging
 import pandas as pd
 
 import bamt.networks as Nets
-from bamt.nodes import GaussianNode, DiscreteNode, LogitNode
+
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.logit_node import LogitNode
 
 logging.getLogger("network").setLevel(logging.CRITICAL)
 

@@ -6,7 +6,8 @@ import logging
 import pandas as pd
 
 import bamt.builders as builders
-from bamt.nodes import GaussianNode, DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.nodes.discrete_node import DiscreteNode
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)
 
@@ -99,7 +100,7 @@ class TestVerticesDefiner(unittest.TestCase):
                                         name="Node7")])
 
     def test_overwrite_vetrex(self):
-        self.assertEqual(self.VD.skeleton, {'V': None, 'E': None})
+        self.assertEqual(self.VD.skeleton, {'V': [], 'E': []})
 
         def reload():
             self.VD.skeleton['V'] = self.VD.vertices

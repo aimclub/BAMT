@@ -3,16 +3,14 @@ import logging
 import pandas as pd
 import numpy as np
 
-import bamt.nodes as nodes
-
+from bamt.nodes import *
 logging.getLogger("nodes").setLevel(logging.CRITICAL)
 
 
 class TestBaseNode(unittest.TestCase):
-
     def test_equality(self):
-        test = nodes.BaseNode(name="node0")
-        first = nodes.BaseNode(name="node1")
+        test = base.BaseNode(name="node0")
+        first = base.BaseNode(name="node1")
 
         test_clone = test
 
@@ -61,7 +59,7 @@ class TestBaseNode(unittest.TestCase):
 class TestDiscreteNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = nodes.DiscreteNode(name="test")
+        self.node = discrete_node.DiscreteNode(name="test")
         self.data_dict = {
             "node0": np.random.normal(0, 4, 30),
             "node1": np.random.normal(0, .1, 30),
@@ -106,7 +104,7 @@ class TestDiscreteNode(unittest.TestCase):
 class TestGaussianNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = nodes.GaussianNode(name="test")
+        self.node = gaussian_node.GaussianNode(name="test")
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),
@@ -123,7 +121,7 @@ class TestGaussianNode(unittest.TestCase):
         self.node.children = ["node6"]
 
     def test_fit_parameters(self):
-        node_without_parents = nodes.GaussianNode(name="foster-son")
+        node_without_parents = gaussian_node.GaussianNode(name="foster-son")
         node_without_parents.children = ["node6", "node5"]
 
         params_parents = self.node.fit_parameters(
@@ -159,7 +157,7 @@ class TestGaussianNode(unittest.TestCase):
 class TestConditionalGaussianNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = nodes.ConditionalGaussianNode(name="test")
+        self.node = conditional_gaussian_node.ConditionalGaussianNode(name="test")
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),
@@ -176,7 +174,7 @@ class TestConditionalGaussianNode(unittest.TestCase):
         self.node.children = ["node6"]
 
     def test_fit_parameters(self):
-        node_without_parents = nodes.ConditionalGaussianNode(name="foster-son")
+        node_without_parents = conditional_gaussian_node.ConditionalGaussianNode(name="foster-son")
         node_without_parents.children = ["node6", "node5"]
 
         params_parents = self.node.fit_parameters(
@@ -227,7 +225,7 @@ class TestConditionalGaussianNode(unittest.TestCase):
 class TestMixtureGaussianNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = nodes.MixtureGaussianNode(name="test")
+        self.node = mixture_gaussian_node.MixtureGaussianNode(name="test")
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),
@@ -264,7 +262,7 @@ class TestMixtureGaussianNode(unittest.TestCase):
 class TestConditionalMixtureGaussianNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = nodes.ConditionalMixtureGaussianNode(name="test")
+        self.node = conditional_mixture_gaussian_node.ConditionalMixtureGaussianNode(name="test")
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),
@@ -310,7 +308,7 @@ class TestConditionalMixtureGaussianNode(unittest.TestCase):
 class TestLogitNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = nodes.LogitNode(name="test")
+        self.node = logit_node.LogitNode(name="test")
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),

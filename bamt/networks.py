@@ -22,7 +22,8 @@ from bamt.utils.MathUtils import get_brave_matrix, get_proximity_matrix
 # from bamt import Builders, Nodes
 
 import bamt.builders as Builders
-import bamt.nodes as Nodes
+# import bamt.nodes as Nodes
+from bamt.nodes.base import BaseNode
 
 # from bamt.Preprocessors import Preprocessor
 
@@ -57,7 +58,7 @@ class BaseNetwork(object):
     def nodes_names(self) -> List[str]:
         return [node.name for node in self.nodes]
 
-    def __getitem__(self, node_name: str) -> Type[Nodes.BaseNode]:
+    def __getitem__(self, node_name: str) -> Type[BaseNode]:
         if node_name in self.nodes_names:
             index = self.nodes_names.index(node_name)
             return self.nodes[index]
@@ -101,8 +102,8 @@ class BaseNetwork(object):
     def add_edges(self,
                   data: pd.DataFrame,
                   scoring_function: Union[Tuple[str,
-                                                Callable],
-                                          Tuple[str]],
+                  Callable],
+                  Tuple[str]],
                   progress_bar: bool = True,
                   classifier: Optional[object] = None,
                   params: Optional[ParamDict] = None,
@@ -129,9 +130,9 @@ class BaseNetwork(object):
                     params["init_edges"]]
                 )
                 failed = (
-                    (type_map[:, 0] == "cont") &
-                    ((type_map[:, 1] == "disc") |
-                     (type_map[:, 1] == "disc_num"))
+                        (type_map[:, 0] == "cont") &
+                        ((type_map[:, 1] == "disc") |
+                         (type_map[:, 1] == "disc_num"))
                 )
                 if sum(failed):
                     logger_network.warning(
@@ -170,7 +171,7 @@ class BaseNetwork(object):
         """
         import bamt.utils.GraphUtils as gru
         if not all([i in ['disc', 'disc_num']
-                   for i in gru.nodes_types(discretized_data).values()]):
+                    for i in gru.nodes_types(discretized_data).values()]):
             logger_network.error(
                 f"calculate_weghts() method deals only with discrete data. Continuous data: " +
                 f"{[col for col, type in gru.nodes_types(discretized_data).items() if type not in ['disc', 'disc_num']]}")
@@ -222,12 +223,12 @@ class BaseNetwork(object):
         self.nodes = []
         for node in nodes:
             try:
-                assert issubclass(type(node), Nodes.BaseNode)
+                assert issubclass(type(node), BaseNode)
                 self.nodes.append(node)
                 continue
             except AssertionError:
                 logger_network.error(
-                    f"{node} is not an instance of {Nodes.BaseNode}")
+                    f"{node} is not an instance of {BaseNode}")
                 continue
             except TypeError:
                 logger_network.error(f"TypeError : {node.__class__}")
@@ -274,10 +275,10 @@ class BaseNetwork(object):
         Function to set structure manually
         info: Descriptor
         nodes, edges:
-        overwrite: use 2 stage of defining or not
+        overwrite: use 2nd stage of defining or not
         """
         if nodes and (
-            info or (
+                info or (
                 self.descriptor["types"] and self.descriptor["signs"])):
             self.set_nodes(nodes=nodes, info=info)
         if edges:
@@ -412,17 +413,17 @@ class BaseNetwork(object):
                     # Since we don't have information about types of nodes, we
                     # should derive it from parameters.
                     if any(list(node_keys.keys()) == ["covars", "mean", "coef"]
-                            for node_keys in node_data['hybcprob'].values()):
+                           for node_keys in node_data['hybcprob'].values()):
                         raise CompatibilityError("use_mixture")
 
         if not self.has_logit:
             if not all(
-                ob1 == [
-                    ob2[0],
-                    ob2[1]] for ob1,
-                ob2 in zip(
-                    input_dict['edges'],
-                    self.edges)):
+                    ob1 == [
+                        ob2[0],
+                        ob2[1]] for ob1,
+                    ob2 in zip(
+                        input_dict['edges'],
+                        self.edges)):
                 raise CompatibilityError("has_logit")
 
         self.set_parameters(parameters=input_dict['parameters'])
@@ -550,9 +551,9 @@ class BaseNetwork(object):
                                 else:
                                     model_type = "classifier"
                                 if obj_data["serialization"] == 'joblib' and obj_data[
-                                        f"{model_type}_obj"]:
+                                    f"{model_type}_obj"]:
                                     new_path = models_dir + \
-                                        f"\\{node.name.replace(' ', '_')}\\{obj}.joblib.compressed"
+                                               f"\\{node.name.replace(' ', '_')}\\{obj}.joblib.compressed"
                                     node_data["hybcprob"][obj][f"{model_type}_obj"] = new_path
 
                     if predict:
@@ -593,9 +594,9 @@ class BaseNetwork(object):
                 test: pd.DataFrame,
                 parall_count: int = 1,
                 progress_bar: bool = True) -> Dict[str,
-                                                   Union[List[str],
-                                                         List[int],
-                                                         List[float]]]:
+    Union[List[str],
+    List[int],
+    List[float]]]:
         """
         Function to predict columns from given data.
         Note that train data and test data must have different columns.
@@ -776,7 +777,7 @@ class BaseNetwork(object):
                 cls = name2class[name]
                 color = class2color[cls]
                 network.add_node(name, label=name, color=color, size=45, level=level, font={
-                                 'size': 36}, title=f'Узел байесовской сети {name} ({cls})')
+                    'size': 36}, title=f'Узел байесовской сети {name} ({cls})')
 
         for edge in G.edges:
             network.add_edge(edge[0], edge[1])
@@ -833,7 +834,7 @@ class HybridBN(BaseNetwork):
         types = descriptor['types']
         s = set(types.values())
         return True if ({'cont', 'disc', 'disc_num'} == s) or (
-            {'cont', 'disc'} == s) or ({'cont', 'disc_num'} == s) else False
+                {'cont', 'disc'} == s) or ({'cont', 'disc_num'} == s) else False
 
 
 class BigBraveBN:
