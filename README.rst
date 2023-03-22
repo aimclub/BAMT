@@ -5,7 +5,9 @@
 .. start-badges
 .. list-table::
    :stub-columns: 1
-
+   
+   * - team
+     - | |ITMO| |NCCR| 
    * - package
      - | |pypi| |py_8| |py_9| |py_10|
    * - tests
@@ -201,6 +203,10 @@ Citation
 .. |docs| image:: https://readthedocs.org/projects/bamt/badge/?version=latest
     :target: https://bamt.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
+   
+.. |ITMO| image:: https://raw.githubusercontent.com/ITMO-NSS-team/open-source-ops/cd771018e80e9164f7b661bd2191061ab58f94de/badges/ITMO_badge.svg
+
+.. |NCCR| image:: https://raw.githubusercontent.com/ITMO-NSS-team/open-source-ops/cd771018e80e9164f7b661bd2191061ab58f94de/badges/NCCR_badge.svg
 
 .. |pypi| image:: https://badge.fury.io/py/bamt.svg
     :target: https://badge.fury.io/py/bamt
