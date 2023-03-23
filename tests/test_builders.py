@@ -83,7 +83,7 @@ class TestVerticesDefiner(unittest.TestCase):
                                      "Node7": "disc_num"},
                            "signs": {"Node0": "pos", "Node1": "neg"}}
 
-        self.VD = builders.VerticesDefiner(descriptor=self.descriptor)
+        self.VD = builders.VerticesDefiner(descriptor=self.descriptor, regressor=None)
 
     def test_first_level(self):
         self.assertEqual(
@@ -165,7 +165,9 @@ class TestVerticesDefiner(unittest.TestCase):
             reload()
             self.VD.overwrite_vertex(
                 has_logit=has_logit,
-                use_mixture=use_mixture)
+                use_mixture=use_mixture,
+                classifier=None,
+                regressor=None)
             self.assertEqual(
                 {
                     node.name: node.type for node in self.VD.skeleton["V"]},
