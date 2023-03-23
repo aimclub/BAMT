@@ -9,3 +9,4 @@ __pycache__/
 tests/bamt
 tutorials/Test.ipynb
 tutorials/bamt
+.DS_Store
