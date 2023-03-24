@@ -209,9 +209,6 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
         """
         :param scoring_function: a tuple with following format (Name, scoring_function)
         """
-        # if len(scoring_function) == 2:
-        #     if callable(scoring_function[1]):
-        #         logger_builder.error("Cannot call scoring function")
 
         self.scoring_function = scoring_function
         self.optimizer = HillClimbSearch(data)
@@ -286,7 +283,7 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
                      remove_init_edges: bool,
                      white_list: Optional[List[Tuple[str,
                                                      str]]]):
-        # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
+
         column_name_dict = dict([(n.name, i)
                                 for i, n in enumerate(self.vertices)])
         blacklist_new = []

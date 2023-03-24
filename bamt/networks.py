@@ -8,7 +8,6 @@ import numpy as np
 import json
 import os
 
-# from sklearn import preprocessing as pp
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from pyvis.network import Network
@@ -19,12 +18,10 @@ from bamt.builders import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
 from bamt.utils.MathUtils import get_brave_matrix, get_proximity_matrix
-# from bamt import Builders, Nodes
 
 import bamt.builders as Builders
 import bamt.nodes as Nodes
 
-# from bamt.Preprocessors import Preprocessor
 
 STORAGE = config.get('NODES', 'models_storage',
                      fallback='models_storage is not defined')
@@ -315,14 +312,11 @@ class BaseNetwork(object):
     def set_parameters(self, parameters: Dict):
         if not self.nodes:
             logger_network.error("Failed on search of BN's nodes.")
-        # elif self._param_validation(parameters):
-        # pass
 
         self.distributions = parameters
 
         for node, data in self.distributions.items():
             if "hybcprob" in data.keys():
-                # first_item = next(iter(data["hybcprob"].values()))
                 if "mixture" in self[node].type.lower():
                     continue
                 else:
@@ -654,9 +648,6 @@ class BaseNetwork(object):
 
         preds = {column_name: list() for column_name in columns}
 
-        # processed_list = Parallel(n_jobs=parall_count)(
-        # delayed(wrapper)(self, test.loc[[i]], columns) for i in
-        # tqdm(test.index, position=0, leave=True))
 
         if progress_bar:
             processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(
@@ -669,9 +660,6 @@ class BaseNetwork(object):
             curr_pred = processed_list[i]
             for n, key in enumerate(columns):
                 preds[key].append(curr_pred[key][0])
-
-        # for column in columns:
-        #     preds[column] = [k for k in preds[column] if not pd.isna(k)]
 
         return preds
 

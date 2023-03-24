@@ -1,8 +1,3 @@
-# from bayesian.redef_info_scores import BIC_local
-# import os,sys,inspect
-# currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-# parentdir = os.path.dirname(currentdir)
-# sys.path.insert(0,parentdir)
 import sys
 import numpy as np
 import pandas as pd
@@ -101,7 +96,6 @@ def log_likelihood(bn, data, method='LL'):
     ent_scores = [entropy(data[:, bn.V.index(rv)], method=method)
                   for rv in bn.nodes()]
     return NROW * (sum(mi_scores) - sum(ent_scores))
-    # return ((1/nrow)*(np.sum(np.log((1e+7+bn.flat_cpt())))))
 
 
 def log_lik_local(data, method='LL'):
@@ -117,8 +111,6 @@ def log_lik_local(data, method='LL'):
             return (NROW * (mutual_information(data, method=method) -
                     entropy(data[:, 0], method=method)))
 
-    # return ((1/nrow)*(np.sum(np.log((1e+7+bn.flat_cpt())))))
-
 
 def BIC_local(data, method='BIC'):
     NROW = data.shape[0]
@@ -126,7 +118,6 @@ def BIC_local(data, method='BIC'):
     try:
         penalty = 0.5 * num_params(data) * np.log(NROW)
     except OverflowError as err:
-        # print(data)
         penalty = sys.float_info.max
     return log_score - penalty
 
