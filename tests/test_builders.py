@@ -83,7 +83,8 @@ class TestVerticesDefiner(unittest.TestCase):
                                      "Node7": "disc_num"},
                            "signs": {"Node0": "pos", "Node1": "neg"}}
 
-        self.VD = builders.VerticesDefiner(descriptor=self.descriptor, regressor=None)
+        self.VD = builders.VerticesDefiner(
+            descriptor=self.descriptor, regressor=None)
 
     def test_first_level(self):
         self.assertEqual(

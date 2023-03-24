@@ -290,7 +290,10 @@ class BaseNetwork(object):
                 builder.get_family()
                 if self.edges:
                     builder.overwrite_vertex(
-                        has_logit=self.has_logit, use_mixture=self.use_mixture, classifier=None, regressor=None)
+                        has_logit=self.has_logit,
+                        use_mixture=self.use_mixture,
+                        classifier=None,
+                        regressor=None)
                     self.set_nodes(nodes=builder.skeleton['V'])
                 else:
                     logger_network.error("Empty set of edges")
@@ -437,7 +440,6 @@ class BaseNetwork(object):
         if dropna:
             data = data.dropna()
             data.reset_index(inplace=True, drop=True)
-
 
         if not os.path.isdir(STORAGE):
             os.makedirs(STORAGE)
@@ -647,7 +649,6 @@ class BaseNetwork(object):
             return {}
 
         preds = {column_name: list() for column_name in columns}
-
 
         if progress_bar:
             processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(
