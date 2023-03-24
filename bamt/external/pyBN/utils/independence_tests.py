@@ -1,6 +1,6 @@
 """
 ******************************
-Conditional Independence Tests 
+Conditional Independence Tests
 for Constraint-based Learning
 ******************************
 
@@ -10,7 +10,7 @@ Implemented Constraint-based Tests
 - Pearson's X^2
 
 I may consider putting this code into its own class structure. The
-main benefit I could see from doing this would be the ability to 
+main benefit I could see from doing this would be the ability to
 cache joint/marginal/conditional probabilities for expedited tests.
 
 """
@@ -43,7 +43,7 @@ def mutual_information(data, conditional=False):
         PxPy += 1e-7
         MI = np.sum(Pxy * np.log(Pxy / (PxPy)))
         return round(MI, 4)
-    elif len(bins) > 2 and conditional == True:
+    elif len(bins) > 2 and conditional:
         # CHECK FOR > 3 COLUMNS -> concatenate Z into one column
         if len(bins) > 3:
             data = data.astype('str')
@@ -93,6 +93,7 @@ def mutual_information(data, conditional=False):
         PxPy += 1e-7
         MI = np.sum(Pxy * np.log(Pxy / (PxPy)))
         return round(MI, 4)
+
 
 def entropy(data):
     """
