@@ -30,17 +30,18 @@ Design Specs
             - list of rv's children -
 Notes
 -----
-- Edges can be inferred from Factorization, but Vertex values 
+- Edges can be inferred from Factorization, but Vertex values
     must be specified.
 """
 
 __author__ = """Nicholas Cullen <ncullen.th@dartmouth.edu>"""
 
-from copy import copy, deepcopy
+from copy import deepcopy
 
 import numpy as np
 from bamt.external.pyBN.utils.class_equivalence import are_class_equivalent
 from bamt.external.pyBN.utils.graph import topsort
+
 
 class BayesNet(object):
     """
@@ -56,29 +57,29 @@ class BayesNet(object):
         ---------
         *V* : a list of strings - vertices in topsort order
         *E* : a dict, where key = vertex, val = list of its children
-        *F* : a dict, 
-            where key = rv, 
+        *F* : a dict,
+            where key = rv,
             val = another dict with
-                keys = 
-                    'parents', 
-                    'values', 
+                keys =
+                    'parents',
+                    'values',
                     'cpt'
 
-        *V* : a dict        
+        *V* : a dict
 
         Notes
         -----
-        
+
         """
         if file is not None:
             import pyBN.io.read as ior
             bn = ior.read_bn(file)
             self.V = bn.V
             self.E = bn.E
-            self.F = bn.F        
+            self.F = bn.F
         else:
             if E is not None:
-                #assert (value_dict is not None), 'Must set values if E is set.'
+                # assert (value_dict is not None), 'Must set values if E is set.'
                 self.set_structure(E, value_dict)
             else:
                 self.V = []
@@ -99,7 +100,7 @@ class BayesNet(object):
         Allows BayesNet objects to be used
         as keys in a dictionary (i.e. hashable)
         """
-        return hash((str(self.V),str(self.E)))
+        return hash((str(self.V), str(self.E)))
 
     def copy(self):
         V = deepcopy(self.V)
@@ -119,28 +120,27 @@ class BayesNet(object):
 
     def add_node(self, rv, cpt=[], parents=[], values=[]):
         self.V.append(rv)
-        self.F[rv] = {'cpt':cpt,'parents':parents,'values':values}
+        self.F[rv] = {'cpt': cpt, 'parents': parents, 'values': values}
 
     def add_edge(self, u, v):
         if not self.has_node(u):
             self.add_node(u)
         if not self.has_node(v):
             self.add_node(v)
-        if self.has_edge(u,v):
+        if self.has_edge(u, v):
             print('Edge already exists')
         else:
             self.E[u].append(v)
             self.F[v]['parents'].append(u)
-        #self.V = topsort(self.E)
+        # self.V = topsort(self.E)
         # HOW DO I RECALCULATE CPT?
-
 
     def remove_edge(self, u, v):
         self.E[u].remove(v)
         self.F[v]['parents'].remove(u)
 
     def reverse_arc(self, u, v):
-        if self.has_edge(u,v):
+        if self.has_edge(u, v):
             self.E[u].remove(v)
             self.E[v].append(u)
 
@@ -176,7 +176,8 @@ class BayesNet(object):
     def edges(self):
         for u in self.nodes():
             for v in self.E[u]:
-                yield (u,v)
+                yield (u, v)
+
     def num_edges(self):
         num = 0
         for u in self.nodes():
@@ -190,7 +191,7 @@ class BayesNet(object):
         return num
 
     def scope_size(self, rv):
-        return len(self.F[rv]['parents'])+1
+        return len(self.F[rv]['parents']) + 1
 
     def num_nodes(self):
         return len(self.V)
@@ -219,14 +220,14 @@ class BayesNet(object):
         return self.F[rv]['values']
 
     def value_idx(self, rv, val):
-        try:   
+        try:
             return self.F[rv]['values'].index(val)
         except ValueError:
             print("Value Index Error")
             return -1
 
     def stride(self, rv, n):
-        if n==rv:
+        if n == rv:
             return 1
         else:
             card_list = [self.card(rv)]
@@ -242,9 +243,11 @@ class BayesNet(object):
         if by_var:
             cpt = np.array([sum(self.cpt(rv)) for rv in self.nodes()])
         elif by_parents:
-            cpt = np.array([sum(self.cpt(rv)[i:(i+self.card(rv))]) for rv in self.nodes() for i in range(len(self.cpt(rv))/self.card(rv))])
+            cpt = np.array([sum(self.cpt(rv)[i:(i + self.card(rv))])
+                           for rv in self.nodes() for i in range(len(self.cpt(rv)) / self.card(rv))])
         else:
-            cpt = np.array([val for rv in self.nodes() for val in self.cpt(rv)])
+            cpt = np.array([val for rv in self.nodes()
+                           for val in self.cpt(rv)])
         return cpt
 
     def cpt_indices(self, target, val_dict):
@@ -267,20 +270,21 @@ class BayesNet(object):
             key=rv,val=rv value
 
         """
-        stride = dict([(n,self.stride(target,n)) for n in self.scope(target)])
-        #if len(val_dict)==len(self.parents(target)):
+        stride = dict([(n, self.stride(target, n))
+                      for n in self.scope(target)])
+        # if len(val_dict)==len(self.parents(target)):
         #    idx = sum([self.value_idx(rv,val)*stride[rv] \
         #            for rv,val in val_dict.items()])
-        #else:
+        # else:
         card = dict([(n, self.card(n)) for n in self.scope(target)])
         idx = set(range(len(self.cpt(target))))
         for rv, val in val_dict.items():
-            val_idx = self.value_idx(rv,val)
+            val_idx = self.value_idx(rv, val)
             rv_idx = []
-            s_idx = val_idx*stride[rv]
+            s_idx = val_idx * stride[rv]
             while s_idx < len(self.cpt(target)):
-                rv_idx.extend(range(s_idx,(s_idx+stride[rv])))
-                s_idx += stride[rv]*card[rv]
+                rv_idx.extend(range(s_idx, (s_idx + stride[rv])))
+                s_idx += stride[rv] * card[rv]
             idx = idx.intersection(set(rv_idx))
 
         return list(idx)
@@ -291,18 +295,16 @@ class BayesNet(object):
         Parents=Val for the given idx of the given rv's cpt.
         """
         rv_val = self.values(rv)[idx % self.card(rv)]
-        s = str(rv)+'='+str(rv_val) + '|'
-        _idx=1
+        s = str(rv) + '=' + str(rv_val) + '|'
+        _idx = 1
         for parent in self.parents(rv):
             for val in self.values(parent):
-                if idx in self.cpt_indices(rv,{rv:rv_val,parent:val}):
-                    s += str(parent)+'='+str(val)
+                if idx in self.cpt_indices(rv, {rv: rv_val, parent: val}):
+                    s += str(parent) + '=' + str(val)
                     if _idx < len(self.parents(rv)):
                         s += ','
-                    _idx+=1
+                    _idx += 1
         return s
-
-
 
     def set_structure(self, edge_dict, value_dict=None):
         """
@@ -340,10 +342,10 @@ class BayesNet(object):
 
         self.V = topsort(edge_dict)
         self.E = edge_dict
-        self.F = dict([(rv,{}) for rv in self.nodes()])
+        self.F = dict([(rv, {}) for rv in self.nodes()])
         for rv in self.nodes():
             self.F[rv] = {
-                'parents':[p for p in self.nodes() if rv in self.children(p)],
+                'parents': [p for p in self.nodes() if rv in self.children(p)],
                 'cpt': [],
                 'values': []
             }
@@ -357,8 +359,8 @@ class BayesNet(object):
         a list of that vertex's neighbors.
         """
         adj_list = [[] for _ in self.V]
-        vi_map = dict((self.V[i],i) for i in range(len(self.V)))
-        for u,v in self.edges():
+        vi_map = dict((self.V[i], i) for i in range(len(self.V)))
+        for u, v in self.edges():
             adj_list[vi_map[u]].append(vi_map[v])
         return adj_list
 
@@ -379,14 +381,8 @@ class BayesNet(object):
         e = set()
         for u in self.nodes():
             for p1 in self.parents(u):
-                e.add((p1,u))
+                e.add((p1, u))
                 for p2 in self.parents(u):
-                    if p1!=p2 and (p2,p1) not in e:
-                        e.add((p1,p2))
+                    if p1 != p2 and (p2, p1) not in e:
+                        e.add((p1, p2))
         return list(e)
-
-
-    
-
-
-    

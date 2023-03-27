@@ -113,7 +113,8 @@ class VerticesDefiner(StructureBuilder):
     Main class for defining vertices
     """
 
-    def __init__(self, descriptor: Dict[str, Dict[str, str]]):
+    def __init__(self, descriptor: Dict[str, Dict[str, str]],
+                 regressor: Optional[object]):
         """
         Automatically creates a list of nodes
         """
@@ -127,7 +128,7 @@ class VerticesDefiner(StructureBuilder):
             if type in ['disc_num', 'disc']:
                 node = discrete_node.DiscreteNode(name=vertex)
             elif type == 'cont':
-                node = gaussian_node.GaussianNode(name=vertex)
+                Node = nodes.GaussianNode(name=vertex, regressor=regressor)
             else:
                 msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
@@ -140,10 +141,12 @@ class VerticesDefiner(StructureBuilder):
             self,
             has_logit: bool,
             use_mixture: bool,
-            classifier: Optional[Callable] = None):
+            classifier: Optional[Callable],
+            regressor: Optional[Callable]):
         """
         Level 2: Redefined nodes according structure (parents)
         :param classifier: an object to pass into logit, condLogit nodes
+        :param regressor: an object to pass into gaussianish nodes
         :param has_logit allows edges from cont to disc nodes
         :param use_mixture allows using Mixture
         """
@@ -173,8 +176,8 @@ class VerticesDefiner(StructureBuilder):
             else:
                 if 'Gaussian' in node_instance.type:
                     if node_instance.disc_parents:
-                        Node = conditional_gaussian_node.ConditionalGaussianNode(
-                            name=node_instance.name)
+                        Node = nodes.ConditionalGaussianNode(
+                            name=node_instance.name, regressor=regressor)
                     else:
                         continue
 
@@ -193,19 +196,17 @@ class EdgesDefiner(StructureBuilder):
         super(EdgesDefiner, self).__init__(descriptor)
 
 
-class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
+class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
     """
     Object to define structure and pass it into skeleton
     """
 
     def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
-                 scoring_function: Union[Tuple[str, Callable], Tuple[str]]):
+                 scoring_function: Union[Tuple[str, Callable], Tuple[str]],
+                 regressor: Optional[object] = None):
         """
         :param scoring_function: a tuple with following format (Name, scoring_function)
         """
-        if len(scoring_function) == 2:
-            if not callable(scoring_function[1]):
-                logger_builder.error("Cannot call scoring function")
 
         self.scoring_function = scoring_function
         self.optimizer = HillClimbSearch(data)
@@ -214,7 +215,7 @@ class HillClimbDefiner(EdgesDefiner, VerticesDefiner):
                        'remove_init_edges': True,
                        'white_list': None,
                        'bl_add': None}
-        super(HillClimbDefiner, self).__init__(descriptor)
+        super(HillClimbDefiner, self).__init__(descriptor, regressor=regressor)
 
     def apply_K2(self,
                  data: DataFrame,
@@ -326,6 +327,7 @@ class HCStructureBuilder(HillClimbDefiner):
     def __init__(self, data: DataFrame,
                  descriptor: Dict[str, Dict[str, str]],
                  scoring_function: Tuple[str, Callable],
+                 regressor: Optional[object],
                  has_logit: bool, use_mixture: bool):
         """
         :param data: train data
@@ -337,13 +339,15 @@ class HCStructureBuilder(HillClimbDefiner):
             self).__init__(
             descriptor=descriptor,
             data=data,
-            scoring_function=scoring_function)
+            scoring_function=scoring_function,
+            regressor=regressor)
         self.use_mixture = use_mixture
         self.has_logit = has_logit
 
     def build(self, data: DataFrame,
               progress_bar: bool,
               classifier: Optional[object],
+              regressor: Optional[object],
               params: Optional[ParamDict] = None):
         if params:
             for param, value in params.items():
@@ -369,4 +373,5 @@ class HCStructureBuilder(HillClimbDefiner):
         self.get_family()
         self.overwrite_vertex(has_logit=self.has_logit,
                               use_mixture=self.use_mixture,
-                              classifier=classifier)
+                              classifier=classifier,
+                              regressor=regressor)

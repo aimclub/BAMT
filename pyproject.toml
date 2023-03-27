@@ -8,6 +8,7 @@ authors = ["Roman Netrogolov <romius2001@gmail.com>",
 	   "Nikita Kovalev Yasen <Nikitoskova123@gmail.com>",
 	   "Anna Bubnova <banuba313@gmail.com>",
 	   "Yury Kaminsky <jkaminski@niuitmo.ru>"]
+
 license = "BSD-3-Clause"
 readme = "readme.rst"
 repository = "https://github.com/ITMO-NSS-team/BAMT"

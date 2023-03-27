@@ -158,13 +158,11 @@ def hc(
                             cache[old_cols] = mutual_information(
                                 data[:, old_cols])
                         mi_old = cache[old_cols]
-                        # mi_old = mutual_information(data[:,old_cols])
                         new_cols = old_cols + (u,)  # with'u' as parent
                         if new_cols not in cache:
                             cache[new_cols] = mutual_information(
                                 data[:, new_cols])
                         mi_new = cache[new_cols]
-                        # mi_new = mutual_information(data[:,new_cols])
                         delta_score = nrow * (mi_old - mi_new)
 
                         if delta_score > max_delta:
@@ -184,13 +182,10 @@ def hc(
                     if old_cols not in cache:
                         cache[old_cols] = mutual_information(data[:, old_cols])
                     mi_old = cache[old_cols]
-                    # mi_old = mutual_information(data[:,old_cols])
-                    # without 'u' as parent
                     new_cols = tuple([i for i in old_cols if i != u])
                     if new_cols not in cache:
                         cache[new_cols] = mutual_information(data[:, new_cols])
                     mi_new = cache[new_cols]
-                    # mi_new = mutual_information(data[:,new_cols])
                     delta_score = nrow * (mi_old - mi_new)
 
                     if (delta_score > max_delta):
@@ -231,30 +226,25 @@ def hc(
                         v, u) in restriction) and (
                             black_list is None or not (
                                 (v, u) in black_list)):
-                    # SCORE FOR 'U' -> gaining 'v' as parent
                     old_cols = (u,) + tuple(p_dict[v])  # without 'v' as parent
                     if old_cols not in cache:
                         cache[old_cols] = mutual_information(data[:, old_cols])
                     mi_old = cache[old_cols]
-                    # mi_old = mutual_information(data[:,old_cols])
                     new_cols = old_cols + (v,)  # with 'v' as parent
                     if new_cols not in cache:
                         cache[new_cols] = mutual_information(data[:, new_cols])
                     mi_new = cache[new_cols]
-                    # mi_new = mutual_information(data[:,new_cols])
                     delta1 = -1 * nrow * (mi_old - mi_new)
                     # SCORE FOR 'V' -> losing 'u' as parent
                     old_cols = (v,) + tuple(p_dict[v])  # with 'u' as parent
                     if old_cols not in cache:
                         cache[old_cols] = mutual_information(data[:, old_cols])
                     mi_old = cache[old_cols]
-                    # mi_old = mutual_information(data[:,old_cols])
                     # without 'u' as parent
                     new_cols = tuple([u for i in old_cols if i != u])
                     if new_cols not in cache:
                         cache[new_cols] = mutual_information(data[:, new_cols])
                     mi_new = cache[new_cols]
-                    # mi_new = mutual_information(data[:,new_cols])
                     delta2 = nrow * (mi_old - mi_new)
                     # COMBINED DELTA-SCORES
                     delta_score = delta1 + delta2

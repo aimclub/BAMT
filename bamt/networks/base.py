@@ -91,7 +91,7 @@ class BaseNetwork(object):
             return None
         self.descriptor = descriptor
         # LEVEL 1
-        worker_1 = Builders.VerticesDefiner(descriptor)
+        worker_1 = Builders.VerticesDefiner(descriptor, regressor=None)
         self.nodes = worker_1.vertices
 
     def add_edges(self,
@@ -101,6 +101,7 @@ class BaseNetwork(object):
                   Tuple[str]],
                   progress_bar: bool = True,
                   classifier: Optional[object] = None,
+                  regressor: Optional[object] = None,
                   params: Optional[ParamDict] = None,
                   optimizer: str = 'HC'):
         """
@@ -108,7 +109,7 @@ class BaseNetwork(object):
         scoring_function: tuple with the following format (NAME, scoring_function) or (NAME,)
         Params:
         init_edges: list of tuples, a graph to start learning with
-        remove_init_edges: allows changes in the model defined by user
+        remove_init_edges: allows changes in a model defined by user
         white_list: list of allowed edges
         """
         if not self.has_logit and classifier:
@@ -146,7 +147,8 @@ class BaseNetwork(object):
                 descriptor=self.descriptor,
                 scoring_function=scoring_function,
                 has_logit=self.has_logit,
-                use_mixture=self.use_mixture)
+                use_mixture=self.use_mixture,
+                regressor=regressor)
 
             self.sf_name = scoring_function[0]
 
@@ -154,6 +156,7 @@ class BaseNetwork(object):
                 data=data,
                 params=params,
                 classifier=classifier,
+                regressor=regressor,
                 progress_bar=progress_bar)
 
             # update family
@@ -282,13 +285,16 @@ class BaseNetwork(object):
             self.set_edges(edges=edges)
             if overwrite:
                 builder = Builders.VerticesDefiner(
-                    descriptor=self.descriptor)  # init worker
+                    descriptor=self.descriptor, regressor=None)  # init worker
                 builder.skeleton['V'] = builder.vertices  # 1 stage
                 builder.skeleton['E'] = self.edges
                 builder.get_family()
                 if self.edges:
                     builder.overwrite_vertex(
-                        has_logit=self.has_logit, use_mixture=self.use_mixture)
+                        has_logit=self.has_logit,
+                        use_mixture=self.use_mixture,
+                        classifier=None,
+                        regressor=None)
                     self.set_nodes(nodes=builder.skeleton['V'])
                 else:
                     logger_network.error("Empty set of edges")
@@ -310,8 +316,6 @@ class BaseNetwork(object):
     def set_parameters(self, parameters: Dict):
         if not self.nodes:
             logger_network.error("Failed on search of BN's nodes.")
-        # elif self._param_validation(parameters):
-        # pass
 
         self.distributions = parameters
 
@@ -648,10 +652,6 @@ class BaseNetwork(object):
 
         preds = {column_name: list() for column_name in columns}
 
-        # processed_list = Parallel(n_jobs=parall_count)(
-        # delayed(wrapper)(self, test.loc[[i]], columns) for i in
-        # tqdm(test.index, position=0, leave=True))
-
         if progress_bar:
             processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(
                 self, test.loc[[i]], columns) for i in tqdm(test.index, position=0, leave=True))
@@ -663,9 +663,6 @@ class BaseNetwork(object):
             curr_pred = processed_list[i]
             for n, key in enumerate(columns):
                 preds[key].append(curr_pred[key][0])
-
-        # for column in columns:
-        #     preds[column] = [k for k in preds[column] if not pd.isna(k)]
 
         return preds
 
