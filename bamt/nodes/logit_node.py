@@ -1,16 +1,18 @@
 import numpy as np
-import os
+
 import pickle
 import joblib
 import random
 
-from .base import BaseNode, STORAGE
+from .base import BaseNode
 from .schema import LogitParams
 from bamt.log import logger_nodes
 
 from sklearn import linear_model
 from pandas import DataFrame
 from typing import Optional, List, Union
+
+
 class LogitNode(BaseNode):
     """
     Main class for logit node
@@ -40,23 +42,8 @@ class LogitNode(BaseNode):
         else:
             logger_nodes.warning(
                 f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
-            index = str(int(os.listdir(STORAGE)[-1]))
-            if not os.path.isdir(
-                os.path.join(
-                    STORAGE,
-                    index,
-                    f"{self.name.replace(' ', '_')}")):
-                os.makedirs(
-                    os.path.join(
-                        STORAGE,
-                        index,
-                        f"{self.name.replace(' ', '_')}"))
-            path = os.path.abspath(
-                os.path.join(
-                    STORAGE,
-                    index,
-                    f"{self.name.replace(' ', '_')}",
-                    f"{self.name.replace(' ', '_')}.joblib.compressed"))
+
+            path = self.get_path_joblib(self.name, specific=self.name.replace(' ', '_'))
 
             joblib.dump(self.classifier, path, compress=True, protocol=4)
             serialization_name = 'joblib'

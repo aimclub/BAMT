@@ -9,6 +9,7 @@ from typing import Type, Dict, Union, List
 from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 from concurrent.futures import ThreadPoolExecutor
 
+
 class DiscreteNode(BaseNode):
     """
     Main class of Discrete Node
@@ -34,12 +35,12 @@ class DiscreteNode(BaseNode):
                     data[node.name].values)
                 cprob = list(dict(sorted(dist.items())).values())
                 vals = sorted([str(x)
-                              for x in list(dist.parameters[0].keys())])
+                               for x in list(dist.parameters[0].keys())])
             else:
                 dist = DiscreteDistribution.from_samples(
                     data[node.name].values)
                 vals = sorted([str(x)
-                              for x in list(dist.parameters[0].keys())])
+                               for x in list(dist.parameters[0].keys())])
                 dist = ConditionalProbabilityTable.from_samples(
                     data[parents + [node.name]].values)
                 params = dist.parameters[0]

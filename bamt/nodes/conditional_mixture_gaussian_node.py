@@ -8,9 +8,6 @@ from bamt.utils.MathUtils import component
 from pandas import DataFrame
 from gmr import GMM
 
-
-
-
 from typing import Union, List, Optional, Dict
 
 

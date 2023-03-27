@@ -8,6 +8,8 @@ from bamt.utils.MathUtils import component
 from gmr import GMM
 
 from typing import Union, List, Optional
+
+
 class MixtureGaussianNode(BaseNode):
     """
     Main class for Mixture Gaussian Node
@@ -48,10 +50,10 @@ class MixtureGaussianNode(BaseNode):
                         new_data,
                         nodes,
                         'aic') +
-                        component(
-                        new_data,
-                        nodes,
-                        'bic')) /
+                     component(
+                         new_data,
+                         nodes,
+                         'bic')) /
                     2)  # component(new_data, nodes, 'LRTS')#
                 # n_comp = 3
                 gmm = GMM(

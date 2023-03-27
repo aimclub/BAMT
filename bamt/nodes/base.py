@@ -3,6 +3,7 @@ from bamt.config import config
 from typing import Union
 
 import pickle
+import os
 
 STORAGE = config.get(
     'NODES',
@@ -59,3 +60,37 @@ class BaseNode(object):
             return 'pickle'
         except Exception as ex:
             return ex
+
+    @staticmethod
+    def get_path_joblib(node_name: str, specific: str = "") -> str:
+        """
+        Args:
+            node_name: name of node
+            specific: more specific unique name for node.
+            For example, combination.
+
+        Return:
+            Path to save a joblib file.
+        """
+        if not isinstance(specific, str):
+            specific = str(specific)
+
+        index = str(int(os.listdir(STORAGE)[-1]))
+
+        if not os.path.isdir(
+                os.path.join(
+                    STORAGE,
+                    index,
+                    f"{node_name.replace(' ', '_')}")):
+            os.makedirs(
+                os.path.join(
+                    STORAGE,
+                    index,
+                    f"{node_name.replace(' ', '_')}"))
+
+        path = os.path.abspath(
+            os.path.join(
+                STORAGE,
+                index,
+                f"{node_name.replace(' ', '_')}", f"{specific}.joblib.compressed"))
+        return path

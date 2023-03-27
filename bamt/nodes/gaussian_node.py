@@ -2,10 +2,10 @@ import pickle
 import numpy as np
 import joblib
 import random
-import os
+
 import math
 
-from .base import BaseNode, STORAGE
+from .base import BaseNode
 from bamt.log import logger_nodes
 
 from .schema import GaussianParams
@@ -15,6 +15,7 @@ from pandas import DataFrame
 
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
+
 
 class GaussianNode(BaseNode):
     """
@@ -49,24 +50,9 @@ class GaussianNode(BaseNode):
             else:
                 logger_nodes.warning(
                     f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
-                index = str(int(os.listdir(STORAGE)[-1]))
-                if not os.path.isdir(
-                    os.path.join(
-                        STORAGE,
-                        index,
-                        f"{self.name.replace(' ', '_')}")):
-                    os.makedirs(
-                        os.path.join(
-                            STORAGE,
-                            index,
-                            f"{self.name.replace(' ', '_')}"))
-                path = os.path.abspath(
-                    os.path.join(
-                        STORAGE,
-                        index,
-                        f"{self.name.replace(' ', '_')}",
-                        f"{self.name.replace(' ', '_')}.joblib.compressed"))
 
+                path = self.get_path_joblib(node_name=self.name.replace(' ', '_'),
+                                            specific=f"{self.name.replace(' ', '_')}")
                 joblib.dump(self.regressor, path, compress=True, protocol=4)
                 return {'mean': np.nan,
                         'regressor_obj': path,

@@ -1,17 +1,19 @@
 import numpy as np
-import os
+
 import pickle
 import joblib
 import random
 import itertools
 
-from .base import BaseNode, STORAGE
+from .base import BaseNode
 from .schema import LogitParams
 from bamt.log import logger_nodes
 
 from sklearn import linear_model
 from pandas import DataFrame
 from typing import Optional, List, Union, Dict
+
+
 class ConditionalLogitNode(BaseNode):
     """
     Main class for Conditional Logit Node
@@ -25,8 +27,7 @@ class ConditionalLogitNode(BaseNode):
         self.classifier = classifier
         self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(
-            self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
+    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
         """
         Train params on data
         Return:
@@ -68,25 +69,11 @@ class ConditionalLogitNode(BaseNode):
                     else:
                         logger_nodes.warning(
                             f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
-                        index = str(int(os.listdir(STORAGE)[-1]))
-                        if not os.path.isdir(
-                            os.path.join(
-                                STORAGE,
-                                index,
-                                f"{self.name.replace(' ', '_')}")):
-                            os.makedirs(
-                                os.path.join(
-                                    STORAGE,
-                                    index,
-                                    f"{self.name.replace(' ', '_')}"))
-                        path = os.path.abspath(
-                            os.path.join(
-                                STORAGE,
-                                index,
-                                f"{self.name.replace(' ', '_')}",
-                                f"{comb}.joblib.compressed"))
 
+                        path = self.get_path_joblib(node_name=self.name.replace(' ', '_'),
+                                                    specific=comb)
                         joblib.dump(model, path, compress=True, protocol=4)
+
                         hycprob[str(key_comb)] = {'classes': classes,
                                                   'classifier_obj': path,
                                                   'classifier': type(self.classifier).__name__,
@@ -102,11 +89,8 @@ class ConditionalLogitNode(BaseNode):
         return {"hybcprob": hycprob}
 
     @staticmethod
-    def choose(node_info: Dict[str,
-                               Dict[str,
-                                    LogitParams]],
-               pvals: List[Union[str,
-                                 float]]) -> str:
+    def choose(node_info: Dict[str, Dict[str, LogitParams]],
+               pvals: List[Union[str, float]]) -> str:
         """
         Return value from ConditionalLogit node
         params:
@@ -156,11 +140,8 @@ class ConditionalLogitNode(BaseNode):
             return str(lgdistribution["classes"][0])
 
     @staticmethod
-    def predict(node_info: Dict[str,
-                                Dict[str,
-                                     LogitParams]],
-                pvals: List[Union[str,
-                                  float]]) -> str:
+    def predict(node_info: Dict[str, Dict[str, LogitParams]],
+                pvals: List[Union[str, float]]) -> str:
         """
         Return value from ConditionalLogit node
         params:

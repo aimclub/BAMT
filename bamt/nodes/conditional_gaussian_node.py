@@ -1,12 +1,12 @@
 import numpy as np
 import itertools
-import os
+
 import pickle
 import joblib
 import random
 import math
 
-from .base import BaseNode, STORAGE
+from .base import BaseNode
 from .schema import CondGaussParams
 
 from bamt.log import logger_nodes
@@ -15,6 +15,8 @@ from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
 from pandas import DataFrame
 from typing import Dict, Optional, List, Union
+
+
 class ConditionalGaussianNode(BaseNode):
     """
     Main class for Conditional Gaussian Node
@@ -28,8 +30,7 @@ class ConditionalGaussianNode(BaseNode):
         self.type = 'ConditionalGaussian' + \
                     f" ({type(self.regressor).__name__})"
 
-    def fit_parameters(
-            self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
+    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
         """
         Train params for Conditional Gaussian Node.
         Return:
@@ -72,24 +73,9 @@ class ConditionalGaussianNode(BaseNode):
                     else:
                         logger_nodes.warning(
                             f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
-                        index = str(int(os.listdir(STORAGE)[-1]))
-                        if not os.path.isdir(
-                                os.path.join(
-                                    STORAGE,
-                                    index,
-                                    f"{self.name.replace(' ', '_')}")):
-                            os.makedirs(
-                                os.path.join(
-                                    STORAGE,
-                                    index,
-                                    f"{self.name.replace(' ', '_')}"))
-                        path = os.path.abspath(
-                            os.path.join(
-                                STORAGE,
-                                index,
-                                f"{self.name.replace(' ', '_')}",
-                                f"{comb}.joblib.compressed"))
 
+                        path = self.get_path_joblib(node_name=self.name.replace(' ', '_'),
+                                                    specific=comb)
                         joblib.dump(model, path, compress=True, protocol=4)
                         hycprob[str(key_comb)] = {'variance': variance,
                                                   'mean': np.nan,
@@ -113,11 +99,8 @@ class ConditionalGaussianNode(BaseNode):
         return {"hybcprob": hycprob}
 
     def choose(self,
-               node_info: Dict[str,
-               Dict[str,
-               CondGaussParams]],
-               pvals: List[Union[str,
-               float]]) -> float:
+               node_info: Dict[str, Dict[str,CondGaussParams]],
+               pvals: List[Union[str, float]]) -> float:
         """
         Return value from ConditionalLogit node
         params:
@@ -168,11 +151,8 @@ class ConditionalGaussianNode(BaseNode):
                     lgdistribution['variance']))
 
     def predict(self,
-                node_info: Dict[str,
-                Dict[str,
-                CondGaussParams]],
-                pvals: List[Union[str,
-                float]]) -> float:
+                node_info: Dict[str, Dict[str, CondGaussParams]],
+                pvals: List[Union[str, float]]) -> float:
         """
         Return value from ConditionalLogit node
         params:
@@ -200,7 +180,6 @@ class ConditionalGaussianNode(BaseNode):
                 return np.nan
             else:
                 if lgdistribution['regressor']:
-
                     if lgdistribution["serialization"] == 'joblib':
                         model = joblib.load(lgdistribution["regressor_obj"])
                     else:
