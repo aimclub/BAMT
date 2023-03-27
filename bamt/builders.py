@@ -9,11 +9,11 @@ from bamt.log import logger_builder
 from pandas import DataFrame
 from bamt.utils import GraphUtils as gru
 
-from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union
+from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union, Sequence
 
 
 class ParamDict(TypedDict, total=False):
-    init_edges: Optional[Tuple[str, str]]
+    init_edges: Optional[Sequence[str, str]]
     init_nodes: Optional[List[str]]
     remove_init_edges: bool
     white_list: Optional[Tuple[str, str]]
