@@ -1,4 +1,4 @@
-import json
+# import json
 
 import bamt.networks as Nets
 import bamt.preprocessors as preprocessors
@@ -39,13 +39,14 @@ info = p.info
 
 bn.add_nodes(info)
 
-bn.add_edges(discretized_data, scoring_function=("BIC",))
+bn.add_edges(discretized_data, scoring_function=("BIC",), progress_bar=False)
 bn.set_classifiers(classifiers={'Structural setting': DecisionTreeClassifier(),
                                 'Lithology': RandomForestClassifier(),
                                 'Period': KNeighborsClassifier(n_neighbors=2)})
 
-# bn.fit_parameters(hack_data)
-#
+bn.fit_parameters(hack_data)
+
 # bn.save("mynet.json")
+print(bn.sample(500).shape)
 
 bn.get_info(as_df=False)

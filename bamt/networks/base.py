@@ -18,7 +18,7 @@ from bamt.log import logger_network
 from bamt.config import config
 
 from bamt.nodes.base import BaseNode
-from bamt.networks.hybrid_bn import HybridBN
+
 import bamt.builders as Builders
 
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
@@ -614,7 +614,7 @@ class BaseNetwork(object):
 
         from joblib import Parallel, delayed
 
-        def wrapper(bn: HybridBN, test: pd.DataFrame, columns: List[str]):
+        def wrapper(bn, test: pd.DataFrame, columns: List[str]):
             preds = {column_name: list() for column_name in columns}
 
             if len(test) == 1:

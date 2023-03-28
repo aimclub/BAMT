@@ -1,4 +1,4 @@
-from bamt.networks.base import BaseNetwork
+from .base import BaseNetwork
 
 from typing import Dict
 

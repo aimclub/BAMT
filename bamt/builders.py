@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union, Sequ
 
 
 class ParamDict(TypedDict, total=False):
-    init_edges: Optional[Sequence[str, str]]
+    init_edges: Optional[Sequence[str]]
     init_nodes: Optional[List[str]]
     remove_init_edges: bool
     white_list: Optional[Tuple[str, str]]
@@ -128,7 +128,7 @@ class VerticesDefiner(StructureBuilder):
             if type in ['disc_num', 'disc']:
                 node = discrete_node.DiscreteNode(name=vertex)
             elif type == 'cont':
-                Node = nodes.GaussianNode(name=vertex, regressor=regressor)
+                node = gaussian_node.GaussianNode(name=vertex, regressor=regressor)
             else:
                 msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
@@ -176,7 +176,7 @@ class VerticesDefiner(StructureBuilder):
             else:
                 if 'Gaussian' in node_instance.type:
                     if node_instance.disc_parents:
-                        Node = nodes.ConditionalGaussianNode(
+                        Node = conditional_gaussian_node.ConditionalGaussianNode(
                             name=node_instance.name, regressor=regressor)
                     else:
                         continue

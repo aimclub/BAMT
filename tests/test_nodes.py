@@ -173,7 +173,11 @@ class TestConditionalGaussianNode(unittest.TestCase):
         self.node.cont_parents = ["node0", "node1"]
         self.node.children = ["node6"]
 
-    def test_fit_parameters(self):
+    def fit_parameters(self, regressor=None):
+        if regressor is not None:
+            self.node.regressor = regressor
+            self.node.type = 'ConditionalGaussian' + f" ({type(regressor).__name__})"
+
         node_without_parents = conditional_gaussian_node.ConditionalGaussianNode(name="foster-son")
         node_without_parents.children = ["node6", "node5"]
 
@@ -186,7 +190,7 @@ class TestConditionalGaussianNode(unittest.TestCase):
         self.assertIsNotNone(params_foster["mean"])
 
         # Since there can be empty dictionaries,
-        # we have to count them and if a percent is greater than the threshold
+        # we have to count them and if a fraction is greater than the threshold
         # test failed.
         report = []
         for comb, data in params_parents.items():
@@ -204,6 +208,12 @@ class TestConditionalGaussianNode(unittest.TestCase):
                 self.assertIsNotNone(data["mean"])
 
         self.assertLess(sum(report) / len(report), 0.3)
+        # print(params_parents, params_foster, sep="\n\n")
+
+        # for k, v in params_parents.items():
+        #     print(k, True if v["regressor_obj"] else False, v["regressor"])
+
+        # print(sum(report) / len(report), node_without_parents.regressor)
 
     def test_choose(self):
         pvals = [1.05, 1.95, "cat4", "cat7"]

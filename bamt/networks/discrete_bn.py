@@ -1,4 +1,6 @@
-from bamt.networks.base import BaseNetwork
+from .base import BaseNetwork
+
+
 class DiscreteBN(BaseNetwork):
     """
     Bayesian Network with Discrete Types of Nodes
