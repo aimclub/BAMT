@@ -4,7 +4,14 @@ from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 from bamt.redef_HC import hc as hc_method
 
-from bamt.nodes import *
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.nodes.conditional_logit_node import ConditionalLogitNode
+from bamt.nodes.logit_node import LogitNode
+from bamt.nodes.mixture_gaussian_node import MixtureGaussianNode
+from bamt.nodes.conditional_mixture_gaussian_node import ConditionalMixtureGaussianNode
+from bamt.nodes.conditional_gaussian_node import ConditionalGaussianNode
+
 from bamt.log import logger_builder
 from pandas import DataFrame
 from bamt.utils import GraphUtils as gru
@@ -126,9 +133,9 @@ class VerticesDefiner(StructureBuilder):
         # LEVEL 1: Define a general type of node: Discrete or Gaussian
         for vertex, type in self.descriptor['types'].items():
             if type in ['disc_num', 'disc']:
-                node = discrete_node.DiscreteNode(name=vertex)
+                node = DiscreteNode(name=vertex)
             elif type == 'cont':
-                node = gaussian_node.GaussianNode(name=vertex, regressor=regressor)
+                node = GaussianNode(name=vertex, regressor=regressor)
             else:
                 msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
@@ -151,44 +158,44 @@ class VerticesDefiner(StructureBuilder):
         :param use_mixture allows using Mixture
         """
         for node_instance in self.vertices:
-            Node = node_instance
+            node = node_instance
             if has_logit:
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
                         if not node_instance.disc_parents:
-                            Node = logit_node.LogitNode(
+                            node = LogitNode(
                                 name=node_instance.name, classifier=classifier)
 
                         elif node_instance.disc_parents:
-                            Node = conditional_logit_node.ConditionalLogitNode(
+                            node = ConditionalLogitNode(
                                 name=node_instance.name, classifier=classifier)
 
             if use_mixture:
                 if 'Gaussian' in node_instance.type:
                     if not node_instance.disc_parents:
-                        Node = mixture_gaussian_node.MixtureGaussianNode(
+                        node = MixtureGaussianNode(
                             name=node_instance.name)
                     elif node_instance.disc_parents:
-                        Node = conditional_mixture_gaussian_node.ConditionalMixtureGaussianNode(
+                        node = ConditionalMixtureGaussianNode(
                             name=node_instance.name)
                     else:
                         continue
             else:
                 if 'Gaussian' in node_instance.type:
                     if node_instance.disc_parents:
-                        Node = conditional_gaussian_node.ConditionalGaussianNode(
+                        node = ConditionalGaussianNode(
                             name=node_instance.name, regressor=regressor)
                     else:
                         continue
 
-            if node_instance == Node:
+            if node_instance == node:
                 continue
 
             id = self.skeleton['V'].index(node_instance)
-            Node.disc_parents = node_instance.disc_parents
-            Node.cont_parents = node_instance.cont_parents
-            Node.children = node_instance.children
-            self.skeleton['V'][id] = Node
+            node.disc_parents = node_instance.disc_parents
+            node.cont_parents = node_instance.cont_parents
+            node.children = node_instance.children
+            self.skeleton['V'][id] = node
 
 
 class EdgesDefiner(StructureBuilder):
@@ -282,7 +289,14 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
                      remove_init_edges: bool,
                      white_list: Optional[List[Tuple[str,
                      str]]]):
-        # (score == "MI") | (score == "LL") | (score == "BIC") | (score == "AIC")
+        """
+        This method implements the group of scoring functions.
+        Group:
+        "MI" - Mutual Information,
+        "LL" - Log Likelihood,
+        "BIC" - Bayess Information Criteria,
+        "AIC" - Akaike information Criteria.
+        """
         column_name_dict = dict([(n.name, i)
                                  for i, n in enumerate(self.vertices)])
         blacklist_new = []

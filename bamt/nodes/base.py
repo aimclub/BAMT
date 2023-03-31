@@ -76,12 +76,12 @@ class BaseNode(object):
             specific = str(specific)
 
         index = str(int(os.listdir(STORAGE)[-1]))
+        path_to_check = os.path.join(
+            STORAGE,
+            index,
+            f"{node_name.replace(' ', '_')}")
 
-        if not os.path.isdir(
-                os.path.join(
-                    STORAGE,
-                    index,
-                    f"{node_name.replace(' ', '_')}")):
+        if not os.path.isdir(path_to_check):
             os.makedirs(
                 os.path.join(
                     STORAGE,
@@ -89,8 +89,5 @@ class BaseNode(object):
                     f"{node_name.replace(' ', '_')}"))
 
         path = os.path.abspath(
-            os.path.join(
-                STORAGE,
-                index,
-                f"{node_name.replace(' ', '_')}", f"{specific}.joblib.compressed"))
+            os.path.join(path_to_check, f"{specific}.joblib.compressed"))
         return path

@@ -168,11 +168,11 @@ class BaseNetwork(object):
         Provide calculation of link strength according mutual information between node and its parent(-s) values.
         """
         import bamt.utils.GraphUtils as gru
-        if not all([i in ['disc', 'disc_num']
-                    for i in gru.nodes_types(discretized_data).values()]):
+        data_descriptor = gru.nodes_types(discretized_data)
+        if not all([i in ['disc', 'disc_num'] for i in data_descriptor.values()]):
             logger_network.error(
                 f"calculate_weghts() method deals only with discrete data. Continuous data: " +
-                f"{[col for col, type in gru.nodes_types(discretized_data).items() if type not in ['disc', 'disc_num']]}")
+                f"{[col for col, type in data_descriptor.items() if type not in ['disc', 'disc_num']]}")
         if not self.edges:
             logger_network.error(
                 "Bayesian Network hasn't fitted yet. Please add edges with add_edges() method")
@@ -222,17 +222,12 @@ class BaseNetwork(object):
             return
         self.nodes = []
         for node in nodes:
-            try:
-                assert issubclass(type(node), BaseNode)
+            if issubclass(type(node), BaseNode):
                 self.nodes.append(node)
-                continue
-            except AssertionError:
+            else:
                 logger_network.error(
                     f"{node} is not an instance of {BaseNode}")
-                continue
-            except TypeError:
-                logger_network.error(f"TypeError : {node.__class__}")
-                continue
+
         if info:
             self.descriptor = info
 
@@ -240,7 +235,7 @@ class BaseNetwork(object):
         """
         additional function to set edges manually. User should be aware that
         nodes must be a subclass of BaseNode.
-        :param edges dict with name and node (if a lot of nodes should be added)
+        param: edges dict with name and node (if a lot of nodes should be added)
         """
 
         if not self.nodes:
@@ -416,12 +411,13 @@ class BaseNetwork(object):
                            for node_keys in node_data['hybcprob'].values()):
                         raise CompatibilityError("use_mixture")
 
+        # check if edges before and after are the same.They can be different in the case when user sets forbidden edges.
         if not self.has_logit:
             if not all(
-                    ob1 == [
-                        ob2[0],
-                        ob2[1]] for ob1,
-                    ob2 in zip(
+                    edges_before == [
+                        edges_after[0],
+                        edges_after[1]] for edges_before,
+                    edges_after in zip(
                         input_dict['edges'],
                         self.edges)):
                 raise CompatibilityError("has_logit")
