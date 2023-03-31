@@ -19,4 +19,3 @@ scikit-learn
 scipy
 missingno
 pytest
-catboost
