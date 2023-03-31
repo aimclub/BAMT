@@ -3,10 +3,10 @@ Adding Machine Learning models to Bayesian Network nodes
 
 BAMT supports adding machine learning models to Bayesian Network nodes.
 
-First, lets import BAMT modules and required machinr learning modules.
+First, lets import BAMT modules and required machine learning modules.
 
 .. code-block:: python
-    import bamt.Networks as Nets
+    from bamt.networks.hybrid_bn import HybridBN
     import bamt.Preprocessors as pp
 
     import pandas as pd
@@ -63,7 +63,7 @@ Let's start with data importing and preprocessing.
 Next, we initialize Bayesian Network object and add nodes to it.
 
 .. code-block:: python
-    bn = Nets.HybridBN(has_logit=True, use_mixture=True)
+    bn = HybridBN(has_logit=True, use_mixture=True)
     bn.add_nodes(info)
 
 After adding nodes we can perform structure learning.

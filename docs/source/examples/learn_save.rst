@@ -8,7 +8,7 @@ Used imports:
     from bamt.preprocessors import Preprocessor
     import pandas as pd
     from sklearn import preprocessing as pp
-    import bamt.networks as Networks
+    from bamt.networks.hybrid_bn import HybridBN
 
 
 Let's start with data loading and preprocessing: 
@@ -38,7 +38,7 @@ Then we create a network object and perform structure and parameters learning:
 .. code-block:: python
 
     # initialize network object
-    bn = Networks.HybridBN(use_mixture=True, has_logit=True)
+    bn = HybridBN(use_mixture=True, has_logit=True)
 
     # add nodes to network
     bn.add_nodes(info)

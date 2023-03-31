@@ -8,7 +8,7 @@ Used imports:
     from bamt.preprocessors import Preprocessor
     import pandas as pd
     from sklearn import preprocessing as pp
-    import bamt.networks as Networks
+    from bamt.networks.hybrid_bn import HybridBN
     import json
 
 There are two options for loading a BN structure. The first is to read it directly from a JSON file:
@@ -16,12 +16,12 @@ There are two options for loading a BN structure. The first is to read it direct
 
 .. code-block:: python
 
-    bn = Networks.HybridBN(use_mixture=True, has_logit=True)
+    bn = HybridBN(use_mixture=True, has_logit=True)
 
     bn2.load("structure.json")
 
 
-The second one is to set it maually using list of edges:
+The second one is to set it manually using list of edges:
 
 .. code-block:: python
 
