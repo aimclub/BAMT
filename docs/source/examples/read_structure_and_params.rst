@@ -8,7 +8,7 @@ Used imports:
     from bamt.preprocessors import Preprocessor
     import pandas as pd
     from sklearn import preprocessing as pp
-    import bamt.networks as Networks
+    from bamt.networks.hybrid_bn import HybridBN
     import json
 
 You can read the pre-trained structure and distribution parameters from a file.
@@ -26,7 +26,7 @@ It is also possible to read structure and distribution parameters separately, if
 
 .. code-block:: python
 
-    bn = Networks.HybridBN(use_mixture=True, has_logit=True)
+    bn = HybridBN(use_mixture=True, has_logit=True)
 
     bn.load("network_pretrained_structure.json")
     bn.load("network_pretrained_distribution.json")

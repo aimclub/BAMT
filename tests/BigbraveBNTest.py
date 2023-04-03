@@ -1,14 +1,12 @@
 from sklearn import preprocessing
 from pgmpy.estimators import K2Score
-import matplotlib.pyplot as plt
-import numpy as np
+
 import pandas as pd
-from bamt.networks import BigBraveBN
+from bamt.networks.big_brave_bn import BigBraveBN
+from bamt.networks.discrete_bn import DiscreteBN
+from bamt.networks.continuous_bn import ContinuousBN
+
 import bamt.preprocessors as pp
-import bamt.networks as Nets
-import os
-import sys
-from pathlib import Path
 
 data_discrete = pd.read_csv(r"../Data/benchmark/pigs.csv")
 data_continuous = pd.read_csv(r"../Data/benchmark/arth150.csv")
@@ -29,7 +27,7 @@ space_restrictor.set_possible_edges_by_brave(
 
 ps = space_restrictor.possible_edges
 
-bn_discrete = Nets.DiscreteBN()
+bn_discrete = DiscreteBN()
 
 bn_discrete.add_nodes(descriptor=info)
 
@@ -53,7 +51,7 @@ space_restrictor.set_possible_edges_by_brave(
 
 ps = space_restrictor.possible_edges
 
-bn_continuous = Nets.ContinuousBN()
+bn_continuous = ContinuousBN()
 
 bn_continuous.add_nodes(descriptor=info)
 

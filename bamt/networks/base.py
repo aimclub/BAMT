@@ -12,16 +12,16 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
-from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
 from bamt.builders import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
-from bamt.utils.MathUtils import get_brave_matrix, get_proximity_matrix
+
+from bamt.nodes.base import BaseNode
 
 import bamt.builders as Builders
-import bamt.nodes as Nodes
 
+from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
 STORAGE = config.get('NODES', 'models_storage',
                      fallback='models_storage is not defined')
@@ -34,10 +34,9 @@ class BaseNetwork(object):
 
     def __init__(self):
         """
-        Attributes:
-            nodes: a list of nodes instances
-            edges: a list of edges
-            distributions: dict
+        nodes: a list of nodes instances
+        edges: a list of edges
+        distributions: dict
         """
         self.type = 'Abstract'
         self._allowed_dtypes = ['Abstract']
@@ -54,7 +53,7 @@ class BaseNetwork(object):
     def nodes_names(self) -> List[str]:
         return [node.name for node in self.nodes]
 
-    def __getitem__(self, node_name: str) -> Type[Nodes.BaseNode]:
+    def __getitem__(self, node_name: str) -> Type[BaseNode]:
         if node_name in self.nodes_names:
             index = self.nodes_names.index(node_name)
             return self.nodes[index]
@@ -98,8 +97,8 @@ class BaseNetwork(object):
     def add_edges(self,
                   data: pd.DataFrame,
                   scoring_function: Union[Tuple[str,
-                                                Callable],
-                                          Tuple[str]],
+                  Callable],
+                  Tuple[str]],
                   progress_bar: bool = True,
                   classifier: Optional[object] = None,
                   regressor: Optional[object] = None,
@@ -127,9 +126,9 @@ class BaseNetwork(object):
                     params["init_edges"]]
                 )
                 failed = (
-                    (type_map[:, 0] == "cont") &
-                    ((type_map[:, 1] == "disc") |
-                     (type_map[:, 1] == "disc_num"))
+                        (type_map[:, 0] == "cont") &
+                        ((type_map[:, 1] == "disc") |
+                         (type_map[:, 1] == "disc_num"))
                 )
                 if sum(failed):
                     logger_network.warning(
@@ -169,11 +168,11 @@ class BaseNetwork(object):
         Provide calculation of link strength according mutual information between node and its parent(-s) values.
         """
         import bamt.utils.GraphUtils as gru
-        if not all([i in ['disc', 'disc_num']
-                   for i in gru.nodes_types(discretized_data).values()]):
+        data_descriptor = gru.nodes_types(discretized_data)
+        if not all([i in ['disc', 'disc_num'] for i in data_descriptor.values()]):
             logger_network.error(
                 f"calculate_weghts() method deals only with discrete data. Continuous data: " +
-                f"{[col for col, type in gru.nodes_types(discretized_data).items() if type not in ['disc', 'disc_num']]}")
+                f"{[col for col, type in data_descriptor.items() if type not in ['disc', 'disc_num']]}")
         if not self.edges:
             logger_network.error(
                 "Bayesian Network hasn't fitted yet. Please add edges with add_edges() method")
@@ -189,9 +188,9 @@ class BaseNetwork(object):
             y = discretized_data[node.name].values
             if len(parents) == 1:
                 x = discretized_data[parents[0]].values
-                LS_true = drv.information_mutual(X=y, Y=x)
+                ls_true = drv.information_mutual(X=y, Y=x)
                 entropy = drv.entropy(X=y)
-                weight = LS_true / entropy
+                weight = ls_true / entropy
                 weights[(parents[0], node.name)] = weight
             else:
                 for parent_node in parents:
@@ -201,11 +200,11 @@ class BaseNetwork(object):
                     z = list()
                     for other_parent in other_parents:
                         z.append(list(discretized_data[other_parent].values))
-                    LS_true = np.average(drv.information_mutual_conditional(
+                    ls_true = np.average(drv.information_mutual_conditional(
                         X=y, Y=x, Z=z, cartesian_product=True))
                     entropy = np.average(drv.entropy_conditional(
                         X=y, Y=z, cartesian_product=True)) + 1e-8
-                    weight = LS_true / entropy
+                    weight = ls_true / entropy
                     weights[(parent_node, node.name)] = weight
         self.weights = weights
 
@@ -213,7 +212,9 @@ class BaseNetwork(object):
         """
         additional function to set nodes manually. User should be aware that
         nodes must be a subclass of BaseNode.
-        :param nodes dict with name and node (if a lot of nodes should be added)
+        Params:
+            nodes: dict with name and node (if a lot of nodes should be added)
+            info: descriptor
         """
         if not info and not self.descriptor["types"]:
             logger_network.error(
@@ -221,17 +222,12 @@ class BaseNetwork(object):
             return
         self.nodes = []
         for node in nodes:
-            try:
-                assert issubclass(type(node), Nodes.BaseNode)
+            if issubclass(type(node), BaseNode):
                 self.nodes.append(node)
-                continue
-            except AssertionError:
+            else:
                 logger_network.error(
-                    f"{node} is not an instance of {Nodes.BaseNode}")
-                continue
-            except TypeError:
-                logger_network.error(f"TypeError : {node.__class__}")
-                continue
+                    f"{node} is not an instance of {BaseNode}")
+
         if info:
             self.descriptor = info
 
@@ -239,7 +235,7 @@ class BaseNetwork(object):
         """
         additional function to set edges manually. User should be aware that
         nodes must be a subclass of BaseNode.
-        :param edges dict with name and node (if a lot of nodes should be added)
+        param: edges dict with name and node (if a lot of nodes should be added)
         """
 
         if not self.nodes:
@@ -274,10 +270,10 @@ class BaseNetwork(object):
         Function to set structure manually
         info: Descriptor
         nodes, edges:
-        overwrite: use 2 stage of defining or not
+        overwrite: use 2nd stage of defining or not
         """
         if nodes and (
-            info or (
+                info or (
                 self.descriptor["types"] and self.descriptor["signs"])):
             self.set_nodes(nodes=nodes, info=info)
         if edges:
@@ -412,17 +408,18 @@ class BaseNetwork(object):
                     # Since we don't have information about types of nodes, we
                     # should derive it from parameters.
                     if any(list(node_keys.keys()) == ["covars", "mean", "coef"]
-                            for node_keys in node_data['hybcprob'].values()):
+                           for node_keys in node_data['hybcprob'].values()):
                         raise CompatibilityError("use_mixture")
 
+        # check if edges before and after are the same.They can be different in the case when user sets forbidden edges.
         if not self.has_logit:
             if not all(
-                ob1 == [
-                    ob2[0],
-                    ob2[1]] for ob1,
-                ob2 in zip(
-                    input_dict['edges'],
-                    self.edges)):
+                    edges_before == [
+                        edges_after[0],
+                        edges_after[1]] for edges_before,
+                    edges_after in zip(
+                        input_dict['edges'],
+                        self.edges)):
                 raise CompatibilityError("has_logit")
 
         self.set_parameters(parameters=input_dict['parameters'])
@@ -548,9 +545,9 @@ class BaseNetwork(object):
                                 else:
                                     model_type = "classifier"
                                 if obj_data["serialization"] == 'joblib' and obj_data[
-                                        f"{model_type}_obj"]:
+                                    f"{model_type}_obj"]:
                                     new_path = models_dir + \
-                                        f"\\{node.name.replace(' ', '_')}\\{obj}.joblib.compressed"
+                                               f"\\{node.name.replace(' ', '_')}\\{obj}.joblib.compressed"
                                     node_data["hybcprob"][obj][f"{model_type}_obj"] = new_path
 
                     if predict:
@@ -591,9 +588,9 @@ class BaseNetwork(object):
                 test: pd.DataFrame,
                 parall_count: int = 1,
                 progress_bar: bool = True) -> Dict[str,
-                                                   Union[List[str],
-                                                         List[int],
-                                                         List[float]]]:
+    Union[List[str],
+    List[int],
+    List[float]]]:
         """
         Function to predict columns from given data.
         Note that train data and test data must have different columns.
@@ -602,6 +599,7 @@ class BaseNetwork(object):
         Args:
             test (pd.DataFrame): test dataset
             parall_count (int, optional):number of threads. Defaults to 1.
+            progress_bar: verbose mode.
 
         Returns:
             predicted data (dict): dict with column as key and predicted data as value
@@ -612,7 +610,7 @@ class BaseNetwork(object):
 
         from joblib import Parallel, delayed
 
-        def wrapper(bn: HybridBN, test: pd.DataFrame, columns: List[str]):
+        def wrapper(bn, test: pd.DataFrame, columns: List[str]):
             preds = {column_name: list() for column_name in columns}
 
             if len(test) == 1:
@@ -767,7 +765,7 @@ class BaseNetwork(object):
                 cls = name2class[name]
                 color = class2color[cls]
                 network.add_node(name, label=name, color=color, size=45, level=level, font={
-                                 'size': 36}, title=f'Узел байесовской сети {name} ({cls})')
+                    'size': 36}, title=f'Узел байесовской сети {name} ({cls})')
 
         for edge in G.edges:
             network.add_edge(edge[0], edge[1])
@@ -778,89 +776,3 @@ class BaseNetwork(object):
             os.mkdir("visualization_result")
 
         return network.show(f'visualization_result/' + output)
-
-
-class DiscreteBN(BaseNetwork):
-    """
-    Bayesian Network with Discrete Types of Nodes
-    """
-
-    def __init__(self):
-        super(DiscreteBN, self).__init__()
-        self.type = 'Discrete'
-        self.scoring_function = ""
-        self._allowed_dtypes = ['disc', 'disc_num']
-        self.has_logit = None
-        self.use_mixture = None
-
-
-class ContinuousBN(BaseNetwork):
-    """
-    Bayesian Network with Continuous Types of Nodes
-    """
-
-    def __init__(self, use_mixture: bool = False):
-        super(ContinuousBN, self).__init__()
-        self.type = 'Continuous'
-        self._allowed_dtypes = ['cont']
-        self.has_logit = None
-        self.use_mixture = use_mixture
-        self.scoring_function = ""
-
-
-class HybridBN(BaseNetwork):
-    """
-    Bayesian Network with Mixed Types of Nodes
-    """
-
-    def __init__(self, has_logit: bool = False, use_mixture: bool = False):
-        super(HybridBN, self).__init__()
-        self._allowed_dtypes = ['cont', 'disc', 'disc_num']
-        self.type = 'Hybrid'
-        self.has_logit = has_logit
-        self.use_mixture = use_mixture
-
-    def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
-        types = descriptor['types']
-        s = set(types.values())
-        return True if ({'cont', 'disc', 'disc_num'} == s) or (
-            {'cont', 'disc'} == s) or ({'cont', 'disc_num'} == s) else False
-
-
-class BigBraveBN:
-
-    def __init__(self, n_nearest=5, threshold=.3, proximity_metric='MI'):
-        self.n_nearest = n_nearest
-        self.threshold = threshold
-        self.proximity_metric = proximity_metric
-        self.possible_edges = []
-
-    def set_possible_edges_by_brave(self, df):
-        """Returns list of possible edges for structure learning
-
-        Args:
-            df (DataFrame): data
-            proximity_matrix (DataFrame): might be generated by get_mutual_info_score_matrix() function,
-                                                                                                        correlation etc.
-            n_nearest (int, optional): Number of Nearest neighbors, hyperparameter. Defaults to 5.
-            threshold (float, optional): Threshold for edge candidates to be passed to possible edges, threshold.
-                                                                                                Defaults to 0.3 [0;1].
-
-        Returns:
-            Possible edges: list of possible edges
-        """
-
-        proximity_matrix = get_proximity_matrix(
-            df, proximity_metric=self.proximity_metric)
-        brave_matrix = get_brave_matrix(
-            df.columns, proximity_matrix, self.n_nearest)
-
-        possible_edges_list = []
-
-        for c1 in df.columns:
-            for c2 in df.columns:
-                if brave_matrix.loc[c1, c2] > brave_matrix.max(
-                        numeric_only='true').max() * self.threshold:
-                    possible_edges_list.append((c1, c2))
-
-        self.possible_edges = possible_edges_list

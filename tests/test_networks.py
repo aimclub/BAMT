@@ -1,15 +1,23 @@
 import pathlib as pl
 import json
-import os
-from shutil import rmtree
 import unittest
+
+from sklearn.tree import DecisionTreeRegressor
+from catboost import CatBoostRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+from sklearn import preprocessing as pp
 
 import logging
 
 import pandas as pd
 
-import bamt.networks as Nets
-from bamt.nodes import GaussianNode, DiscreteNode, LogitNode
+from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
+
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.logit_node import LogitNode
+from bamt import preprocessors
 
 logging.getLogger("network").setLevel(logging.CRITICAL)
 
@@ -23,11 +31,40 @@ class TestCaseBase(unittest.TestCase):
         if not pl.Path(path).resolve().is_dir():
             raise AssertionError("Direction does not exist: %s" % str(path))
 
+    def prepare_bn_and_data(self):
+        # prepare bn where models were set by set_model
+        hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
+            ['Tectonic regime', 'Period', 'Lithology', 'Structural setting',
+             'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
+
+        encoder = pp.LabelEncoder()
+        discretizer = pp.KBinsDiscretizer(
+            n_bins=5,
+            encode='ordinal',
+            strategy='quantile')
+
+        p = preprocessors.Preprocessor(
+            [('encoder', encoder), ('discretizer', discretizer)])
+
+        discretized_data, est = p.apply(hack_data)
+
+        self.bn = HybridBN(has_logit=True)
+        info = p.info
+
+        self.bn.add_nodes(info)
+
+        self.bn.add_edges(discretized_data, scoring_function=("BIC",), progress_bar=False)
+
+        self.bn.set_regressor(regressors={'Depth': CatBoostRegressor(logging_level="Silent", allow_writing_files=False),
+                                          'Gross': RandomForestRegressor(),
+                                          'Porosity': DecisionTreeRegressor()})
+        return hack_data
+
 
 class TestBaseNetwork(TestCaseBase):
 
     def setUp(self):
-        self.bn = Nets.BaseNetwork()
+        self.bn = BaseNetwork()
 
         self.nodes = [GaussianNode(name="Node0"), DiscreteNode(name="Node1"),
                       GaussianNode(name="Node2")]
@@ -132,24 +169,28 @@ class TestBaseNetwork(TestCaseBase):
         pass
 
     def test_fit_parameters(self):
-        # here we test only initialization of folder
+        from bamt.networks.base import STORAGE
+        # here we test only initialization of the folder
         self.bn.has_logit = True
         self.bn.nodes = [LogitNode(name="Node0")]
 
-        tmp = os.getcwd()
-        prev_storage = Nets.STORAGE
-
-        Nets.STORAGE = tmp + r"\Nodes_data"
         try:
             self.bn.fit_parameters(data=pd.DataFrame())
         except KeyError:
             pass
 
-        self.assertIsDir(Nets.STORAGE)
-        self.assertIsDir(pl.Path(Nets.STORAGE).joinpath("0"))
+        self.assertIsDir(STORAGE)
+        self.assertIsDir(pl.Path(STORAGE).joinpath("0"))
 
-        rmtree(Nets.STORAGE)
-        Nets.STORAGE = prev_storage
+    def test_joblib_pathsave(self):
+        hack_data = self.prepare_bn_and_data()
+        self.bn.fit_parameters(hack_data)
+
+        self.assertGreater(self.bn.sample(100, progress_bar=False).size, 0, "Sampling is broken")
+
+        saveloc = self.bn.distributions["Gross"]['hybcprob']["['COMPRESSION']"]['regressor_obj']
+
+        self.assertIsFile(saveloc)
 
     def test_sample(self):
         data = {
@@ -176,12 +217,12 @@ class TestBaseNetwork(TestCaseBase):
                 name='Tectonic regime'), DiscreteNode(
                 name='Period'), DiscreteNode(
                 name='Lithology'), DiscreteNode(
-                    name='Structural setting'), DiscreteNode(
-                        name='Gross'), DiscreteNode(
-                            name='Netpay'), DiscreteNode(
-                                name='Porosity'), DiscreteNode(
-                                    name='Permeability'), DiscreteNode(
-                                        name='Depth')]
+                name='Structural setting'), DiscreteNode(
+                name='Gross'), DiscreteNode(
+                name='Netpay'), DiscreteNode(
+                name='Porosity'), DiscreteNode(
+                name='Permeability'), DiscreteNode(
+                name='Depth')]
 
         self.bn.set_nodes(
             nodes, info={
@@ -224,7 +265,7 @@ class TestBaseNetwork(TestCaseBase):
                 name='Tectonic regime'), DiscreteNode(
                 name='Period'), DiscreteNode(
                 name='Lithology'), DiscreteNode(
-                    name='Structural setting')]
+                name='Structural setting')]
 
         self.bn.set_nodes(
             nodes, info={

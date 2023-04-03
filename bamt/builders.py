@@ -4,16 +4,23 @@ from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 from bamt.redef_HC import hc as hc_method
 
-from bamt import nodes
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.nodes.conditional_logit_node import ConditionalLogitNode
+from bamt.nodes.logit_node import LogitNode
+from bamt.nodes.mixture_gaussian_node import MixtureGaussianNode
+from bamt.nodes.conditional_mixture_gaussian_node import ConditionalMixtureGaussianNode
+from bamt.nodes.conditional_gaussian_node import ConditionalGaussianNode
+
 from bamt.log import logger_builder
 from pandas import DataFrame
 from bamt.utils import GraphUtils as gru
 
-from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union
+from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Union, Sequence
 
 
 class ParamDict(TypedDict, total=False):
-    init_edges: Optional[Tuple[str, str]]
+    init_edges: Optional[Sequence[str]]
     init_nodes: Optional[List[str]]
     remove_init_edges: bool
     white_list: Optional[Tuple[str, str]]
@@ -30,11 +37,10 @@ class StructureBuilder(object):
         """
         :param descriptor: a dict with types and signs of nodes
         Attributes:
-        Skeleton: dict;
         black_list: a list with restricted connections;
         """
-        self.skeleton = {'V': None,
-                         'E': None}
+        self.skeleton = {'V': [],
+                         'E': []}
         self.descriptor = descriptor
 
         self.has_logit = bool
@@ -54,7 +60,6 @@ class StructureBuilder(object):
         datacol = data.columns.to_list()
 
         if not self.has_logit:
-
             # Has_logit flag allows BN building edges between cont and disc
             RESTRICTIONS = [('cont', 'disc'), ('cont', 'disc_num')]
             for x, y in itertools.product(datacol, repeat=2):
@@ -124,20 +129,20 @@ class VerticesDefiner(StructureBuilder):
         # Notice that vertices are used only by Builders
         self.vertices = []
 
-        Node = None
+        node = None
         # LEVEL 1: Define a general type of node: Discrete or Gaussian
         for vertex, type in self.descriptor['types'].items():
             if type in ['disc_num', 'disc']:
-                Node = nodes.DiscreteNode(name=vertex)
+                node = DiscreteNode(name=vertex)
             elif type == 'cont':
-                Node = nodes.GaussianNode(name=vertex, regressor=regressor)
+                node = GaussianNode(name=vertex, regressor=regressor)
             else:
                 msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
                 logger_builder.error(msg)
                 continue
 
-            self.vertices.append(Node)
+            self.vertices.append(node)
 
     def overwrite_vertex(
             self,
@@ -153,44 +158,44 @@ class VerticesDefiner(StructureBuilder):
         :param use_mixture allows using Mixture
         """
         for node_instance in self.vertices:
-            Node = node_instance
+            node = node_instance
             if has_logit:
                 if 'Discrete' in node_instance.type:
                     if node_instance.cont_parents:
                         if not node_instance.disc_parents:
-                            Node = nodes.LogitNode(
+                            node = LogitNode(
                                 name=node_instance.name, classifier=classifier)
 
                         elif node_instance.disc_parents:
-                            Node = nodes.ConditionalLogitNode(
+                            node = ConditionalLogitNode(
                                 name=node_instance.name, classifier=classifier)
 
             if use_mixture:
                 if 'Gaussian' in node_instance.type:
                     if not node_instance.disc_parents:
-                        Node = nodes.MixtureGaussianNode(
+                        node = MixtureGaussianNode(
                             name=node_instance.name)
                     elif node_instance.disc_parents:
-                        Node = nodes.ConditionalMixtureGaussianNode(
+                        node = ConditionalMixtureGaussianNode(
                             name=node_instance.name)
                     else:
                         continue
             else:
                 if 'Gaussian' in node_instance.type:
                     if node_instance.disc_parents:
-                        Node = nodes.ConditionalGaussianNode(
+                        node = ConditionalGaussianNode(
                             name=node_instance.name, regressor=regressor)
                     else:
                         continue
 
-            if node_instance == Node:
+            if node_instance == node:
                 continue
 
             id = self.skeleton['V'].index(node_instance)
-            Node.disc_parents = node_instance.disc_parents
-            Node.cont_parents = node_instance.cont_parents
-            Node.children = node_instance.children
-            self.skeleton['V'][id] = Node
+            node.disc_parents = node_instance.disc_parents
+            node.cont_parents = node_instance.cont_parents
+            node.children = node_instance.children
+            self.skeleton['V'][id] = node
 
 
 class EdgesDefiner(StructureBuilder):
@@ -222,20 +227,21 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
     def apply_K2(self,
                  data: DataFrame,
                  init_edges: Optional[List[Tuple[str,
-                                                 str]]],
+                 str]]],
                  progress_bar: bool,
                  remove_init_edges: bool,
                  white_list: Optional[List[Tuple[str,
-                                                 str]]]):
+                 str]]]):
         """
         :param init_edges: list of tuples, a graph to start learning with
-        :param remove_init_edges: allows changes in model defined by user
+        :param remove_init_edges: allows changes in a model defined by user
+        :param data: user's data
         :param progress_bar: verbose regime
         :param white_list: list of allowed edges
         """
         import bamt.utils.GraphUtils as gru
         if not all([i in ['disc', 'disc_num']
-                   for i in gru.nodes_types(data).values()]):
+                    for i in gru.nodes_types(data).values()]):
             logger_builder.error(
                 f"K2 deals only with discrete data. Continuous data: {[col for col, type in gru.nodes_types(data).items() if type not in ['disc', 'disc_num']]}")
             return None
@@ -279,13 +285,20 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
                      data: DataFrame,
                      progress_bar: bool,
                      init_edges: Optional[List[Tuple[str,
-                                                     str]]],
+                     str]]],
                      remove_init_edges: bool,
                      white_list: Optional[List[Tuple[str,
-                                                     str]]]):
-
+                     str]]]):
+        """
+        This method implements the group of scoring functions.
+        Group:
+        "MI" - Mutual Information,
+        "LL" - Log Likelihood,
+        "BIC" - Bayess Information Criteria,
+        "AIC" - Akaike information Criteria.
+        """
         column_name_dict = dict([(n.name, i)
-                                for i, n in enumerate(self.vertices)])
+                                 for i, n in enumerate(self.vertices)])
         blacklist_new = []
         for pair in self.black_list:
             blacklist_new.append(

@@ -5,7 +5,7 @@ Used imports:
 
 .. code-block:: python
 
-    import bamt.Networks as Nets
+    from bamt.networks.hybrid_bn import HybridBN
     import bamt.Preprocessors as pp
 
     import pandas as pd
@@ -19,7 +19,7 @@ Used imports:
 
     from pgmpy.estimators import K2Score
 
-Importing exaple data:
+Importing example data:
 
 .. code-block:: python
 
@@ -32,9 +32,9 @@ Choosing a chunk of data:
 
     cols = ['age', 'sex', 'has_pets', 'is_parent', 'relation', 'is_driver', 'tr_per_month', 'median_tr', 'mean_tr']
     data = data[cols]
-    data[['sex',	'has_pets',	'is_parent',	'relation',	'is_driver']] = data[['sex',	'has_pets',	'is_parent',	'relation',	'is_driver']].astype(str)
+    data[['sex', 'has_pets',  'is_parent', 'relation', 'is_driver']] = data[['sex',	'has_pets',	'is_parent', 'relation', 'is_driver']].astype(str)
 
-Prepocessing data, encode categorical features and discretize numerical features, initialize BN and add nodes:
+Preprocessing data, encode categorical features and discretize numerical features, initialize BN and add nodes:
 
 .. code-block:: python 
 
@@ -44,12 +44,12 @@ Prepocessing data, encode categorical features and discretize numerical features
     p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
     discretized_data, est = p.apply(data)
 
-    bn = Nets.HybridBN(has_logit=True, use_mixture=True) # init BN
+    bn = HybridBN(has_logit=True, use_mixture=True) # init BN
     info = p.info
     info
     bn.add_nodes(info)
 
-Learinig BN structure and parameters with HillClimbing algorithm:
+Learning BN structure and parameters with HillClimbing algorithm:
 
 .. code-block:: python 
 
