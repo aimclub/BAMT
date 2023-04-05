@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+from joblib import Parallel, delayed
 
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
@@ -458,11 +459,15 @@ class BaseNetwork(object):
 
         def worker(node):
             return node.fit_parameters(data)
+          
+        results = Parallel(n_jobs=-1)(delayed(worker)(node) for node in self.nodes)
+        for result, node in zip(results, self.nodes):
+            self.distributions[node.name] = result
 
-        pool = ThreadPoolExecutor(3)
-        for node in self.nodes:
-            future = pool.submit(worker, node)
-            self.distributions[node.name] = future.result()
+#         pool = ThreadPoolExecutor(3)
+#         for node in self.nodes:
+#             future = pool.submit(worker, node)
+#             self.distributions[node.name] = future.result()
 
     def get_info(self, as_df: bool = True) -> Optional[pd.DataFrame]:
         """Return a table with name, type, parents_type, parents_names"""
