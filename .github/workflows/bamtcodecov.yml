@@ -8,7 +8,7 @@ jobs:
     name: Test python API
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     - name: Update pip
