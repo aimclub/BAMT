@@ -9,7 +9,7 @@
    * - team
      - | |ITMO| |NCCR| 
    * - package
-     - | |pypi| |py_8| |py_9| |py_10|
+     - | |pypi| |py_9| |py_10|
    * - tests
      - | |Build| |coverage|
    * - docs
