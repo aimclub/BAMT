@@ -21,9 +21,19 @@ There are two options for loading a BN structure. The first is to read it direct
     bn2.load("structure.json")
 
 
-The second one is to set it manually using list of edges:
+The second one is to set it manually using list of edges, but first nodes should be added:
 
 .. code-block:: python
+
+    encoder = preprocessing.LabelEncoder()
+    discretizer = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal', strategy='quantile')
+
+    p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
+    discretized_data, est = p.apply(data)
+    
+    info = p.info
+
+    bn.add_nodes(info)
 
     structure = [("Tectonic regime", "Structural setting"),
                 ("Gross", "Netpay"),
