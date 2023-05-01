@@ -9,7 +9,7 @@ import json
 import os
 
 from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
+from joblib import Parallel, delayed
 from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
 
@@ -97,8 +97,8 @@ class BaseNetwork(object):
     def add_edges(self,
                   data: pd.DataFrame,
                   scoring_function: Union[Tuple[str,
-                  Callable],
-                  Tuple[str]],
+                                                Callable],
+                                          Tuple[str]],
                   progress_bar: bool = True,
                   classifier: Optional[object] = None,
                   regressor: Optional[object] = None,
@@ -126,9 +126,9 @@ class BaseNetwork(object):
                     params["init_edges"]]
                 )
                 failed = (
-                        (type_map[:, 0] == "cont") &
-                        ((type_map[:, 1] == "disc") |
-                         (type_map[:, 1] == "disc_num"))
+                    (type_map[:, 0] == "cont") &
+                    ((type_map[:, 1] == "disc") |
+                     (type_map[:, 1] == "disc_num"))
                 )
                 if sum(failed):
                     logger_network.warning(
@@ -169,7 +169,8 @@ class BaseNetwork(object):
         """
         import bamt.utils.GraphUtils as gru
         data_descriptor = gru.nodes_types(discretized_data)
-        if not all([i in ['disc', 'disc_num'] for i in data_descriptor.values()]):
+        if not all([i in ['disc', 'disc_num']
+                   for i in data_descriptor.values()]):
             logger_network.error(
                 f"calculate_weghts() method deals only with discrete data. Continuous data: " +
                 f"{[col for col, type in data_descriptor.items() if type not in ['disc', 'disc_num']]}")
@@ -411,7 +412,8 @@ class BaseNetwork(object):
                            for node_keys in node_data['hybcprob'].values()):
                         raise CompatibilityError("use_mixture")
 
-        # check if edges before and after are the same.They can be different in the case when user sets forbidden edges.
+        # check if edges before and after are the same.They can be different in
+        # the case when user sets forbidden edges.
         if not self.has_logit:
             if not all(
                     edges_before == [
@@ -430,7 +432,11 @@ class BaseNetwork(object):
             weights[tuple_key] = input_dict['weights'][str(tuple_key)]
         self.weights = weights
 
-    def fit_parameters(self, data: pd.DataFrame, dropna: bool = True):
+    def fit_parameters(
+            self,
+            data: pd.DataFrame,
+            dropna: bool = True,
+            n_jobs: int = -1):
         """
         Base function for parameter learning
         """
@@ -459,10 +465,11 @@ class BaseNetwork(object):
         def worker(node):
             return node.fit_parameters(data)
 
-        pool = ThreadPoolExecutor(3)
-        for node in self.nodes:
-            future = pool.submit(worker, node)
-            self.distributions[node.name] = future.result()
+        results = Parallel(n_jobs=n_jobs)(delayed(worker)(node)
+                                          for node in self.nodes)
+
+        for result, node in zip(results, self.nodes):
+            self.distributions[node.name] = result
 
     def get_info(self, as_df: bool = True) -> Optional[pd.DataFrame]:
         """Return a table with name, type, parents_type, parents_names"""
@@ -545,9 +552,9 @@ class BaseNetwork(object):
                                 else:
                                     model_type = "classifier"
                                 if obj_data["serialization"] == 'joblib' and obj_data[
-                                    f"{model_type}_obj"]:
+                                        f"{model_type}_obj"]:
                                     new_path = models_dir + \
-                                               f"\\{node.name.replace(' ', '_')}\\{obj}.joblib.compressed"
+                                        f"\\{node.name.replace(' ', '_')}\\{obj}.joblib.compressed"
                                     node_data["hybcprob"][obj][f"{model_type}_obj"] = new_path
 
                     if predict:
@@ -588,9 +595,9 @@ class BaseNetwork(object):
                 test: pd.DataFrame,
                 parall_count: int = 1,
                 progress_bar: bool = True) -> Dict[str,
-    Union[List[str],
-    List[int],
-    List[float]]]:
+                                                   Union[List[str],
+                                                         List[int],
+                                                         List[float]]]:
         """
         Function to predict columns from given data.
         Note that train data and test data must have different columns.
