@@ -239,5 +239,5 @@ Citation
 .. |Build| image:: https://github.com/ITMO-NSS-team/BAMT/actions/workflows/bamtcodecov.yml/badge.svg
    :target: https://github.com/ITMO-NSS-team/BAMT/actions/workflows/bamtcodecov.yml
 
-.. |coverage| image:: https://codecov.io/github/ITMO-NSS-team/BAMT/branch/master/graph/badge.svg?token=9ZX37JNIYZ 
-   :target: https://codecov.io/github/ITMO-NSS-team/BAMT
+.. |coverage| image:: https://codecov.io/github/aimclub/BAMT/branch/master/graph/badge.svg?token=fA4qsxGqTC 
+ :target: https://codecov.io/github/aimclub/BAMT
