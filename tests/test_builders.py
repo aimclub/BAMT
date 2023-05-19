@@ -5,7 +5,10 @@ import logging
 
 import pandas as pd
 
-import bamt.builders as builders
+from bamt.builders.builders_base import StructureBuilder, VerticesDefiner, EdgesDefiner
+from bamt.builders.hc_builder import HCStructureBuilder, HillClimbDefiner
+from bamt.builders.evo_builder import EvoStructureBuilder
+
 from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.discrete_node import DiscreteNode
 
@@ -20,7 +23,7 @@ class TestStructureBuilder(unittest.TestCase):
                                      "Node1": "disc",
                                      "Node2": "disc_num"},
                            "signs": {"Node0": "pos"}}
-        self.SB = builders.StructureBuilder(descriptor=self.descriptor)
+        self.SB = StructureBuilder(descriptor=self.descriptor)
 
     def test_restrict(self):
         self.SB.has_logit = True
@@ -84,7 +87,7 @@ class TestVerticesDefiner(unittest.TestCase):
                                      "Node7": "disc_num"},
                            "signs": {"Node0": "pos", "Node1": "neg"}}
 
-        self.VD = builders.VerticesDefiner(
+        self.VD = VerticesDefiner(
             descriptor=self.descriptor, regressor=None)
 
     def test_first_level(self):
@@ -214,9 +217,9 @@ class TestHillClimbDefiner(unittest.TestCase):
                       0, 4, 0, 1, 2, 0, 0, 3]}
 
     def test_apply_K2(self):
-        hcd = builders.HillClimbDefiner(data=pd.DataFrame(self.data),
-                                        descriptor=self.descriptor,
-                                        scoring_function=("K2",))
+        hcd = HillClimbDefiner(data=pd.DataFrame(self.data),
+                                                   descriptor=self.descriptor,
+                                                   scoring_function=("K2",))
 
         hcd.apply_K2(data=pd.DataFrame(self.data),
                      init_edges=None,
@@ -245,9 +248,9 @@ class TestHillClimbDefiner(unittest.TestCase):
         self.assertEqual(hcd.skeleton["E"], right_edges)
 
     def test_apply_group1(self):
-        hcd = builders.HillClimbDefiner(data=pd.DataFrame(self.data),
-                                        descriptor=self.descriptor,
-                                        scoring_function=("MI",))
+        hcd = HillClimbDefiner(data=pd.DataFrame(self.data),
+                                                   descriptor=self.descriptor,
+                                                   scoring_function=("MI",))
 
         hcd.restrict(
             data=pd.DataFrame(

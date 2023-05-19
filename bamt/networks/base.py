@@ -13,13 +13,13 @@ from joblib import Parallel, delayed
 from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
 
-from bamt.builders import ParamDict
+from bamt.builders.builders_base import ParamDict
 from bamt.log import logger_network
 from bamt.config import config
 
 from bamt.nodes.base import BaseNode
 
-import bamt.builders as Builders
+import bamt.builders as builders
 
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
@@ -91,7 +91,7 @@ class BaseNetwork(object):
             return None
         self.descriptor = descriptor
         # LEVEL 1
-        worker_1 = Builders.VerticesDefiner(descriptor, regressor=None)
+        worker_1 = builders.builders_base.VerticesDefiner(descriptor, regressor=None)
         self.nodes = worker_1.vertices
 
     def add_edges(self,
@@ -143,7 +143,7 @@ class BaseNetwork(object):
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return None
         if optimizer == 'HC':
-            worker = Builders.HCStructureBuilder(
+            worker = builders.hc_builder.HCStructureBuilder(
                 data=data,
                 descriptor=self.descriptor,
                 scoring_function=scoring_function,
@@ -151,7 +151,7 @@ class BaseNetwork(object):
                 use_mixture=self.use_mixture,
                 regressor=regressor)
         elif optimizer == 'Evo':
-            worker = Builders.EvoStructureBuilder(
+            worker = builders.evo_builder.EvoStructureBuilder(
                 data=data,
                 descriptor=self.descriptor,
                 scoring_function=scoring_function,
@@ -290,7 +290,7 @@ class BaseNetwork(object):
         if edges:
             self.set_edges(edges=edges)
             if overwrite:
-                builder = Builders.VerticesDefiner(
+                builder = builders.builders_base.VerticesDefiner(
                     descriptor=self.descriptor, regressor=None)  # init worker
                 builder.skeleton['V'] = builder.vertices  # 1 stage
                 builder.skeleton['E'] = self.edges
