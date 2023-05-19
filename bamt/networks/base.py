@@ -103,7 +103,8 @@ class BaseNetwork(object):
                   classifier: Optional[object] = None,
                   regressor: Optional[object] = None,
                   params: Optional[ParamDict] = None,
-                  optimizer: str = 'HC'):
+                  optimizer: str = 'HC',
+                  **kwargs):
         """
         Base function for Structure learning
         scoring_function: tuple with the following format (NAME, scoring_function) or (NAME,)
@@ -149,19 +150,28 @@ class BaseNetwork(object):
                 has_logit=self.has_logit,
                 use_mixture=self.use_mixture,
                 regressor=regressor)
-
-            self.sf_name = scoring_function[0]
-
-            worker.build(
+        elif optimizer == 'Evo':
+            worker = Builders.EvoStructureBuilder(
                 data=data,
-                params=params,
-                classifier=classifier,
-                regressor=regressor,
-                progress_bar=progress_bar)
+                descriptor=self.descriptor,
+                scoring_function=scoring_function,
+                has_logit=self.has_logit,
+                use_mixture=self.use_mixture,
+                regressor=regressor)
 
-            # update family
-            self.nodes = worker.skeleton['V']
-            self.edges = worker.skeleton['E']
+        self.sf_name = scoring_function[0]
+
+        worker.build(
+            data=data,
+            params=params,
+            classifier=classifier,
+            regressor=regressor,
+            progress_bar=progress_bar,
+            **kwargs)
+
+        # update family
+        self.nodes = worker.skeleton['V']
+        self.edges = worker.skeleton['E']
 
     def calculate_weights(self, discretized_data: pd.DataFrame):
         """
