@@ -218,8 +218,8 @@ class TestHillClimbDefiner(unittest.TestCase):
 
     def test_apply_K2(self):
         hcd = HillClimbDefiner(data=pd.DataFrame(self.data),
-                                                   descriptor=self.descriptor,
-                                                   scoring_function=("K2",))
+                               descriptor=self.descriptor,
+                               scoring_function=("K2",))
 
         hcd.apply_K2(data=pd.DataFrame(self.data),
                      init_edges=None,
@@ -249,8 +249,8 @@ class TestHillClimbDefiner(unittest.TestCase):
 
     def test_apply_group1(self):
         hcd = HillClimbDefiner(data=pd.DataFrame(self.data),
-                                                   descriptor=self.descriptor,
-                                                   scoring_function=("MI",))
+                               descriptor=self.descriptor,
+                               scoring_function=("MI",))
 
         hcd.restrict(
             data=pd.DataFrame(

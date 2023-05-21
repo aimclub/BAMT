@@ -43,7 +43,9 @@ class LogitNode(BaseNode):
             logger_nodes.warning(
                 f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
 
-            path = self.get_path_joblib(self.name, specific=self.name.replace(' ', '_'))
+            path = self.get_path_joblib(
+                self.name, specific=self.name.replace(
+                    ' ', '_'))
 
             joblib.dump(self.classifier, path, compress=True, protocol=4)
             serialization_name = 'joblib'

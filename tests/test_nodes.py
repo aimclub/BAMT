@@ -157,7 +157,8 @@ class TestGaussianNode(unittest.TestCase):
 class TestConditionalGaussianNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = conditional_gaussian_node.ConditionalGaussianNode(name="test")
+        self.node = conditional_gaussian_node.ConditionalGaussianNode(
+            name="test")
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),
@@ -176,9 +177,11 @@ class TestConditionalGaussianNode(unittest.TestCase):
     def fit_parameters(self, regressor=None):
         if regressor is not None:
             self.node.regressor = regressor
-            self.node.type = 'ConditionalGaussian' + f" ({type(regressor).__name__})"
+            self.node.type = 'ConditionalGaussian' + \
+                f" ({type(regressor).__name__})"
 
-        node_without_parents = conditional_gaussian_node.ConditionalGaussianNode(name="foster-son")
+        node_without_parents = conditional_gaussian_node.ConditionalGaussianNode(
+            name="foster-son")
         node_without_parents.children = ["node6", "node5"]
 
         params_parents = self.node.fit_parameters(
@@ -272,7 +275,8 @@ class TestMixtureGaussianNode(unittest.TestCase):
 class TestConditionalMixtureGaussianNode(unittest.TestCase):
 
     def setUp(self):
-        self.node = conditional_mixture_gaussian_node.ConditionalMixtureGaussianNode(name="test")
+        self.node = conditional_mixture_gaussian_node.ConditionalMixtureGaussianNode(
+            name="test")
         self.data_dict = {
             "node0": np.random.normal(1, 4, 30),
             "node1": np.random.normal(2, .1, 30),

@@ -91,7 +91,8 @@ class BaseNetwork(object):
             return None
         self.descriptor = descriptor
         # LEVEL 1
-        worker_1 = builders.builders_base.VerticesDefiner(descriptor, regressor=None)
+        worker_1 = builders.builders_base.VerticesDefiner(
+            descriptor, regressor=None)
         self.nodes = worker_1.vertices
 
     def add_edges(self,

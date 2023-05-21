@@ -10,6 +10,7 @@ from bamt.utils import GraphUtils as gru
 
 from typing import Dict, List, Optional, Tuple, Callable, Union
 
+
 class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
     """
     Object to define structure and pass it into skeleton
@@ -34,11 +35,11 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
     def apply_K2(self,
                  data: DataFrame,
                  init_edges: Optional[List[Tuple[str,
-                 str]]],
+                                                 str]]],
                  progress_bar: bool,
                  remove_init_edges: bool,
                  white_list: Optional[List[Tuple[str,
-                 str]]]):
+                                                 str]]]):
         """
         :param init_edges: list of tuples, a graph to start learning with
         :param remove_init_edges: allows changes in a model defined by user
@@ -91,10 +92,10 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
                      data: DataFrame,
                      progress_bar: bool,
                      init_edges: Optional[List[Tuple[str,
-                     str]]],
+                                                     str]]],
                      remove_init_edges: bool,
                      white_list: Optional[List[Tuple[str,
-                     str]]]):
+                                                     str]]]):
         """
         This method implements the group of scoring functions.
         Group:

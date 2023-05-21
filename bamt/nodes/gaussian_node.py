@@ -51,8 +51,8 @@ class GaussianNode(BaseNode):
                 logger_nodes.warning(
                     f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
 
-                path = self.get_path_joblib(node_name=self.name.replace(' ', '_'),
-                                            specific=f"{self.name.replace(' ', '_')}")
+                path = self.get_path_joblib(node_name=self.name.replace(
+                    ' ', '_'), specific=f"{self.name.replace(' ', '_')}")
                 joblib.dump(self.regressor, path, compress=True, protocol=4)
                 return {'mean': np.nan,
                         'regressor_obj': path,

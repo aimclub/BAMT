@@ -30,7 +30,8 @@ class ConditionalGaussianNode(BaseNode):
         self.type = 'ConditionalGaussian' + \
                     f" ({type(self.regressor).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
+    def fit_parameters(
+            self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
         """
         Train params for Conditional Gaussian Node.
         Return:
@@ -74,8 +75,9 @@ class ConditionalGaussianNode(BaseNode):
                         logger_nodes.warning(
                             f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
 
-                        path = self.get_path_joblib(node_name=self.name.replace(' ', '_'),
-                                                    specific=comb)
+                        path = self.get_path_joblib(
+                            node_name=self.name.replace(
+                                ' ', '_'), specific=comb)
                         joblib.dump(model, path, compress=True, protocol=4)
                         hycprob[str(key_comb)] = {'variance': variance,
                                                   'mean': np.nan,
@@ -99,7 +101,7 @@ class ConditionalGaussianNode(BaseNode):
         return {"hybcprob": hycprob}
 
     def choose(self,
-               node_info: Dict[str, Dict[str,CondGaussParams]],
+               node_info: Dict[str, Dict[str, CondGaussParams]],
                pvals: List[Union[str, float]]) -> float:
         """
         Return value from ConditionalLogit node
