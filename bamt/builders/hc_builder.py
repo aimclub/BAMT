@@ -15,6 +15,7 @@ class HillClimbDefiner(BaseDefiner):
     """
     Object to define structure and pass it into skeleton
     """
+
     def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
                  scoring_function: Union[Tuple[str, Callable], Tuple[str]],
                  regressor: Optional[object] = None):
