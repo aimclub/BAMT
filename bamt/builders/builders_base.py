@@ -12,7 +12,7 @@ from bamt.log import logger_builder
 from pandas import DataFrame
 from bamt.utils import GraphUtils as gru
 
-from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Sequence
+from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Sequence, Union
 
 
 class ParamDict(TypedDict, total=False):
@@ -149,7 +149,7 @@ class VerticesDefiner(StructureBuilder):
         """
         Level 2: Redefined nodes according structure (parents)
         :param classifier: an object to pass into logit, condLogit nodes
-        :param regressor: an object to pass into gaussianish nodes
+        :param regressor: an object to pass into gaussian nodes
         :param has_logit allows edges from cont to disc nodes
         :param use_mixture allows using Mixture
         """
@@ -197,3 +197,18 @@ class VerticesDefiner(StructureBuilder):
 class EdgesDefiner(StructureBuilder):
     def __init__(self, descriptor: Dict[str, Dict[str, str]]):
         super(EdgesDefiner, self).__init__(descriptor)
+
+
+class BaseDefiner(VerticesDefiner, EdgesDefiner):
+    def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
+                 scoring_function: Union[Tuple[str, Callable], Tuple[str]],
+                 regressor: Optional[object] = None):
+
+        self.scoring_function = scoring_function
+        self.params = {'init_edges': None,
+                       'init_nodes': None,
+                       'remove_init_edges': True,
+                       'white_list': None,
+                       'bl_add': None}
+        super().__init__(descriptor, regressor=regressor)
+        self.optimizer = None  # will be defined in subclasses

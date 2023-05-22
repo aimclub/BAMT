@@ -1,7 +1,7 @@
 from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 
-from bamt.builders.builders_base import EdgesDefiner, VerticesDefiner, ParamDict
+from bamt.builders.builders_base import ParamDict, BaseDefiner
 from bamt.redef_HC import hc as hc_method
 
 from bamt.log import logger_builder
@@ -11,26 +11,16 @@ from bamt.utils import GraphUtils as gru
 from typing import Dict, List, Optional, Tuple, Callable, Union
 
 
-class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
+class HillClimbDefiner(BaseDefiner):
     """
     Object to define structure and pass it into skeleton
     """
-
     def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
                  scoring_function: Union[Tuple[str, Callable], Tuple[str]],
                  regressor: Optional[object] = None):
-        """
-        :param scoring_function: a tuple with following format (Name, scoring_function)
-        """
 
-        self.scoring_function = scoring_function
+        super().__init__(data, descriptor, scoring_function, regressor)
         self.optimizer = HillClimbSearch(data)
-        self.params = {'init_edges': None,
-                       'init_nodes': None,
-                       'remove_init_edges': True,
-                       'white_list': None,
-                       'bl_add': None}
-        super(HillClimbDefiner, self).__init__(descriptor, regressor=regressor)
 
     def apply_K2(self,
                  data: DataFrame,
@@ -101,7 +91,7 @@ class HillClimbDefiner(VerticesDefiner, EdgesDefiner):
         Group:
         "MI" - Mutual Information,
         "LL" - Log Likelihood,
-        "BIC" - Bayess Information Criteria,
+        "BIC" - Bayesian Information Criteria,
         "AIC" - Akaike information Criteria.
         """
         column_name_dict = dict([(n.name, i)

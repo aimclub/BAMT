@@ -14,6 +14,8 @@ from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
 
 from bamt.builders.builders_base import ParamDict
+from bamt.builders.hc_builder import HCStructureBuilder
+from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.log import logger_network
 from bamt.config import config
 
@@ -144,7 +146,7 @@ class BaseNetwork(object):
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return None
         if optimizer == 'HC':
-            worker = builders.hc_builder.HCStructureBuilder(
+            worker = HCStructureBuilder(
                 data=data,
                 descriptor=self.descriptor,
                 scoring_function=scoring_function,
@@ -152,7 +154,7 @@ class BaseNetwork(object):
                 use_mixture=self.use_mixture,
                 regressor=regressor)
         elif optimizer == 'Evo':
-            worker = builders.evo_builder.EvoStructureBuilder(
+            worker = EvoStructureBuilder(
                 data=data,
                 descriptor=self.descriptor,
                 scoring_function=scoring_function,

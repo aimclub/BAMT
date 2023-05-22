@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from pandas import DataFrame
 
-from bamt.builders.builders_base import VerticesDefiner, EdgesDefiner
+from bamt.builders.builders_base import BaseDefiner
 from bamt.utils import EvoUtils as evo
 
 from golem.core.adapter import DirectAdapter
@@ -16,19 +16,29 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
 from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 
-from typing import Callable
+from typing import Dict, List, Optional, Tuple, Callable, Union
 
 
-class EvoStructureBuilder(VerticesDefiner, EdgesDefiner):
+class EvoDefiner(BaseDefiner):
+    def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
+                 scoring_function: Union[Tuple[str, Callable], Tuple[str]],
+                 regressor: Optional[object] = None):
+
+        super().__init__(data, descriptor, scoring_function, regressor)
+
+
+class EvoStructureBuilder(EvoDefiner):
     def __init__(
             self,
-            data,
-            descriptor,
-            scoring_function,
-            has_logit,
-            use_mixture,
-            regressor):
-        super().__init__(
+            data: DataFrame,
+            descriptor: Dict[str, Dict[str, str]],
+            scoring_function: Tuple[str, Callable],
+            regressor: Optional[object],
+            has_logit: bool,
+            use_mixture: bool):
+        super(
+            EvoStructureBuilder,
+            self).__init__(
             data=data,
             descriptor=descriptor,
             scoring_function=scoring_function,
@@ -50,9 +60,12 @@ class EvoStructureBuilder(VerticesDefiner, EdgesDefiner):
         self.default_max_arity = 10
         self.default_max_depth = 10
         self.default_timeout = 180
-        self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
-                                   CrossoverTypesEnum.exchange_parents_one,
-                                   CrossoverTypesEnum.exchange_parents_both]
+        # uncomment when the next version of golem is released
+        # self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
+        #                            CrossoverTypesEnum.exchange_parents_one,
+        #                            CrossoverTypesEnum.exchange_parents_both]
+        # erase when the next version of golem is released
+        self.default_crossovers = [CrossoverTypesEnum.none]
         self.default_mutations = [
             evo.custom_mutation_add,
             evo.custom_mutation_delete,
@@ -66,6 +79,8 @@ class EvoStructureBuilder(VerticesDefiner, EdgesDefiner):
 
     def build(self,
               data: DataFrame,
+              classifier: Optional[object],
+              regressor: Optional[object],
               **kwargs):
         # Get the list of node names
         nodes_types = data.columns.to_list()
@@ -91,7 +106,7 @@ class EvoStructureBuilder(VerticesDefiner, EdgesDefiner):
             mutation_prob=kwargs.get('mutation_prob', self.default_mutation_prob),
             genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
             mutation_types=kwargs.get('custom_mutations', self.default_mutations),
-            crossover_types=kwargs.get('custom_crossovers', self.default_mutation_prob),
+            crossover_types=kwargs.get('custom_crossovers', self.default_crossovers),
             selection_types=kwargs.get('selection_type', self.default_selection))
 
         # Set the adapter for the conversion between the graph and the data
@@ -124,16 +139,20 @@ class EvoStructureBuilder(VerticesDefiner, EdgesDefiner):
 
         # Define the function to evaluate the objective function
         objective_eval = ObjectiveEvaluate(
-            objective, data=data, visualisation=False)
+            objective, data=data)
 
         # Run the optimization
         optimized_graph = optimizer.optimise(objective_eval)[0]
 
         # Get the best graph
-        best_graph = adapter.restore(optimized_graph)
+        # best_graph = adapter.restore(optimized_graphs[0])
+
+        best_graph_edge_list = optimized_graph.operator.get_edges()
+
+        print('Best graph: ', best_graph_edge_list)
 
         # Convert the best graph to the format used by the Bayesian Network
-        self.skeleton = self._convert_to_bn_format(best_graph)
+        self.skeleton = self._convert_to_bn_format(best_graph_edge_list)
 
         self.get_family()
         self.overwrite_vertex(has_logit=self.has_logit,
@@ -141,8 +160,6 @@ class EvoStructureBuilder(VerticesDefiner, EdgesDefiner):
                               classifier=classifier,
                               regressor=regressor)
 
-    def _convert_to_bn_format(self, graph):
+    def _convert_to_bn_format(self, edge_list):
         # Convert the graph to the format used by the Bayesian Network
-        # This is a placeholder and should be replaced with the actual
-        # conversion code
-        return {'V': [self.vertices], 'E': [graph]}
+        return {'V': [self.vertices], 'E': [edge_list]}
