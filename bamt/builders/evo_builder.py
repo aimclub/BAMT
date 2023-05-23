@@ -60,12 +60,9 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_max_arity = 10
         self.default_max_depth = 10
         self.default_timeout = 180
-        # uncomment when the next version of golem is released
-        # self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
-        #                            CrossoverTypesEnum.exchange_parents_one,
-        #                            CrossoverTypesEnum.exchange_parents_both]
-        # erase when the next version of golem is released
-        self.default_crossovers = [CrossoverTypesEnum.none]
+        self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
+                                   CrossoverTypesEnum.exchange_parents_one,
+                                   CrossoverTypesEnum.exchange_parents_both]
         self.default_mutations = [
             evo.custom_mutation_add,
             evo.custom_mutation_delete,
@@ -148,11 +145,13 @@ class EvoStructureBuilder(EvoDefiner):
         # best_graph = adapter.restore(optimized_graphs[0])
 
         best_graph_edge_list = optimized_graph.operator.get_edges()
+        best_graph_edge_list = self._convert_to_strings(best_graph_edge_list)
 
         print('Best graph: ', best_graph_edge_list)
 
         # Convert the best graph to the format used by the Bayesian Network
-        self.skeleton = self._convert_to_bn_format(best_graph_edge_list)
+        self.skeleton['V'] = self.vertices
+        self.skeleton['E'] = best_graph_edge_list
 
         self.get_family()
         self.overwrite_vertex(has_logit=self.has_logit,
@@ -160,6 +159,6 @@ class EvoStructureBuilder(EvoDefiner):
                               classifier=classifier,
                               regressor=regressor)
 
-    def _convert_to_bn_format(self, edge_list):
-        # Convert the graph to the format used by the Bayesian Network
-        return {'V': [self.vertices], 'E': [edge_list]}
+    @staticmethod
+    def _convert_to_strings(nested_list):
+        return [[str(item) for item in inner_list] for inner_list in nested_list]
