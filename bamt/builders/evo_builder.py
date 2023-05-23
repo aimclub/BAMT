@@ -16,15 +16,14 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
 from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 
-from typing import Dict, List, Optional, Tuple, Callable, Union
+from typing import Dict, Optional
 
 
 class EvoDefiner(BaseDefiner):
     def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
-                 scoring_function: Union[Tuple[str, Callable], Tuple[str]],
                  regressor: Optional[object] = None):
 
-        super().__init__(data, descriptor, scoring_function, regressor)
+        super().__init__(data, descriptor, regressor)
 
 
 class EvoStructureBuilder(EvoDefiner):
@@ -32,7 +31,6 @@ class EvoStructureBuilder(EvoDefiner):
             self,
             data: DataFrame,
             descriptor: Dict[str, Dict[str, str]],
-            scoring_function: Tuple[str, Callable],
             regressor: Optional[object],
             has_logit: bool,
             use_mixture: bool):
@@ -41,11 +39,9 @@ class EvoStructureBuilder(EvoDefiner):
             self).__init__(
             data=data,
             descriptor=descriptor,
-            scoring_function=scoring_function,
             regressor=regressor)
         self.data = data
         self.descriptor = descriptor
-        self.scoring_function = scoring_function
         self.has_logit = has_logit
         self.use_mixture = use_mixture
         self.regressor = regressor
@@ -60,6 +56,7 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_max_arity = 10
         self.default_max_depth = 10
         self.default_timeout = 180
+        self.objective_metric = evo.K2_metric
         self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
                                    CrossoverTypesEnum.exchange_parents_one,
                                    CrossoverTypesEnum.exchange_parents_both]
@@ -72,7 +69,6 @@ class EvoStructureBuilder(EvoDefiner):
             has_no_self_cycled_nodes,
             has_no_cycle,
             evo.has_no_duplicates]
-        self.objective_metric = evo.K2_metric
 
     def build(self,
               data: DataFrame,
@@ -85,8 +81,10 @@ class EvoStructureBuilder(EvoDefiner):
         # Create the initial population
         initial = [
             evo.CustomGraphModel(
-                nodes=[
-                    evo.CustomGraphNode(node_type) for node_type in nodes_types])]
+                nodes=kwargs.get(
+                    'init_nodes', [
+                        evo.CustomGraphNode(node_type) for node_type in nodes_types]), edges=kwargs.get(
+                    'init_edges', None))]
 
         # Define the requirements for the evolutionary algorithm
         requirements = GraphRequirements(
@@ -113,6 +111,12 @@ class EvoStructureBuilder(EvoDefiner):
             base_node_class=evo.CustomGraphNode)
 
         # Set the constraints for the graph
+
+        if kwargs.get('blacklist', None) is not None:
+            self.default_constraints.append(evo.has_no_blacklist_edges)
+        if kwargs.get('whitelist', None) is not None:
+            self.default_constraints.append(evo.has_only_whitelist_edges)
+
         constraints = kwargs.get(
             'custom_constraints',
             self.default_constraints)
@@ -142,8 +146,6 @@ class EvoStructureBuilder(EvoDefiner):
         optimized_graph = optimizer.optimise(objective_eval)[0]
 
         # Get the best graph
-        # best_graph = adapter.restore(optimized_graphs[0])
-
         best_graph_edge_list = optimized_graph.operator.get_edges()
         best_graph_edge_list = self._convert_to_strings(best_graph_edge_list)
 
@@ -161,4 +163,5 @@ class EvoStructureBuilder(EvoDefiner):
 
     @staticmethod
     def _convert_to_strings(nested_list):
-        return [[str(item) for item in inner_list] for inner_list in nested_list]
+        return [[str(item) for item in inner_list]
+                for inner_list in nested_list]

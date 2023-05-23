@@ -284,5 +284,44 @@ class TestHillClimbDefiner(unittest.TestCase):
         self.assertEqual(hcd.skeleton["E"], right_edges)
 
 
+class TestEvoStructureBuilder(unittest.TestCase):
+
+    def setUp(self):
+        self.data = pd.read_csv("../data/asia.csv")
+        self.descriptor = {"types": {"Node0": "cont",
+                                     "Node1": "disc",
+                                     "Node2": "disc_num"},
+                           "signs": {"Node0": "pos"}}
+        self.evo_builder = EvoStructureBuilder(data=self.data,
+                                               descriptor=self.descriptor,
+                                               regressor=None,
+                                               has_logit=True,
+                                               use_mixture=True)
+        # Replace this with your actual reference DAG
+        self.reference_dag = None
+
+    def test_build(self):
+        # placeholder kwargs
+        kwargs = {}
+        self.evo_builder.build(
+            data=self.data,
+            classifier=None,
+            regressor=None,
+            **kwargs)
+
+        obtained_dag = self.evo_builder.skeleton['E']
+        dist = structural_hamming_distance(obtained_dag, self.reference_dag)
+
+        self.assertLess(
+            dist,
+            20,
+            msg="Structural Hamming Distance should be less than 20.")
+
+
+def structural_hamming_distance(DAG1, DAG2):
+    # placeholder function
+    pass
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -95,3 +95,19 @@ def has_no_duplicates(graph):
     if len(labels.values()) != len(set(labels.values())):
         raise ValueError('Custom graph has duplicates')
     return True
+
+
+def has_no_blacklist_edges(graph, blacklist):
+    nx_graph, _ = graph_structure_as_nx_graph(graph)
+    for edge in nx_graph.edges():
+        if edge in blacklist:
+            raise ValueError('Graph contains blacklisted edges')
+    return True
+
+
+def has_only_whitelist_edges(graph, whitelist):
+    nx_graph, _ = graph_structure_as_nx_graph(graph)
+    for edge in nx_graph.edges():
+        if edge not in whitelist:
+            raise ValueError('Graph contains non-whitelisted edges')
+    return True
