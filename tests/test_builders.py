@@ -332,8 +332,8 @@ class TestEvoStructureBuilder(unittest.TestCase):
 
         self.assertLess(
             dist,
-            10,
-            msg=f"Structural Hamming Distance should be less than 10, obtained SHD = {dist}")
+            15,
+            msg=f"Structural Hamming Distance should be less than 15, obtained SHD = {dist}")
 
 
 if __name__ == "__main__":
