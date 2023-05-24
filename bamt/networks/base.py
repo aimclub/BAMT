@@ -12,6 +12,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
+from pgmpy.estimators import K2Score
 
 from bamt.builders.builders_base import ParamDict
 from bamt.builders.hc_builder import HCStructureBuilder
@@ -101,7 +102,7 @@ class BaseNetwork(object):
                   data: pd.DataFrame,
                   scoring_function: Union[Tuple[str,
                                                 Callable],
-                                          Tuple[str]],
+                                          Tuple[str]] = ('K2', K2Score),
                   progress_bar: bool = True,
                   classifier: Optional[object] = None,
                   regressor: Optional[object] = None,
@@ -157,7 +158,6 @@ class BaseNetwork(object):
             worker = EvoStructureBuilder(
                 data=data,
                 descriptor=self.descriptor,
-                scoring_function=scoring_function,
                 has_logit=self.has_logit,
                 use_mixture=self.use_mixture,
                 regressor=regressor)

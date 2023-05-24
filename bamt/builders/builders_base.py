@@ -107,6 +107,7 @@ class StructureBuilder(object):
 
         ordered = gru.toporder(self.skeleton['V'], self.skeleton['E'])
         notOrdered = [node.name for node in self.skeleton['V']]
+        notOrdered = [node.name for node in self.skeleton['V']]
         mask = [notOrdered.index(name) for name in ordered]
         self.skeleton['V'] = [self.skeleton['V'][i] for i in mask]
 

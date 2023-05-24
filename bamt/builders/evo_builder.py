@@ -20,6 +20,9 @@ from typing import Dict, Optional
 
 
 class EvoDefiner(BaseDefiner):
+    """
+    Object that might take additional methods to decompose structure builder class
+    """
     def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
                  regressor: Optional[object] = None):
 
@@ -27,6 +30,9 @@ class EvoDefiner(BaseDefiner):
 
 
 class EvoStructureBuilder(EvoDefiner):
+    """
+    Evolutionary structure Builder based on GOLEM
+    """
     def __init__(
             self,
             data: DataFrame,
@@ -83,8 +89,7 @@ class EvoStructureBuilder(EvoDefiner):
             evo.CustomGraphModel(
                 nodes=kwargs.get(
                     'init_nodes', [
-                        evo.CustomGraphNode(node_type) for node_type in nodes_types]), edges=kwargs.get(
-                    'init_edges', None))]
+                        evo.CustomGraphNode(node_type) for node_type in nodes_types]))]
 
         # Define the requirements for the evolutionary algorithm
         requirements = GraphRequirements(

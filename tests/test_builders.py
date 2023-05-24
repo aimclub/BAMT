@@ -5,12 +5,14 @@ import logging
 
 import pandas as pd
 
-from bamt.builders.builders_base import StructureBuilder, VerticesDefiner, EdgesDefiner
+from bamt.builders.builders_base import StructureBuilder, VerticesDefiner
 from bamt.builders.hc_builder import HCStructureBuilder, HillClimbDefiner
 from bamt.builders.evo_builder import EvoStructureBuilder
 
 from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.discrete_node import DiscreteNode
+
+from bamt.utils.MathUtils import precision_recall
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)
 
@@ -287,18 +289,32 @@ class TestHillClimbDefiner(unittest.TestCase):
 class TestEvoStructureBuilder(unittest.TestCase):
 
     def setUp(self):
-        self.data = pd.read_csv("../data/asia.csv")
-        self.descriptor = {"types": {"Node0": "cont",
-                                     "Node1": "disc",
-                                     "Node2": "disc_num"},
-                           "signs": {"Node0": "pos"}}
+        self.data = pd.read_csv(r"data/benchmark/asia.csv", index_col=0)
+        self.descriptor = {'types': {'asia': 'disc',
+                                     'tub': 'disc',
+                                     'smoke': 'disc',
+                                     'lung': 'disc',
+                                     'bronc': 'disc',
+                                     'either': 'disc',
+                                     'xray': 'disc',
+                                     'dysp': 'disc'},
+                           'signs': {}}
         self.evo_builder = EvoStructureBuilder(data=self.data,
                                                descriptor=self.descriptor,
                                                regressor=None,
                                                has_logit=True,
                                                use_mixture=True)
         # Replace this with your actual reference DAG
-        self.reference_dag = None
+        self.reference_dag = [
+                              ('asia', 'tub'),
+                              ('tub', 'either'),
+                              ('smoke', 'lung'),
+                              ('smoke', 'bronc'),
+                              ('lung', 'either'),
+                              ('bronc', 'dysp'),
+                              ('either', 'xray'),
+                              ('either', 'dysp')
+                             ]
 
     def test_build(self):
         # placeholder kwargs
@@ -310,17 +326,14 @@ class TestEvoStructureBuilder(unittest.TestCase):
             **kwargs)
 
         obtained_dag = self.evo_builder.skeleton['E']
-        dist = structural_hamming_distance(obtained_dag, self.reference_dag)
+        dist = precision_recall(obtained_dag, self.reference_dag)['SHD']
+        num_edges = len(obtained_dag)
+        self.assertGreaterEqual(num_edges, 1, msg="Obtained graph should have at least one edge.")
 
         self.assertLess(
             dist,
-            20,
-            msg="Structural Hamming Distance should be less than 20.")
-
-
-def structural_hamming_distance(DAG1, DAG2):
-    # placeholder function
-    pass
+            10,
+            msg=f"Structural Hamming Distance should be less than 10, obtained SHD = {dist}")
 
 
 if __name__ == "__main__":
