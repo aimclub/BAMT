@@ -160,7 +160,8 @@ class HCStructureBuilder(HillClimbDefiner):
               progress_bar: bool,
               classifier: Optional[object],
               regressor: Optional[object],
-              params: Optional[ParamDict] = None):
+              params: Optional[ParamDict] = None,
+              **kwargs):
         if params:
             for param, value in params.items():
                 self.params[param] = value

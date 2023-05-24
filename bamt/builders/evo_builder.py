@@ -31,7 +31,15 @@ class EvoDefiner(BaseDefiner):
 
 class EvoStructureBuilder(EvoDefiner):
     """
-    Evolutionary structure Builder based on GOLEM
+    This class uses an evolutionary algorithm based on GOLEM to generate a Directed Acyclic Graph (DAG) that represents
+    the structure of a Bayesian Network.
+
+    Attributes:
+        data (DataFrame): Input data used to build the structure.
+        descriptor (dict): Descriptor describing node types and signs.
+        regressor (object): A regression model for continuous nodes.
+        has_logit (bool): Indicates whether a logit link function should be used.
+        use_mixture (bool): Indicates whether a mixture model should be used.
     """
     def __init__(
             self,
@@ -81,6 +89,20 @@ class EvoStructureBuilder(EvoDefiner):
               classifier: Optional[object],
               regressor: Optional[object],
               **kwargs):
+        """
+           Builds the structure of a Bayesian network from the given data using an evolutionary algorithm.
+
+           Args:
+               data (DataFrame): The data from which to build the structure.
+               classifier (Optional[object]): A classification model for discrete nodes.
+               regressor (Optional[object]): A regression model for continuous nodes.
+
+           Additional optional parameters can be provided as keyword arguments (kwargs) to customize the evolutionary
+           algorithm used to generate the structure. These include parameters to control the size of the population,
+           the probabilities of crossover and mutation, constraints on the structure of the graph, and many others.
+
+           The resulting structure is stored in the `skeleton` attribute of the `EvoStructureBuilder` object.
+        """
         # Get the list of node names
         nodes_types = data.columns.to_list()
 
