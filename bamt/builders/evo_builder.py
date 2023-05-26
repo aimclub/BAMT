@@ -64,6 +64,7 @@ class EvoStructureBuilder(EvoDefiner):
                        'remove_init_edges': True,
                        'white_list': None,
                        'bl_add': None}
+        self.default_n_jobs = -1
         self.default_pop_size = 15
         self.default_crossover_prob = 0.9
         self.default_mutation_prob = 0.8
@@ -119,7 +120,8 @@ class EvoStructureBuilder(EvoDefiner):
                 'max_arity', self.default_max_arity), max_depth=kwargs.get(
                 'timeout', self.default_max_depth), timeout=timedelta(
                 seconds=kwargs.get(
-                    'timeout', self.default_timeout)))
+                    'timeout', self.default_timeout)),
+            n_jobs=kwargs.get('n_jobs', self.default_n_jobs))
 
         # Set the parameters for the evolutionary algorithm
         optimizer_parameters = GPAlgorithmParameters(
