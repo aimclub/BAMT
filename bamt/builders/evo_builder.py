@@ -118,7 +118,8 @@ class EvoStructureBuilder(EvoDefiner):
         requirements = GraphRequirements(
             max_arity=kwargs.get(
                 'max_arity', self.default_max_arity), max_depth=kwargs.get(
-                'timeout', self.default_max_depth), timeout=timedelta(
+                'timeout', self.default_max_depth),
+            timeout=timedelta(
                 seconds=kwargs.get(
                     'timeout', self.default_timeout)),
             n_jobs=kwargs.get('n_jobs', self.default_n_jobs))
