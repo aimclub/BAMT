@@ -13,7 +13,7 @@ from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphGenerationParams, GraphOptimizer
+from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 
 from typing import Dict, Optional
@@ -178,8 +178,6 @@ class EvoStructureBuilder(EvoDefiner):
         # Get the best graph
         best_graph_edge_list = optimized_graph.operator.get_edges()
         best_graph_edge_list = self._convert_to_strings(best_graph_edge_list)
-
-        print('Best graph: ', best_graph_edge_list)
 
         # Convert the best graph to the format used by the Bayesian Network
         self.skeleton['V'] = self.vertices
