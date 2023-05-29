@@ -68,8 +68,8 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_pop_size = 15
         self.default_crossover_prob = 0.9
         self.default_mutation_prob = 0.8
-        self.default_max_arity = 10
-        self.default_max_depth = 10
+        self.default_max_arity = 100
+        self.default_max_depth = 100
         self.default_timeout = 180
         self.objective_metric = evo.K2_metric
         self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
@@ -118,9 +118,9 @@ class EvoStructureBuilder(EvoDefiner):
         requirements = GraphRequirements(
             max_arity=kwargs.get(
                 'max_arity', self.default_max_arity), max_depth=kwargs.get(
-                'timeout', self.default_max_depth),
+                'max_depth', self.default_max_depth),
             timeout=timedelta(
-                seconds=kwargs.get(
+                minutes=kwargs.get(
                     'timeout', self.default_timeout)),
             n_jobs=kwargs.get('n_jobs', self.default_n_jobs))
 
@@ -147,9 +147,14 @@ class EvoStructureBuilder(EvoDefiner):
         if kwargs.get('whitelist', None) is not None:
             self.default_constraints.append(evo.has_only_whitelist_edges)
 
-        constraints = kwargs.get(
-            'custom_constraints',
-            self.default_constraints)
+        constraints = kwargs.get('custom_constraints', [])
+
+        constraints.append(self.default_constraints)
+
+        if kwargs.get('blacklist', None) is not None:
+            constraints.append(evo.has_no_blacklist_edges)
+        if kwargs.get('whitelist', None) is not None:
+            constraints.append(evo.has_only_whitelist_edges)
 
         graph_generation_params = GraphGenerationParams(
             adapter=adapter,

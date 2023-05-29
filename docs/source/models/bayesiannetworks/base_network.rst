@@ -61,7 +61,7 @@ Evolutionary Algorithm has these additional parameters:
         :Keyword Args:
             * *init_nodes* (list) -- Initial nodes to be included in the population.
             * *max_arity* (int) -- Maximum arity for the evolutionary algorithm.
-            * *timeout* (int) -- Timeout for the evolutionary algorithm in seconds.
+            * *timeout* (int) -- Timeout for the evolutionary algorithm in minutes.
             * *pop_size* (int) -- Population size for the evolutionary algorithm.
             * *crossover_prob* (float) -- Crossover probability for the evolutionary algorithm.
             * *mutation_prob* (float) -- Mutation probability for the evolutionary algorithm.
