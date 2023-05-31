@@ -322,19 +322,17 @@ class TestEvoStructureBuilder(unittest.TestCase):
     def test_build(self):
         # placeholder kwargs
         kwargs = {}
-        with open(os.devnull, 'w') as f:
-            with redirect_stdout(f), redirect_stderr(f):
-                self.evo_builder.build(
-                    data=self.data,
-                    classifier=None,
-                    regressor=None,
-                    **kwargs)
+        self.evo_builder.build(
+            data=self.data,
+            classifier=None,
+            regressor=None,
+            **kwargs)
 
         obtained_dag = self.evo_builder.skeleton['E']
-        dist = precision_recall(obtained_dag, self.reference_dag)['SHD']
         num_edges = len(obtained_dag)
         self.assertGreaterEqual(num_edges, 1, msg="Obtained graph should have at least one edge.")
 
+        dist = precision_recall(obtained_dag, self.reference_dag)['SHD']
         self.assertLess(
             dist,
             15,

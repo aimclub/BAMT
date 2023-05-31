@@ -142,14 +142,9 @@ class EvoStructureBuilder(EvoDefiner):
 
         # Set the constraints for the graph
 
-        if kwargs.get('blacklist', None) is not None:
-            self.default_constraints.append(evo.has_no_blacklist_edges)
-        if kwargs.get('whitelist', None) is not None:
-            self.default_constraints.append(evo.has_only_whitelist_edges)
-
         constraints = kwargs.get('custom_constraints', [])
 
-        constraints.append(self.default_constraints)
+        constraints.extend(self.default_constraints)
 
         if kwargs.get('blacklist', None) is not None:
             constraints.append(evo.has_no_blacklist_edges)
