@@ -53,11 +53,17 @@ class TestCaseBase(unittest.TestCase):
 
         self.bn.add_nodes(info)
 
-        self.bn.add_edges(discretized_data, scoring_function=("BIC",), progress_bar=False)
+        self.bn.add_edges(
+            discretized_data, scoring_function=(
+                "BIC",), progress_bar=False)
 
-        self.bn.set_regressor(regressors={'Depth': CatBoostRegressor(logging_level="Silent", allow_writing_files=False),
-                                          'Gross': RandomForestRegressor(),
-                                          'Porosity': DecisionTreeRegressor()})
+        self.bn.set_regressor(
+            regressors={
+                'Depth': CatBoostRegressor(
+                    logging_level="Silent",
+                    allow_writing_files=False),
+                'Gross': RandomForestRegressor(),
+                'Porosity': DecisionTreeRegressor()})
         return hack_data
 
 
@@ -186,7 +192,12 @@ class TestBaseNetwork(TestCaseBase):
         hack_data = self.prepare_bn_and_data()
         self.bn.fit_parameters(hack_data)
 
-        self.assertGreater(self.bn.sample(100, progress_bar=False).size, 0, "Sampling is broken")
+        self.assertGreater(
+            self.bn.sample(
+                100,
+                progress_bar=False).size,
+            0,
+            "Sampling is broken")
 
         saveloc = self.bn.distributions["Gross"]['hybcprob']["['COMPRESSION']"]['regressor_obj']
 

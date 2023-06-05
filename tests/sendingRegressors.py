@@ -41,9 +41,13 @@ bn.add_nodes(info)
 
 bn.add_edges(discretized_data, scoring_function=("BIC",), progress_bar=False)
 
-bn.set_regressor(regressors={'Depth': CatBoostRegressor(logging_level="Silent", allow_writing_files=False),
-                             'Gross': RandomForestRegressor(),
-                             'Porosity': DecisionTreeRegressor()})
+bn.set_regressor(
+    regressors={
+        'Depth': CatBoostRegressor(
+            logging_level="Silent",
+            allow_writing_files=False),
+        'Gross': RandomForestRegressor(),
+        'Porosity': DecisionTreeRegressor()})
 
 bn.fit_parameters(hack_data)
 

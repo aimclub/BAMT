@@ -41,7 +41,7 @@ class BasePreprocessor(object):
         data = df[columns]  # DATA TO CATEGORIZE
         encoder_dict = dict()
 
-        for col_name, column in data.iteritems():
+        for col_name, column in data.items():
             # Iterate over (column name, Series) pairs.
             try:
                 df[col_name] = encoder.fit_transform(column.values)

@@ -1,3 +1,6 @@
+from contextlib import redirect_stdout, redirect_stderr
+import os
+
 import itertools
 import unittest
 
@@ -5,9 +8,14 @@ import logging
 
 import pandas as pd
 
-import bamt.builders as builders
+from bamt.builders.builders_base import StructureBuilder, VerticesDefiner
+from bamt.builders.hc_builder import HCStructureBuilder, HillClimbDefiner
+from bamt.builders.evo_builder import EvoStructureBuilder
+
 from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.discrete_node import DiscreteNode
+
+from bamt.utils.MathUtils import precision_recall
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)
 
@@ -20,7 +28,7 @@ class TestStructureBuilder(unittest.TestCase):
                                      "Node1": "disc",
                                      "Node2": "disc_num"},
                            "signs": {"Node0": "pos"}}
-        self.SB = builders.StructureBuilder(descriptor=self.descriptor)
+        self.SB = StructureBuilder(descriptor=self.descriptor)
 
     def test_restrict(self):
         self.SB.has_logit = True
@@ -84,7 +92,7 @@ class TestVerticesDefiner(unittest.TestCase):
                                      "Node7": "disc_num"},
                            "signs": {"Node0": "pos", "Node1": "neg"}}
 
-        self.VD = builders.VerticesDefiner(
+        self.VD = VerticesDefiner(
             descriptor=self.descriptor, regressor=None)
 
     def test_first_level(self):
@@ -214,9 +222,9 @@ class TestHillClimbDefiner(unittest.TestCase):
                       0, 4, 0, 1, 2, 0, 0, 3]}
 
     def test_apply_K2(self):
-        hcd = builders.HillClimbDefiner(data=pd.DataFrame(self.data),
-                                        descriptor=self.descriptor,
-                                        scoring_function=("K2",))
+        hcd = HillClimbDefiner(data=pd.DataFrame(self.data),
+                               descriptor=self.descriptor,
+                               scoring_function=("K2",))
 
         hcd.apply_K2(data=pd.DataFrame(self.data),
                      init_edges=None,
@@ -245,9 +253,9 @@ class TestHillClimbDefiner(unittest.TestCase):
         self.assertEqual(hcd.skeleton["E"], right_edges)
 
     def test_apply_group1(self):
-        hcd = builders.HillClimbDefiner(data=pd.DataFrame(self.data),
-                                        descriptor=self.descriptor,
-                                        scoring_function=("MI",))
+        hcd = HillClimbDefiner(data=pd.DataFrame(self.data),
+                               descriptor=self.descriptor,
+                               scoring_function=("MI",))
 
         hcd.restrict(
             data=pd.DataFrame(
@@ -279,6 +287,56 @@ class TestHillClimbDefiner(unittest.TestCase):
                                                         'Netpay', 'Tectonic regime']]
 
         self.assertEqual(hcd.skeleton["E"], right_edges)
+
+
+class TestEvoStructureBuilder(unittest.TestCase):
+
+    def setUp(self):
+        self.data = pd.read_csv(r"data/benchmark/asia.csv", index_col=0)
+        self.descriptor = {'types': {'asia': 'disc',
+                                     'tub': 'disc',
+                                     'smoke': 'disc',
+                                     'lung': 'disc',
+                                     'bronc': 'disc',
+                                     'either': 'disc',
+                                     'xray': 'disc',
+                                     'dysp': 'disc'},
+                           'signs': {}}
+        self.evo_builder = EvoStructureBuilder(data=self.data,
+                                               descriptor=self.descriptor,
+                                               regressor=None,
+                                               has_logit=True,
+                                               use_mixture=True)
+        # Replace this with your actual reference DAG
+        self.reference_dag = [
+                              ('asia', 'tub'),
+                              ('tub', 'either'),
+                              ('smoke', 'lung'),
+                              ('smoke', 'bronc'),
+                              ('lung', 'either'),
+                              ('bronc', 'dysp'),
+                              ('either', 'xray'),
+                              ('either', 'dysp')
+                             ]
+
+    def test_build(self):
+        # placeholder kwargs
+        kwargs = {}
+        self.evo_builder.build(
+            data=self.data,
+            classifier=None,
+            regressor=None,
+            **kwargs)
+
+        obtained_dag = self.evo_builder.skeleton['E']
+        num_edges = len(obtained_dag)
+        self.assertGreaterEqual(num_edges, 1, msg="Obtained graph should have at least one edge.")
+
+        dist = precision_recall(obtained_dag, self.reference_dag)['SHD']
+        self.assertLess(
+            dist,
+            15,
+            msg=f"Structural Hamming Distance should be less than 15, obtained SHD = {dist}")
 
 
 if __name__ == "__main__":

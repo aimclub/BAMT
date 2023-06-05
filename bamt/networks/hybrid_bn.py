@@ -19,4 +19,4 @@ class HybridBN(BaseNetwork):
         types = descriptor['types']
         s = set(types.values())
         return True if ({'cont', 'disc', 'disc_num'} == s) or (
-                {'cont', 'disc'} == s) or ({'cont', 'disc_num'} == s) else False
+            {'cont', 'disc'} == s) or ({'cont', 'disc_num'} == s) else False

@@ -12,14 +12,17 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 from pyvis.network import Network
 from pyitlib import discrete_random_variable as drv
+from pgmpy.estimators import K2Score
 
-from bamt.builders import ParamDict
+from bamt.builders.builders_base import ParamDict
+from bamt.builders.hc_builder import HCStructureBuilder
+from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.log import logger_network
 from bamt.config import config
 
 from bamt.nodes.base import BaseNode
 
-import bamt.builders as Builders
+import bamt.builders as builders
 
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
@@ -91,19 +94,21 @@ class BaseNetwork(object):
             return None
         self.descriptor = descriptor
         # LEVEL 1
-        worker_1 = Builders.VerticesDefiner(descriptor, regressor=None)
+        worker_1 = builders.builders_base.VerticesDefiner(
+            descriptor, regressor=None)
         self.nodes = worker_1.vertices
 
     def add_edges(self,
                   data: pd.DataFrame,
                   scoring_function: Union[Tuple[str,
                                                 Callable],
-                                          Tuple[str]],
+                                          Tuple[str]] = ('K2', K2Score),
                   progress_bar: bool = True,
                   classifier: Optional[object] = None,
                   regressor: Optional[object] = None,
                   params: Optional[ParamDict] = None,
-                  optimizer: str = 'HC'):
+                  optimizer: str = 'HC',
+                  **kwargs):
         """
         Base function for Structure learning
         scoring_function: tuple with the following format (NAME, scoring_function) or (NAME,)
@@ -142,26 +147,34 @@ class BaseNetwork(object):
                 f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
             return None
         if optimizer == 'HC':
-            worker = Builders.HCStructureBuilder(
+            worker = HCStructureBuilder(
                 data=data,
                 descriptor=self.descriptor,
                 scoring_function=scoring_function,
                 has_logit=self.has_logit,
                 use_mixture=self.use_mixture,
                 regressor=regressor)
-
-            self.sf_name = scoring_function[0]
-
-            worker.build(
+        elif optimizer == 'Evo':
+            worker = EvoStructureBuilder(
                 data=data,
-                params=params,
-                classifier=classifier,
-                regressor=regressor,
-                progress_bar=progress_bar)
+                descriptor=self.descriptor,
+                has_logit=self.has_logit,
+                use_mixture=self.use_mixture,
+                regressor=regressor)
 
-            # update family
-            self.nodes = worker.skeleton['V']
-            self.edges = worker.skeleton['E']
+        self.sf_name = scoring_function[0]
+
+        worker.build(
+            data=data,
+            params=params,
+            classifier=classifier,
+            regressor=regressor,
+            progress_bar=progress_bar,
+            **kwargs)
+
+        # update family
+        self.nodes = worker.skeleton['V']
+        self.edges = worker.skeleton['E']
 
     def calculate_weights(self, discretized_data: pd.DataFrame):
         """
@@ -280,7 +293,7 @@ class BaseNetwork(object):
         if edges:
             self.set_edges(edges=edges)
             if overwrite:
-                builder = Builders.VerticesDefiner(
+                builder = builders.builders_base.VerticesDefiner(
                     descriptor=self.descriptor, regressor=None)  # init worker
                 builder.skeleton['V'] = builder.vertices  # 1 stage
                 builder.skeleton['E'] = self.edges

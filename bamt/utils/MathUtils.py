@@ -238,3 +238,40 @@ def get_brave_matrix(
                 brave_matrix.loc[c1, c2] = br
 
     return brave_matrix
+
+
+def _child_dict(net: list):
+    res_dict = dict()
+    for e0, e1 in net:
+        if e1 in res_dict:
+            res_dict[e1].append(e0)
+        else:
+            res_dict[e1] = [e0]
+    return res_dict
+
+
+def precision_recall(pred_net: list, true_net: list, decimal=4):
+    pred_dict = _child_dict(pred_net)
+    true_dict = _child_dict(true_net)
+    corr_undirected = 0
+    corr_dir = 0
+    for e0, e1 in pred_net:
+        flag = True
+        if e1 in true_dict:
+            if e0 in true_dict[e1]:
+                corr_undirected += 1
+                corr_dir += 1
+                flag = False
+        if (e0 in true_dict) and flag:
+            if e1 in true_dict[e0]:
+                corr_undirected += 1
+    pred_len = len(pred_net)
+    true_len = len(true_net)
+    shd = pred_len + true_len - corr_undirected - corr_dir
+    return {'AP': round(corr_undirected / pred_len, decimal),
+            'AR': round(corr_undirected / true_len, decimal),
+    #        'F1_undir': round(2 * (corr_undirected / pred_len) * (corr_undirected / true_len) / (corr_undirected / pred_len + corr_undirected / true_len), decimal),
+            'AHP': round(corr_dir / pred_len, decimal),
+            'AHR': round(corr_dir / true_len, decimal),
+            # 'F1_directed': round(2*(corr_dir/pred_len)*(corr_dir/true_len)/(corr_dir/pred_len+corr_dir/true_len), decimal),
+            'SHD': shd}

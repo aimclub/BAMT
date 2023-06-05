@@ -27,7 +27,8 @@ class ConditionalLogitNode(BaseNode):
         self.classifier = classifier
         self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
+    def fit_parameters(
+            self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
         """
         Train params on data
         Return:
@@ -70,8 +71,9 @@ class ConditionalLogitNode(BaseNode):
                         logger_nodes.warning(
                             f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
 
-                        path = self.get_path_joblib(node_name=self.name.replace(' ', '_'),
-                                                    specific=comb)
+                        path = self.get_path_joblib(
+                            node_name=self.name.replace(
+                                ' ', '_'), specific=comb)
                         joblib.dump(model, path, compress=True, protocol=4)
 
                         hycprob[str(key_comb)] = {'classes': classes,
