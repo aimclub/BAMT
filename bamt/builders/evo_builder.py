@@ -16,7 +16,7 @@ from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Tuple
 
 
 class EvoDefiner(BaseDefiner):
@@ -91,18 +91,36 @@ class EvoStructureBuilder(EvoDefiner):
               regressor: Optional[object],
               **kwargs):
         """
-           Builds the structure of a Bayesian network from the given data using an evolutionary algorithm.
+        Calls the search method to execute all the evolutionary computations.
 
-           Args:
-               data (DataFrame): The data from which to build the structure.
-               classifier (Optional[object]): A classification model for discrete nodes.
-               regressor (Optional[object]): A regression model for continuous nodes.
+        Args:
+            data (DataFrame): The data from which to build the structure.
+            classifier (Optional[object]): A classification model for discrete nodes.
+            regressor (Optional[object]): A regression model for continuous nodes.
+        """
+        best_graph_edge_list = self.search(data, **kwargs)
 
-           Additional optional parameters can be provided as keyword arguments (kwargs) to customize the evolutionary
-           algorithm used to generate the structure. These include parameters to control the size of the population,
-           the probabilities of crossover and mutation, constraints on the structure of the graph, and many others.
+        # Convert the best graph to the format used by the Bayesian Network
+        self.skeleton['V'] = self.vertices
+        self.skeleton['E'] = best_graph_edge_list
 
-           The resulting structure is stored in the `skeleton` attribute of the `EvoStructureBuilder` object.
+        self.get_family()
+        self.overwrite_vertex(has_logit=self.has_logit,
+                              use_mixture=self.use_mixture,
+                              classifier=classifier,
+                              regressor=regressor)
+
+    def search(self,
+               data: DataFrame,
+               **kwargs) -> List[Tuple[str, str]]:
+        """
+        Executes all the evolutionary computations and returns the best graph's edge list.
+
+        Args:
+            data (DataFrame): The data from which to build the structure.
+
+        Returns:
+            best_graph_edge_list (List[Tuple[str, str]]): The edge list of the best graph found by the search.
         """
         # Get the list of node names
         nodes_types = data.columns.to_list()
@@ -179,15 +197,7 @@ class EvoStructureBuilder(EvoDefiner):
         best_graph_edge_list = optimized_graph.operator.get_edges()
         best_graph_edge_list = self._convert_to_strings(best_graph_edge_list)
 
-        # Convert the best graph to the format used by the Bayesian Network
-        self.skeleton['V'] = self.vertices
-        self.skeleton['E'] = best_graph_edge_list
-
-        self.get_family()
-        self.overwrite_vertex(has_logit=self.has_logit,
-                              use_mixture=self.use_mixture,
-                              classifier=classifier,
-                              regressor=regressor)
+        return best_graph_edge_list
 
     @staticmethod
     def _convert_to_strings(nested_list):
