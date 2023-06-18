@@ -94,7 +94,7 @@ class MlModels:
             models_json = json.load(f)
             models = models_json['operations']
             for model, value in models.items():
-                if model not in ['knnreg', 'knn', 'qda'] and list(
-                        set(value['tags']).intersection(forbidden_tags)) == [] and type_model in value['meta']:
+                if model not in ['knnreg', 'knn', 'qda'] and list(set(value['tags']).intersection(
+                        forbidden_tags)) == [] and type_model in value['meta']:
                     candidates.append(model)
         return self.operations_by_types[choice(candidates)]

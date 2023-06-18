@@ -270,7 +270,7 @@ def precision_recall(pred_net: list, true_net: list, decimal=4):
     shd = pred_len + true_len - corr_undirected - corr_dir
     return {'AP': round(corr_undirected / pred_len, decimal),
             'AR': round(corr_undirected / true_len, decimal),
-    #        'F1_undir': round(2 * (corr_undirected / pred_len) * (corr_undirected / true_len) / (corr_undirected / pred_len + corr_undirected / true_len), decimal),
+            #        'F1_undir': round(2 * (corr_undirected / pred_len) * (corr_undirected / true_len) / (corr_undirected / pred_len + corr_undirected / true_len), decimal),
             'AHP': round(corr_dir / pred_len, decimal),
             'AHR': round(corr_dir / true_len, decimal),
             # 'F1_directed': round(2*(corr_dir/pred_len)*(corr_dir/true_len)/(corr_dir/pred_len+corr_dir/true_len), decimal),
