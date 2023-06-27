@@ -631,7 +631,7 @@ class BaseNetwork(object):
 
         from joblib import Parallel, delayed
 
-        def wrapper(bn, models_dir: str, test: pd.DataFrame, columns: List[str]):
+        def wrapper(bn, test: pd.DataFrame, columns: List[str], models_dir: str):
             preds = {column_name: list() for column_name in columns}
 
             if len(test) == 1:
