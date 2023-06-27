@@ -1,6 +1,5 @@
 # import json
 
-# import bamt.networks as Nets
 from bamt.networks.hybrid_bn import HybridBN
 import bamt.preprocessors as preprocessors
 

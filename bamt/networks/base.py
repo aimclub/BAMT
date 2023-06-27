@@ -605,6 +605,7 @@ class BaseNetwork(object):
             return seq
 
     def predict(self,
+                models_dir: str,
                 test: pd.DataFrame,
                 parall_count: int = 1,
                 progress_bar: bool = True) -> Dict[str,
@@ -630,7 +631,7 @@ class BaseNetwork(object):
 
         from joblib import Parallel, delayed
 
-        def wrapper(bn, test: pd.DataFrame, columns: List[str]):
+        def wrapper(bn, models_dir: str, test: pd.DataFrame, columns: List[str]):
             preds = {column_name: list() for column_name in columns}
 
             if len(test) == 1:
@@ -639,7 +640,7 @@ class BaseNetwork(object):
                     for n, key in enumerate(columns):
                         try:
                             sample = bn.sample(
-                                1, evidence=test_row, predict=True, progress_bar=False)
+                                1, evidence=test_row, predict=True, progress_bar=False, models_dir=models_dir)
                             if sample.empty:
                                 preds[key].append(np.nan)
                                 continue
@@ -670,10 +671,10 @@ class BaseNetwork(object):
 
         if progress_bar:
             processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(
-                self, test.loc[[i]], columns) for i in tqdm(test.index, position=0, leave=True))
+                self, test.loc[[i]], columns, models_dir) for i in tqdm(test.index, position=0, leave=True))
         else:
             processed_list = Parallel(n_jobs=parall_count)(
-                delayed(wrapper)(self, test.loc[[i]], columns) for i in test.index)
+                delayed(wrapper)(self, test.loc[[i]], columns, models_dir) for i in test.index)
 
         for i in range(test.shape[0]):
             curr_pred = processed_list[i]
