@@ -605,10 +605,10 @@ class BaseNetwork(object):
             return seq
 
     def predict(self,
-                models_dir: str,
                 test: pd.DataFrame,
                 parall_count: int = 1,
-                progress_bar: bool = True) -> Dict[str,
+                progress_bar: bool = True,
+                models_dir: Optional[str] = None) -> Dict[str,
                                                    Union[List[str],
                                                          List[int],
                                                          List[float]]]:
