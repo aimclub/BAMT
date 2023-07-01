@@ -1,8 +1,15 @@
 from datetime import timedelta
 
 from pandas import DataFrame
+from sklearn import preprocessing
+import bamt.preprocessors as pp
 
 from bamt.builders.builders_base import BaseDefiner
+from bamt.log import logger_builder
+from bamt.utils.composite_utils import CompositeGeneticOperators
+from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
+from bamt.nodes.composite_discrete_node import CompositeDiscreteNode
+from bamt.nodes.composite_continuous_node import CompositeContinuousNode
 from bamt.utils import EvoUtils as evo
 
 from golem.core.adapter import DirectAdapter
@@ -19,7 +26,7 @@ from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 from typing import Dict, Optional, List, Tuple
 
 
-class EvoDefiner(BaseDefiner):
+class CompositeDefiner(BaseDefiner):
     """
     Object that might take additional methods to decompose structure builder class
     """
@@ -29,8 +36,26 @@ class EvoDefiner(BaseDefiner):
 
         super().__init__(data, descriptor, regressor)
 
+        # Notice that vertices are used only by Builders
+        self.vertices = []
 
-class EvoStructureBuilder(EvoDefiner):
+        node = None
+        # LEVEL 1: Define a general type of node: Discrete or Gaussian
+        for vertex, type in self.descriptor['types'].items():
+            if type in ['disc_num', 'disc']:
+                node = CompositeDiscreteNode(name=vertex)
+            elif type == 'cont':
+                node = CompositeContinuousNode(name=vertex, regressor=regressor)
+            else:
+                msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
+                Set vertex manually (by calling set_nodes()) or investigate the error."""
+                logger_builder.error(msg)
+                continue
+
+            self.vertices.append(node)
+
+
+class CompositeStructureBuilder(CompositeDefiner):
     """
     This class uses an evolutionary algorithm based on GOLEM to generate a Directed Acyclic Graph (DAG) that represents
     the structure of a Bayesian Network.
@@ -51,7 +76,7 @@ class EvoStructureBuilder(EvoDefiner):
             has_logit: bool,
             use_mixture: bool):
         super(
-            EvoStructureBuilder,
+            CompositeStructureBuilder,
             self).__init__(
             data=data,
             descriptor=descriptor,
@@ -73,14 +98,16 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_max_arity = 100
         self.default_max_depth = 100
         self.default_timeout = 180
-        self.objective_metric = evo.K2_metric
+        self.objective_metric = CompositeGeneticOperators.composite_metric
         self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
                                    CrossoverTypesEnum.exchange_parents_one,
-                                   CrossoverTypesEnum.exchange_parents_both]
+                                   CrossoverTypesEnum.exchange_parents_both,
+                                   CompositeGeneticOperators.custom_crossover_all_model]
         self.default_mutations = [
-            evo.custom_mutation_add,
-            evo.custom_mutation_delete,
-            evo.custom_mutation_reverse]
+            CompositeGeneticOperators.custom_mutation_add_structure,
+            CompositeGeneticOperators.custom_mutation_delete_structure,
+            CompositeGeneticOperators.custom_mutation_reverse_structure,
+            CompositeGeneticOperators.custom_mutation_add_model]
         self.default_selection = [SelectionTypesEnum.tournament]
         self.default_constraints = [
             has_no_self_cycled_nodes,
@@ -125,14 +152,23 @@ class EvoStructureBuilder(EvoDefiner):
             best_graph_edge_list (List[Tuple[str, str]]): The edge list of the best graph found by the search.
         """
         # Get the list of node names
+        vertices = list(data.columns)
+
         nodes_types = data.columns.to_list()
 
+        encoder = preprocessing.LabelEncoder()
+        p = pp.Preprocessor([('encoder', encoder)])
+        discretized_data, _ = p.apply(data)
+
         # Create the initial population
-        initial = [
-            evo.CustomGraphModel(
-                nodes=kwargs.get(
-                    'init_nodes', [
-                        evo.CustomGraphNode(node_type) for node_type in nodes_types]))]
+        initial = [CompositeModel(nodes=[CompositeNode(nodes_from=None,
+                                                       content={'name': vertex,
+                                                                'type': p.nodes_types[vertex],
+                                                                'parent_model': None})
+                                         for vertex in vertices])]
+
+        objective = Objective({'custom': CompositeGeneticOperators.composite_metric})
+        objective_eval = ObjectiveEvaluate(objective, data=discretized_data)
 
         # Define the requirements for the evolutionary algorithm
         requirements = GraphRequirements(
@@ -156,9 +192,7 @@ class EvoStructureBuilder(EvoDefiner):
 
         # Set the adapter for the conversion between the graph and the data
         # structures used by the optimizer
-        adapter = DirectAdapter(
-            base_graph_class=evo.CustomGraphModel,
-            base_node_class=evo.CustomGraphNode)
+        adapter = DirectAdapter(base_graph_class=CompositeModel, base_node_class=CompositeNode)
 
         # Set the constraints for the graph
 
@@ -173,8 +207,7 @@ class EvoStructureBuilder(EvoDefiner):
 
         graph_generation_params = GraphGenerationParams(
             adapter=adapter,
-            rules_for_constraint=constraints,
-            available_node_types=nodes_types)
+            rules_for_constraint=constraints)
 
         # Define the objective function to optimize
         objective = Objective({'custom': kwargs.get(
@@ -190,7 +223,7 @@ class EvoStructureBuilder(EvoDefiner):
 
         # Define the function to evaluate the objective function
         objective_eval = ObjectiveEvaluate(
-            objective, data=data)
+            objective, data=discretized_data)
 
         # Run the optimization
         optimized_graph = optimizer.optimise(objective_eval)[0]

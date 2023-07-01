@@ -82,7 +82,7 @@ class BaseNetwork(object):
         descriptor: dict with types and signs of nodes
         """
         if not self.validate(descriptor=descriptor):
-            if not self.type == 'Hybrid':
+            if not self.type == 'Hybrid' or not self.type == 'Composite':
                 logger_network.error(
                     f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data")
                 return
@@ -352,7 +352,8 @@ class BaseNetwork(object):
                     self[node].type = re.sub(
                         r"\([\s\S]*\)", f"({model})", self[node].type)
 
-    def save_to_file(self, outdir: str, data: dict):
+    @staticmethod
+    def save_to_file(outdir: str, data: dict):
         """
         Function to save data to json file
         :param outdir: output directory

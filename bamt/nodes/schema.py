@@ -40,3 +40,7 @@ class LogitParams(TypedDict):
     classifier: str
     classifier_obj: Optional[Union[str, bool, bytes]]
     serialization: str
+
+
+class HybcprobParams(TypedDict):
+    hybcprob: Dict[str, CondGaussParams]
