@@ -309,15 +309,15 @@ class TestEvoStructureBuilder(unittest.TestCase):
                                                use_mixture=True)
         # Replace this with your actual reference DAG
         self.reference_dag = [
-                              ('asia', 'tub'),
-                              ('tub', 'either'),
-                              ('smoke', 'lung'),
-                              ('smoke', 'bronc'),
-                              ('lung', 'either'),
-                              ('bronc', 'dysp'),
-                              ('either', 'xray'),
-                              ('either', 'dysp')
-                             ]
+            ('asia', 'tub'),
+            ('tub', 'either'),
+            ('smoke', 'lung'),
+            ('smoke', 'bronc'),
+            ('lung', 'either'),
+            ('bronc', 'dysp'),
+            ('either', 'xray'),
+            ('either', 'dysp')
+        ]
 
     def test_build(self):
         # placeholder kwargs
@@ -330,7 +330,8 @@ class TestEvoStructureBuilder(unittest.TestCase):
 
         obtained_dag = self.evo_builder.skeleton['E']
         num_edges = len(obtained_dag)
-        self.assertGreaterEqual(num_edges, 1, msg="Obtained graph should have at least one edge.")
+        self.assertGreaterEqual(
+            num_edges, 1, msg="Obtained graph should have at least one edge.")
 
         dist = precision_recall(obtained_dag, self.reference_dag)['SHD']
         self.assertLess(
