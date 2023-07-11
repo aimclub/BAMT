@@ -12,17 +12,23 @@ from sklearn import preprocessing as pp
 import pandas as pd
 
 hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
-    ['Tectonic regime', 'Period', 'Lithology', 'Structural setting',
-     'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
+    [
+        "Tectonic regime",
+        "Period",
+        "Lithology",
+        "Structural setting",
+        "Gross",
+        "Netpay",
+        "Porosity",
+        "Permeability",
+        "Depth",
+    ]
+]
 
 encoder = pp.LabelEncoder()
-discretizer = pp.KBinsDiscretizer(
-    n_bins=5,
-    encode='ordinal',
-    strategy='quantile')
+discretizer = pp.KBinsDiscretizer(n_bins=5, encode="ordinal", strategy="quantile")
 
-p = preprocessors.Preprocessor(
-    [('encoder', encoder), ('discretizer', discretizer)])
+p = preprocessors.Preprocessor([("encoder", encoder), ("discretizer", discretizer)])
 
 discretized_data, est = p.apply(hack_data)
 
@@ -42,11 +48,11 @@ bn.add_edges(discretized_data, scoring_function=("BIC",), progress_bar=False)
 
 bn.set_regressor(
     regressors={
-        'Depth': CatBoostRegressor(
-            logging_level="Silent",
-            allow_writing_files=False),
-        'Gross': RandomForestRegressor(),
-        'Porosity': DecisionTreeRegressor()})
+        "Depth": CatBoostRegressor(logging_level="Silent", allow_writing_files=False),
+        "Gross": RandomForestRegressor(),
+        "Porosity": DecisionTreeRegressor(),
+    }
+)
 
 bn.fit_parameters(hack_data)
 

@@ -5,14 +5,23 @@ import bamt.networks as Networks
 import json
 
 hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
-    ['Tectonic regime', 'Period', 'Lithology', 'Structural setting',
-     'Gross', 'Netpay', 'Porosity', 'Permeability', 'Depth']]
+    [
+        "Tectonic regime",
+        "Period",
+        "Lithology",
+        "Structural setting",
+        "Gross",
+        "Netpay",
+        "Porosity",
+        "Permeability",
+        "Depth",
+    ]
+]
 
 encoder = pp.LabelEncoder()
-discretizer = pp.KBinsDiscretizer(
-    n_bins=5, encode='ordinal', strategy='uniform')
+discretizer = pp.KBinsDiscretizer(n_bins=5, encode="ordinal", strategy="uniform")
 
-p = Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
+p = Preprocessor([("encoder", encoder), ("discretizer", discretizer)])
 
 discretized_data, est = p.apply(hack_data)
 
@@ -21,9 +30,11 @@ info = p.info
 
 bn.add_nodes(info)
 
-structure = [("Tectonic regime", "Structural setting"),
-             ("Gross", "Netpay"),
-             ("Lithology", "Permeability")]
+structure = [
+    ("Tectonic regime", "Structural setting"),
+    ("Gross", "Netpay"),
+    ("Lithology", "Permeability"),
+]
 
 bn.set_structure(edges=structure)
 

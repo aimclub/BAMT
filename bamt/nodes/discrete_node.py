@@ -17,7 +17,7 @@ class DiscreteNode(BaseNode):
 
     def __init__(self, name):
         super(DiscreteNode, self).__init__(name)
-        self.type = 'Discrete'
+        self.type = "Discrete"
 
     def fit_parameters(self, data: DataFrame, num_workers: int = 1):
         """
@@ -31,35 +31,31 @@ class DiscreteNode(BaseNode):
         def worker(node: Type[BaseNode]) -> DiscreteParams:
             parents = node.disc_parents + node.cont_parents
             if not parents:
-                dist = DiscreteDistribution.from_samples(
-                    data[node.name].values)
+                dist = DiscreteDistribution.from_samples(data[node.name].values)
                 cprob = list(dict(sorted(dist.items())).values())
-                vals = sorted([str(x)
-                               for x in list(dist.parameters[0].keys())])
+                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
             else:
-                dist = DiscreteDistribution.from_samples(
-                    data[node.name].values)
-                vals = sorted([str(x)
-                               for x in list(dist.parameters[0].keys())])
+                dist = DiscreteDistribution.from_samples(data[node.name].values)
+                vals = sorted([str(x) for x in list(dist.parameters[0].keys())])
                 dist = ConditionalProbabilityTable.from_samples(
-                    data[parents + [node.name]].values)
+                    data[parents + [node.name]].values
+                )
                 params = dist.parameters[0]
                 cprob = dict()
                 for i in range(0, len(params), len(vals)):
                     probs = []
                     for j in range(i, (i + len(vals))):
                         probs.append(params[j][-1])
-                    combination = [str(x) for x in params[i][0:len(parents)]]
+                    combination = [str(x) for x in params[i][0 : len(parents)]]
                     cprob[str(combination)] = probs
-            return {"cprob": cprob, 'vals': vals}
+            return {"cprob": cprob, "vals": vals}
 
         pool = ThreadPoolExecutor(num_workers)
         future = pool.submit(worker, self)
         return future.result()
 
     @staticmethod
-    def choose(node_info: Dict[str, Union[float, str]],
-               pvals: List[str]) -> str:
+    def choose(node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
         """
         Return value from discrete node
         params:
@@ -68,12 +64,12 @@ class DiscreteNode(BaseNode):
         """
         rindex = 0
         random.seed()
-        vals = node_info['vals']
+        vals = node_info["vals"]
         if not pvals:
-            dist = node_info['cprob']
+            dist = node_info["cprob"]
         else:
             # noinspection PyTypeChecker
-            dist = node_info['cprob'][str(pvals)]
+            dist = node_info["cprob"][str(pvals)]
         lbound = 0
         ubound = 0
         rand = random.random()
@@ -88,8 +84,7 @@ class DiscreteNode(BaseNode):
         return vals[rindex]
 
     @staticmethod
-    def predict(node_info: Dict[str, Union[float, str]],
-                pvals: List[str]) -> str:
+    def predict(node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
         """function for prediction based on evidence values in discrete node
 
         Args:
@@ -100,17 +95,15 @@ class DiscreteNode(BaseNode):
             str: prediction
         """
 
-        vals = node_info['vals']
+        vals = node_info["vals"]
         disct = []
         if not pvals:
-            dist = node_info['cprob']
+            dist = node_info["cprob"]
         else:
             # noinspection PyTypeChecker
-            dist = node_info['cprob'][str(pvals)]
+            dist = node_info["cprob"][str(pvals)]
         max_value = max(dist)
-        indices = [
-            index for index,
-            value in enumerate(dist) if value == max_value]
+        indices = [index for index, value in enumerate(dist) if value == max_value]
         max_ind = 0
         if len(indices) == 1:
             max_ind = indices[0]

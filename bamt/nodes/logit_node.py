@@ -22,9 +22,10 @@ class LogitNode(BaseNode):
         super(LogitNode, self).__init__(name)
         if classifier is None:
             classifier = linear_model.LogisticRegression(
-                multi_class='multinomial', solver='newton-cg', max_iter=100)
+                multi_class="multinomial", solver="newton-cg", max_iter=100
+            )
         self.classifier = classifier
-        self.type = 'Logit' + f" ({type(self.classifier).__name__})"
+        self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> LogitParams:
         model_ser = None
@@ -34,25 +35,27 @@ class LogitNode(BaseNode):
         self.classifier.fit(data[parents].values, data[self.name].values)
         serialization = self.choose_serialization(self.classifier)
 
-        if serialization == 'pickle':
+        if serialization == "pickle":
             ex_b = pickle.dumps(self.classifier, protocol=4)
             # model_ser = ex_b.decode('latin1').replace('\'', '\"')
-            model_ser = ex_b.decode('latin1')
-            serialization_name = 'pickle'
+            model_ser = ex_b.decode("latin1")
+            serialization_name = "pickle"
         else:
             logger_nodes.warning(
-                f"{self.name}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
+                f"{self.name}::Pickle failed. BAMT will use Joblib. | "
+                + str(serialization.args[0])
+            )
 
-            path = self.get_path_joblib(
-                self.name, specific=self.name.replace(
-                    ' ', '_'))
+            path = self.get_path_joblib(self.name, specific=self.name.replace(" ", "_"))
 
             joblib.dump(self.classifier, path, compress=True, protocol=4)
-            serialization_name = 'joblib'
-        return {'classes': list(self.classifier.classes_),
-                'classifier_obj': path or model_ser,
-                'classifier': type(self.classifier).__name__,
-                'serialization': serialization_name}
+            serialization_name = "joblib"
+        return {
+            "classes": list(self.classifier.classes_),
+            "classifier_obj": path or model_ser,
+            "classifier": type(self.classifier).__name__,
+            "serialization": serialization_name,
+        }
 
     def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
@@ -65,14 +68,13 @@ class LogitNode(BaseNode):
         rindex = 0
 
         if len(node_info["classes"]) > 1:
-            if node_info["serialization"] == 'joblib':
+            if node_info["serialization"] == "joblib":
                 model = joblib.load(node_info["classifier_obj"])
             else:
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
-                a = node_info["classifier_obj"].encode('latin1')
+                a = node_info["classifier_obj"].encode("latin1")
                 model = pickle.loads(a)
-            distribution = model.predict_proba(
-                np.array(pvals).reshape(1, -1))[0]
+            distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose
             rand = random.random()
@@ -80,7 +82,7 @@ class LogitNode(BaseNode):
             ubound = 0
             for interval in range(len(node_info["classes"])):
                 ubound += distribution[interval]
-                if (lbound <= rand and rand < ubound):
+                if lbound <= rand and rand < ubound:
                     rindex = interval
                     break
                 else:
@@ -91,8 +93,7 @@ class LogitNode(BaseNode):
         else:
             return str(node_info["classes"][0])
 
-    def predict(self, node_info: LogitParams,
-                pvals: List[Union[float]]) -> str:
+    def predict(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return prediction from Logit node
         params:
@@ -101,11 +102,11 @@ class LogitNode(BaseNode):
         """
 
         if len(node_info["classes"]) > 1:
-            if node_info["serialization"] == 'joblib':
+            if node_info["serialization"] == "joblib":
                 model = joblib.load(node_info["classifier_obj"])
             else:
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
-                a = node_info["classifier_obj"].encode('latin1')
+                a = node_info["classifier_obj"].encode("latin1")
                 model = pickle.loads(a)
 
             pred = model.predict(np.array(pvals).reshape(1, -1))[0]

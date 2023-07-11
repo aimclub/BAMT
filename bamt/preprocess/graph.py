@@ -39,5 +39,6 @@ def edges_to_dict(edges: list):
     nodes = nodes_from_edges(edges)
     parents_dict = defaultdict(list, {node: [] for node in nodes})
     parents_dict.update(
-        {child: parents_dict[child] + [parent] for parent, child in edges})
+        {child: parents_dict[child] + [parent] for parent, child in edges}
+    )
     return parents_dict

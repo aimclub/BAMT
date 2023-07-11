@@ -42,18 +42,18 @@ def custom_mutation_add(graph: CustomGraphModel, **kwargs):
         for _ in range(num_mut):
             rid = random.choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
-            other_random_node = graph.nodes[random.choice(
-                range(len(graph.nodes)))]
-            nodes_not_cycling = (random_node.descriptive_id not in
-                                 [n.descriptive_id for n in ordered_subnodes_hierarchy(other_random_node)] and
-                                 other_random_node.descriptive_id not in
-                                 [n.descriptive_id for n in ordered_subnodes_hierarchy(random_node)])
+            other_random_node = graph.nodes[random.choice(range(len(graph.nodes)))]
+            nodes_not_cycling = random_node.descriptive_id not in [
+                n.descriptive_id for n in ordered_subnodes_hierarchy(other_random_node)
+            ] and other_random_node.descriptive_id not in [
+                n.descriptive_id for n in ordered_subnodes_hierarchy(random_node)
+            ]
             if nodes_not_cycling:
                 random_node.nodes_from.append(other_random_node)
                 break
 
     except Exception as ex:
-        print(f'Incorrect connection: {ex}')
+        print(f"Incorrect connection: {ex}")
     return graph
 
 
@@ -63,9 +63,11 @@ def custom_mutation_delete(graph: OptGraph, **kwargs):
         for _ in range(num_mut):
             rid = random.choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
-            other_random_node = graph.nodes[random.choice(
-                range(len(graph.nodes)))]
-            if random_node.nodes_from is not None and other_random_node in random_node.nodes_from:
+            other_random_node = graph.nodes[random.choice(range(len(graph.nodes)))]
+            if (
+                random_node.nodes_from is not None
+                and other_random_node in random_node.nodes_from
+            ):
                 random_node.nodes_from.remove(other_random_node)
                 break
     except Exception as ex:
@@ -79,9 +81,11 @@ def custom_mutation_reverse(graph: OptGraph, **kwargs):
         for _ in range(num_mut):
             rid = random.choice(range(len(graph.nodes)))
             random_node = graph.nodes[rid]
-            other_random_node = graph.nodes[random.choice(
-                range(len(graph.nodes)))]
-            if random_node.nodes_from is not None and other_random_node in random_node.nodes_from:
+            other_random_node = graph.nodes[random.choice(range(len(graph.nodes)))]
+            if (
+                random_node.nodes_from is not None
+                and other_random_node in random_node.nodes_from
+            ):
                 random_node.nodes_from.remove(other_random_node)
                 other_random_node.nodes_from.append(random_node)
                 break
@@ -93,7 +97,7 @@ def custom_mutation_reverse(graph: OptGraph, **kwargs):
 def has_no_duplicates(graph):
     _, labels = graph_structure_as_nx_graph(graph)
     if len(labels.values()) != len(set(labels.values())):
-        raise ValueError('Custom graph has duplicates')
+        raise ValueError("Custom graph has duplicates")
     return True
 
 
@@ -101,7 +105,7 @@ def has_no_blacklist_edges(graph, blacklist):
     nx_graph, _ = graph_structure_as_nx_graph(graph)
     for edge in nx_graph.edges():
         if edge in blacklist:
-            raise ValueError('Graph contains blacklisted edges')
+            raise ValueError("Graph contains blacklisted edges")
     return True
 
 
@@ -109,5 +113,5 @@ def has_only_whitelist_edges(graph, whitelist):
     nx_graph, _ = graph_structure_as_nx_graph(graph)
     for edge in nx_graph.edges():
         if edge not in whitelist:
-            raise ValueError('Graph contains non-whitelisted edges')
+            raise ValueError("Graph contains non-whitelisted edges")
     return True
