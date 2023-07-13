@@ -1,7 +1,10 @@
 from bamt.networks.base import BaseNetwork
 from bamt.log import logger_network
-from typing import Dict
-import bamt.builders as builders
+import pandas as pd
+import numpy as np
+from typing import Optional
+from bamt.builders.builders_base import ParamDict
+from bamt.builders.composite_builder import CompositeStructureBuilder
 
 
 class CompositeBN(BaseNetwork):
@@ -13,3 +16,26 @@ class CompositeBN(BaseNetwork):
         super(CompositeBN, self).__init__()
         self._allowed_dtypes = ['cont', 'disc', 'disc_num']
         self.type = 'Composite'
+
+    def add_edges(self,
+                  data: pd.DataFrame,
+                  progress_bar: bool = True,
+                  classifier: Optional[object] = None,
+                  regressor: Optional[object] = None,
+                  **kwargs):
+
+        worker = CompositeStructureBuilder(
+            data=data,
+            descriptor=self.descriptor,
+            regressor=regressor)
+
+        worker.build(
+            data=data,
+            classifier=classifier,
+            regressor=regressor,
+            progress_bar=progress_bar,
+            **kwargs)
+
+        # update family
+        self.nodes = worker.skeleton['V']
+        self.edges = worker.skeleton['E']

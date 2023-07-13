@@ -610,9 +610,9 @@ class BaseNetwork(object):
                 parall_count: int = 1,
                 progress_bar: bool = True,
                 models_dir: Optional[str] = None) -> Dict[str,
-                                                   Union[List[str],
-                                                         List[int],
-                                                         List[float]]]:
+                                                          Union[List[str],
+                                                                List[int],
+                                                                List[float]]]:
         """
         Function to predict columns from given data.
         Note that train data and test data must have different columns.
@@ -632,7 +632,11 @@ class BaseNetwork(object):
 
         from joblib import Parallel, delayed
 
-        def wrapper(bn, test: pd.DataFrame, columns: List[str], models_dir: str):
+        def wrapper(
+                bn,
+                test: pd.DataFrame,
+                columns: List[str],
+                models_dir: str):
             preds = {column_name: list() for column_name in columns}
 
             if len(test) == 1:
@@ -641,7 +645,11 @@ class BaseNetwork(object):
                     for n, key in enumerate(columns):
                         try:
                             sample = bn.sample(
-                                1, evidence=test_row, predict=True, progress_bar=False, models_dir=models_dir)
+                                1,
+                                evidence=test_row,
+                                predict=True,
+                                progress_bar=False,
+                                models_dir=models_dir)
                             if sample.empty:
                                 preds[key].append(np.nan)
                                 continue
@@ -674,8 +682,8 @@ class BaseNetwork(object):
             processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(
                 self, test.loc[[i]], columns, models_dir) for i in tqdm(test.index, position=0, leave=True))
         else:
-            processed_list = Parallel(n_jobs=parall_count)(
-                delayed(wrapper)(self, test.loc[[i]], columns, models_dir) for i in test.index)
+            processed_list = Parallel(n_jobs=parall_count)(delayed(wrapper)(
+                self, test.loc[[i]], columns, models_dir) for i in test.index)
 
         for i in range(test.shape[0]):
             curr_pred = processed_list[i]

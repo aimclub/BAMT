@@ -12,9 +12,6 @@ NodeInfo = Union[GaussianParams, HybcprobParams]
 
 
 class CompositeContinuousNode(BaseNode):
-    """
-    Main class for Composite Continuous Node, combining the functionalities of Gaussian and Conditional Gaussian Nodes
-    """
 
     def __init__(self, name, regressor: Optional[object] = None):
         super(CompositeContinuousNode, self).__init__(name)
@@ -25,36 +22,23 @@ class CompositeContinuousNode(BaseNode):
             f" ({type(self.regressor).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> NodeInfo:
-        if self.disc_parents:
-            return ConditionalGaussianNode(
-                self.name, self.regressor).fit_parameters(data)
-        else:
-            return GaussianNode(self.name, self.regressor).fit_parameters(data)
+
+        return GaussianNode(self.name, self.regressor).fit_parameters(data)
 
     def choose(self, node_info: NodeInfo,
                pvals: List[Union[str, float]]) -> float:
-        if self.disc_parents:
-            return ConditionalGaussianNode(
-                self.name, self.regressor).choose(
-                node_info.get(
-                    'hybcprob', {}), pvals)
-        else:
-            return GaussianNode(
-                self.name,
-                self.regressor).choose(
-                node_info,
-                pvals)
+
+        return GaussianNode(
+            self.name,
+            self.regressor).choose(
+            node_info,
+            pvals)
 
     def predict(self, node_info: NodeInfo,
                 pvals: List[Union[str, float]]) -> float:
-        if self.disc_parents:
-            return ConditionalGaussianNode(
-                self.name, self.regressor).predict(
-                node_info.get(
-                    'hybcprob', {}), pvals)
-        else:
-            return GaussianNode(
-                self.name,
-                self.regressor).predict(
-                node_info,
-                pvals)
+
+        return GaussianNode(
+            self.name,
+            self.regressor).predict(
+            node_info,
+            pvals)

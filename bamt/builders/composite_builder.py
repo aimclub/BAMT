@@ -45,7 +45,8 @@ class CompositeDefiner(BaseDefiner):
             if type in ['disc_num', 'disc']:
                 node = CompositeDiscreteNode(name=vertex)
             elif type == 'cont':
-                node = CompositeContinuousNode(name=vertex, regressor=regressor)
+                node = CompositeContinuousNode(
+                    name=vertex, regressor=regressor)
             else:
                 msg = f"""First stage of automatic vertex detection failed on {vertex} due TypeError ({type}).
                 Set vertex manually (by calling set_nodes()) or investigate the error."""
@@ -72,9 +73,7 @@ class CompositeStructureBuilder(CompositeDefiner):
             self,
             data: DataFrame,
             descriptor: Dict[str, Dict[str, str]],
-            regressor: Optional[object],
-            has_logit: bool,
-            use_mixture: bool):
+            regressor: Optional[object]):
         super(
             CompositeStructureBuilder,
             self).__init__(
@@ -83,8 +82,6 @@ class CompositeStructureBuilder(CompositeDefiner):
             regressor=regressor)
         self.data = data
         self.descriptor = descriptor
-        self.has_logit = has_logit
-        self.use_mixture = use_mixture
         self.regressor = regressor
         self.params = {'init_edges': None,
                        'init_nodes': None,
@@ -99,10 +96,11 @@ class CompositeStructureBuilder(CompositeDefiner):
         self.default_max_depth = 100
         self.default_timeout = 180
         self.objective_metric = CompositeGeneticOperators.composite_metric
-        self.default_crossovers = [CrossoverTypesEnum.exchange_edges,
-                                   CrossoverTypesEnum.exchange_parents_one,
-                                   CrossoverTypesEnum.exchange_parents_both,
-                                   CompositeGeneticOperators.custom_crossover_all_model]
+        self.default_crossovers = [
+            CrossoverTypesEnum.exchange_edges,
+            CrossoverTypesEnum.exchange_parents_one,
+            CrossoverTypesEnum.exchange_parents_both,
+            CompositeGeneticOperators.custom_crossover_all_model]
         self.default_mutations = [
             CompositeGeneticOperators.custom_mutation_add_structure,
             CompositeGeneticOperators.custom_mutation_delete_structure,
@@ -134,10 +132,6 @@ class CompositeStructureBuilder(CompositeDefiner):
         self.skeleton['E'] = best_graph_edge_list
 
         self.get_family()
-        self.overwrite_vertex(has_logit=self.has_logit,
-                              use_mixture=self.use_mixture,
-                              classifier=classifier,
-                              regressor=regressor)
 
     def search(self,
                data: DataFrame,
@@ -154,20 +148,23 @@ class CompositeStructureBuilder(CompositeDefiner):
         # Get the list of node names
         vertices = list(data.columns)
 
-        nodes_types = data.columns.to_list()
-
         encoder = preprocessing.LabelEncoder()
         p = pp.Preprocessor([('encoder', encoder)])
         discretized_data, _ = p.apply(data)
 
         # Create the initial population
-        initial = [CompositeModel(nodes=[CompositeNode(nodes_from=None,
-                                                       content={'name': vertex,
-                                                                'type': p.nodes_types[vertex],
-                                                                'parent_model': None})
-                                         for vertex in vertices])]
+        initial = [
+            CompositeModel(
+                nodes=[
+                    CompositeNode(
+                        nodes_from=None,
+                        content={
+                            'name': vertex,
+                            'type': p.nodes_types[vertex],
+                            'parent_model': None}) for vertex in vertices])]
 
-        objective = Objective({'custom': CompositeGeneticOperators.composite_metric})
+        objective = Objective(
+            {'custom': CompositeGeneticOperators.composite_metric})
         objective_eval = ObjectiveEvaluate(objective, data=discretized_data)
 
         # Define the requirements for the evolutionary algorithm
@@ -192,7 +189,9 @@ class CompositeStructureBuilder(CompositeDefiner):
 
         # Set the adapter for the conversion between the graph and the data
         # structures used by the optimizer
-        adapter = DirectAdapter(base_graph_class=CompositeModel, base_node_class=CompositeNode)
+        adapter = DirectAdapter(
+            base_graph_class=CompositeModel,
+            base_node_class=CompositeNode)
 
         # Set the constraints for the graph
 

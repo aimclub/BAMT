@@ -23,7 +23,6 @@ class EvoDefiner(BaseDefiner):
     """
     Object that might take additional methods to decompose structure builder class
     """
-
     def __init__(self, data: DataFrame, descriptor: Dict[str, Dict[str, str]],
                  regressor: Optional[object] = None):
 
@@ -42,7 +41,6 @@ class EvoStructureBuilder(EvoDefiner):
         has_logit (bool): Indicates whether a logit link function should be used.
         use_mixture (bool): Indicates whether a mixture model should be used.
     """
-
     def __init__(
             self,
             data: DataFrame,
