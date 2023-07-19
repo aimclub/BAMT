@@ -34,8 +34,7 @@ def lrts_comp(data):
 def mix_norm_cdf(x, weights, means, covars):
     mcdf = 0.0
     for i in range(len(weights)):
-        mcdf += weights[i] * \
-            stats.norm.cdf(x, loc=means[i][0], scale=covars[i][0][0])
+        mcdf += weights[i] * stats.norm.cdf(x, loc=means[i][0], scale=covars[i][0][0])
     return mcdf
 
 
@@ -49,8 +48,7 @@ def theoretical_quantile(data, n_comp):
     d = np.arange(np.min(data), np.max(data), step)
     for i in d:
         x.append(i)
-        q.append(mix_norm_cdf(i, model.weights_,
-                 model.means_, model.covariances_))
+        q.append(mix_norm_cdf(i, model.weights_, model.means_, model.covariances_))
     return x, q
 
 
@@ -61,7 +59,7 @@ def quantile_mix(p, vals, q):
 
 def probability_mix(val, vals, q):
     ind = vals.index(min(vals, key=lambda x: abs(x - val)))
-    return (q[ind])
+    return q[ind]
 
 
 def sum_dist(data, vals, q):
@@ -86,7 +84,7 @@ def component(data, columns, method):
         x = np.transpose([data[columns[0]].values])
     else:
         x = data[columns].values
-    if method == 'aic':
+    if method == "aic":
         lowest_aic = np.infty
         comp_lowest = 0
         for i in range(1, max_comp + 1, 1):
@@ -98,7 +96,7 @@ def component(data, columns, method):
                 comp_lowest = i
             n = comp_lowest
 
-    if method == 'bic':
+    if method == "bic":
         lowest_bic = np.infty
         comp_lowest = 0
         for i in range(1, max_comp + 1, 1):
@@ -110,9 +108,9 @@ def component(data, columns, method):
                 comp_lowest = i
             n = comp_lowest
 
-    if method == 'LRTS':
+    if method == "LRTS":
         n = lrts_comp(x)
-    if method == 'quantile':
+    if method == "quantile":
         biggest_p = -1 * np.infty
         comp_biggest = 0
         for i in range(1, max_comp, 1):
@@ -144,7 +142,7 @@ def get_n_nearest(data, columns, corr=False, number_close=5):
             close_ind = data[c].sort_values(ascending=False).index.tolist()
         else:
             close_ind = data[c].sort_values().index.tolist()
-        groups.append(close_ind[0:number_close + 1])
+        groups.append(close_ind[0 : number_close + 1])
 
     return groups
 
@@ -164,33 +162,28 @@ def get_proximity_matrix(df, proximity_metric) -> pd.DataFrame:
 
     encoder = OrdinalEncoder()
     df_coded = df
-    columnsToEncode = list(df_coded.select_dtypes(
-        include=['category', 'object']))
+    columnsToEncode = list(df_coded.select_dtypes(include=["category", "object"]))
 
-    df_coded[columnsToEncode] = encoder.fit_transform(
-        df_coded[columnsToEncode])
+    df_coded[columnsToEncode] = encoder.fit_transform(df_coded[columnsToEncode])
 
-    df_distance = pd.DataFrame(data=np.zeros(
-        (len(df.columns), len(df.columns))), columns=df.columns)
+    df_distance = pd.DataFrame(
+        data=np.zeros((len(df.columns), len(df.columns))), columns=df.columns
+    )
     df_distance.index = df.columns
 
-    if proximity_metric == 'MI':
+    if proximity_metric == "MI":
         for c1 in df.columns:
             for c2 in df.columns:
-                dist = mutual_info_score(
-                    df_coded[c1].values, df_coded[c2].values)
+                dist = mutual_info_score(df_coded[c1].values, df_coded[c2].values)
                 df_distance.loc[c1, c2] = dist
 
-    elif proximity_metric == 'corr':
-        df_distance = df_coded.corr(method='pearson')
+    elif proximity_metric == "corr":
+        df_distance = df_coded.corr(method="pearson")
 
     return df_distance
 
 
-def get_brave_matrix(
-        df_columns,
-        proximity_matrix,
-        n_nearest=5) -> pd.DataFrame:
+def get_brave_matrix(df_columns, proximity_matrix, n_nearest=5) -> pd.DataFrame:
     """Returns matrix Brave coeffitients of the DataFrame, requires proximity measure to be calculated
 
     Args:
@@ -203,14 +196,16 @@ def get_brave_matrix(
         brave_matrix: DataFrame of Brave coefficients
     """
 
-    brave_matrix = pd.DataFrame(data=np.zeros(
-        (len(df_columns), len(df_columns))), columns=df_columns)
+    brave_matrix = pd.DataFrame(
+        data=np.zeros((len(df_columns), len(df_columns))), columns=df_columns
+    )
     brave_matrix.index = df_columns
 
-    groups = get_n_nearest(proximity_matrix, df_columns.tolist(),
-                           corr=True, number_close=n_nearest)
+    groups = get_n_nearest(
+        proximity_matrix, df_columns.tolist(), corr=True, number_close=n_nearest
+    )
 
-    counter_zeroer = .0
+    counter_zeroer = 0.0
 
     for c1 in df_columns:
         for c2 in df_columns:
@@ -230,9 +225,9 @@ def get_brave_matrix(
                         d += 1
 
                 if (a + c) * (b + d) != 0 and (a + b) * (c + d) != 0:
-
-                    br = (a * len(groups) + (a + c) * (a + b)) / \
-                        ((math.sqrt((a + c) * (b + d))) * (math.sqrt((a + b) * (c + d))))
+                    br = (a * len(groups) + (a + c) * (a + b)) / (
+                        (math.sqrt((a + c) * (b + d))) * (math.sqrt((a + b) * (c + d)))
+                    )
                 else:
                     br = (a * len(groups) + (a + c) * (a + b)) / 0.0000000001
                 brave_matrix.loc[c1, c2] = br
@@ -268,10 +263,12 @@ def precision_recall(pred_net: list, true_net: list, decimal=4):
     pred_len = len(pred_net)
     true_len = len(true_net)
     shd = pred_len + true_len - corr_undirected - corr_dir
-    return {'AP': round(corr_undirected / pred_len, decimal),
-            'AR': round(corr_undirected / true_len, decimal),
-            #        'F1_undir': round(2 * (corr_undirected / pred_len) * (corr_undirected / true_len) / (corr_undirected / pred_len + corr_undirected / true_len), decimal),
-            'AHP': round(corr_dir / pred_len, decimal),
-            'AHR': round(corr_dir / true_len, decimal),
-            # 'F1_directed': round(2*(corr_dir/pred_len)*(corr_dir/true_len)/(corr_dir/pred_len+corr_dir/true_len), decimal),
-            'SHD': shd}
+    return {
+        "AP": round(corr_undirected / pred_len, decimal),
+        "AR": round(corr_undirected / true_len, decimal),
+        #        'F1_undir': round(2 * (corr_undirected / pred_len) * (corr_undirected / true_len) / (corr_undirected / pred_len + corr_undirected / true_len), decimal),
+        "AHP": round(corr_dir / pred_len, decimal),
+        "AHR": round(corr_dir / true_len, decimal),
+        # 'F1_directed': round(2*(corr_dir/pred_len)*(corr_dir/true_len)/(corr_dir/pred_len+corr_dir/true_len), decimal),
+        "SHD": shd,
+    }

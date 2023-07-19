@@ -14,28 +14,29 @@ class CompositeBN(BaseNetwork):
 
     def __init__(self):
         super(CompositeBN, self).__init__()
-        self._allowed_dtypes = ['cont', 'disc', 'disc_num']
-        self.type = 'Composite'
+        self._allowed_dtypes = ["cont", "disc", "disc_num"]
+        self.type = "Composite"
 
-    def add_edges(self,
-                  data: pd.DataFrame,
-                  progress_bar: bool = True,
-                  classifier: Optional[object] = None,
-                  regressor: Optional[object] = None,
-                  **kwargs):
-
+    def add_edges(
+        self,
+        data: pd.DataFrame,
+        progress_bar: bool = True,
+        classifier: Optional[object] = None,
+        regressor: Optional[object] = None,
+        **kwargs
+    ):
         worker = CompositeStructureBuilder(
-            data=data,
-            descriptor=self.descriptor,
-            regressor=regressor)
+            data=data, descriptor=self.descriptor, regressor=regressor
+        )
 
         worker.build(
             data=data,
             classifier=classifier,
             regressor=regressor,
             progress_bar=progress_bar,
-            **kwargs)
+            **kwargs
+        )
 
         # update family
-        self.nodes = worker.skeleton['V']
-        self.edges = worker.skeleton['E']
+        self.nodes = worker.skeleton["V"]
+        self.edges = worker.skeleton["E"]

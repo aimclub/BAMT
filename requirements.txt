@@ -1,6 +1,6 @@
 numpy>=1.24.2
 matplotlib==3.6.2
-pandas==1.5.2
+pandas==2.0.3
 pomegranate==0.14.8
 gmr==1.6.2
 scikit-learn>=0.24.0

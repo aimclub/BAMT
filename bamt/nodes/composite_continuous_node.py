@@ -12,33 +12,18 @@ NodeInfo = Union[GaussianParams, HybcprobParams]
 
 
 class CompositeContinuousNode(BaseNode):
-
     def __init__(self, name, regressor: Optional[object] = None):
         super(CompositeContinuousNode, self).__init__(name)
         if regressor is None:
             regressor = linear_model.LinearRegression()
         self.regressor = regressor
-        self.type = 'CompositeContinuous' + \
-            f" ({type(self.regressor).__name__})"
+        self.type = "CompositeContinuous" + f" ({type(self.regressor).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> NodeInfo:
-
         return GaussianNode(self.name, self.regressor).fit_parameters(data)
 
-    def choose(self, node_info: NodeInfo,
-               pvals: List[Union[str, float]]) -> float:
+    def choose(self, node_info: NodeInfo, pvals: List[Union[str, float]]) -> float:
+        return GaussianNode(self.name, self.regressor).choose(node_info, pvals)
 
-        return GaussianNode(
-            self.name,
-            self.regressor).choose(
-            node_info,
-            pvals)
-
-    def predict(self, node_info: NodeInfo,
-                pvals: List[Union[str, float]]) -> float:
-
-        return GaussianNode(
-            self.name,
-            self.regressor).predict(
-            node_info,
-            pvals)
+    def predict(self, node_info: NodeInfo, pvals: List[Union[str, float]]) -> float:
+        return GaussianNode(self.name, self.regressor).predict(node_info, pvals)

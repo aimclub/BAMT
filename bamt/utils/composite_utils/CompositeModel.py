@@ -10,8 +10,8 @@ class CompositeNode(LinkedGraphNode):
 
 
 class CompositeModel(GraphDelegate):
-    def __init__(self,
-                 nodes: Optional[Union[LinkedGraphNode,
-                                       List[LinkedGraphNode]]] = None):
+    def __init__(
+        self, nodes: Optional[Union[LinkedGraphNode, List[LinkedGraphNode]]] = None
+    ):
         super().__init__(nodes)
         self.unique_pipeline_id = 1
