@@ -18,6 +18,8 @@
      - | |license|
    * - stats
      - | |downloads_stats| |downloads_monthly| |downloads_weekly|
+   * - style
+     - | |Black|
 
 Repository of a data modeling and analysis tool based on Bayesian networks
 
@@ -241,3 +243,6 @@ Citation
 
 .. |coverage| image:: https://codecov.io/github/aimclub/BAMT/branch/master/graph/badge.svg?token=fA4qsxGqTC 
  :target: https://codecov.io/github/aimclub/BAMT
+
+.. |Black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+.. _Black: https://github.com/psf/black

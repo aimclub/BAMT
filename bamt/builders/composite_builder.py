@@ -66,8 +66,6 @@ class CompositeStructureBuilder(CompositeDefiner):
         data (DataFrame): Input data used to build the structure.
         descriptor (dict): Descriptor describing node types and signs.
         regressor (object): A regression model for continuous nodes.
-        has_logit (bool): Indicates whether a logit link function should be used.
-        use_mixture (bool): Indicates whether a mixture model should be used.
     """
 
     def __init__(
