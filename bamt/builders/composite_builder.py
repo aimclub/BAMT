@@ -39,7 +39,6 @@ class CompositeDefiner(BaseDefiner):
         # Notice that vertices are used only by Builders
         self.vertices = []
 
-        node = None
         # LEVEL 1: Define a general type of node: Discrete or Gaussian
         for vertex, type in self.descriptor['types'].items():
             if type in ['disc_num', 'disc']:

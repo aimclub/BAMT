@@ -3,10 +3,10 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
-from CompositeModel import CompositeModel
+from .CompositeModel import CompositeModel
 from random import choice
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
-from MLUtils import MlModels
+from .MLUtils import MlModels
 from scipy.stats import norm
 from numpy import std, mean, log
 from math import log10
@@ -147,7 +147,6 @@ def composite_metric(graph: CompositeModel, data: pd.DataFrame, percent=0.02):
                 continue
             fitted_model = model.fit(features, target)
 
-            idx = data_test.index.to_numpy()
             features = data_test[columns].to_numpy()
             target = data_of_node_test.to_numpy()
             if node.content['type'] == 'cont':

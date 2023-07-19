@@ -21,7 +21,7 @@ from sklearn.svm import LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from xgboost import XGBClassifier, XGBRegressor
 import json
-from CompositeModel import CompositeNode
+from .CompositeModel import CompositeNode
 from random import choice
 
 
