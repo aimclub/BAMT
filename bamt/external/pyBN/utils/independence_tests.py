@@ -46,10 +46,10 @@ def mutual_information(data, conditional=False):
     elif len(bins) > 2 and conditional:
         # CHECK FOR > 3 COLUMNS -> concatenate Z into one column
         if len(bins) > 3:
-            data = data.astype('str')
+            data = data.astype("str")
             ncols = len(bins)
             for i in range(len(data)):
-                data[i, 2] = ''.join(data[i, 2:ncols])
+                data[i, 2] = "".join(data[i, 2:ncols])
             data = data.astype(np.int64)[:, 0:3]
 
         bins = np.amax(data, axis=0)
@@ -76,10 +76,10 @@ def mutual_information(data, conditional=False):
 
         return round(MI, 4)
     elif len(bins) > 2 and conditional == False:
-        data = data.astype('str')
+        data = data.astype("str")
         ncols = len(bins)
         for i in range(len(data)):
-            data[i, 1] = ''.join(data[i, 1:ncols])
+            data[i, 1] = "".join(data[i, 1:ncols])
         data = data.astype(np.int64)[:, 0:2]
 
         hist, _ = np.histogramdd(data, bins=bins[0:2])  # frequency counts
@@ -162,10 +162,10 @@ def entropy(data):
     else:
         # CHECK FOR > 3 COLUMNS -> concatenate Z into one column
         if cols > 3:
-            data = data.astype('str')
+            data = data.astype("str")
             ncols = len(bins)
             for i in range(len(data)):
-                data[i, 2] = ''.join(data[i, 2:ncols])
+                data[i, 2] = "".join(data[i, 2:ncols])
             data = data.astype(np.int64)[:, 0:3]
 
         bins = np.amax(data, axis=0)

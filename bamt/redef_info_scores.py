@@ -8,23 +8,28 @@ from bamt.preprocess.numpy_pandas import get_type_numpy
 from bamt.preprocess.graph import edges_to_dict
 
 
-def info_score(edges: list, data: pd.DataFrame, method='LL'):
-    score_funcs = {'LL': log_lik_local, 'BIC': BIC_local, 'AIC': AIC_local}
+def info_score(edges: list, data: pd.DataFrame, method="LL"):
+    score_funcs = {"LL": log_lik_local, "BIC": BIC_local, "AIC": AIC_local}
     score = score_funcs.get(method.upper(), BIC_local)
 
     parents_dict = edges_to_dict(edges)
     nodes_with_edges = parents_dict.keys()
-    scores = [score(data[child_parents].copy(), method)
-              for var in nodes_with_edges
-              for child_parents in ([var] + parents_dict[var],)]
-    scores += [score(data[[var]].copy(), method) for var in
-               set(data.columns).difference(set(nodes_with_edges))]
+    scores = [
+        score(data[child_parents].copy(), method)
+        for var in nodes_with_edges
+        for child_parents in ([var] + parents_dict[var],)
+    ]
+    scores += [
+        score(data[[var]].copy(), method)
+        for var in set(data.columns).difference(set(nodes_with_edges))
+    ]
     return sum(scores)
 
 
 ##### INFORMATION-THEORETIC SCORING FUNCTIONS #####
 
-def log_likelihood(bn, data, method='LL'):
+
+def log_likelihood(bn, data, method="LL"):
     """
     Determining log-likelihood of the parameters
     of a Bayesian Network. This is a quite simple
@@ -89,30 +94,36 @@ def log_likelihood(bn, data, method='LL'):
     """
 
     NROW = data.shape[0]
-    mi_scores = [mutual_information(data[:,
-                                         (bn.V.index(rv),
-                                          ) + tuple([bn.V.index(p) for p in bn.parents(rv)])],
-                                    method=method) for rv in bn.nodes()]
-    ent_scores = [entropy(data[:, bn.V.index(rv)], method=method)
-                  for rv in bn.nodes()]
+    mi_scores = [
+        mutual_information(
+            data[:, (bn.V.index(rv),) + tuple([bn.V.index(p) for p in bn.parents(rv)])],
+            method=method,
+        )
+        for rv in bn.nodes()
+    ]
+    ent_scores = [entropy(data[:, bn.V.index(rv)], method=method) for rv in bn.nodes()]
     return NROW * (sum(mi_scores) - sum(ent_scores))
 
 
-def log_lik_local(data, method='LL'):
+def log_lik_local(data, method="LL"):
     NROW = data.shape[0]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         if isinstance(data, pd.DataFrame):
-            return (NROW * (mutual_information(data, method=method) -
-                    entropy(data.iloc[:, 0], method=method)))
+            return NROW * (
+                mutual_information(data, method=method)
+                - entropy(data.iloc[:, 0], method=method)
+            )
         elif isinstance(data, pd.Series):
             return 0.0
         elif isinstance(data, np.ndarray):
-            return (NROW * (mutual_information(data, method=method) -
-                    entropy(data[:, 0], method=method)))
+            return NROW * (
+                mutual_information(data, method=method)
+                - entropy(data[:, 0], method=method)
+            )
 
 
-def BIC_local(data, method='BIC'):
+def BIC_local(data, method="BIC"):
     NROW = data.shape[0]
     log_score = log_lik_local(data, method=method)
     try:
@@ -133,15 +144,18 @@ def num_params(data):
     # Calculate number of parameters for numpy array
     if isinstance(data, np.ndarray):
         node_type = get_type_numpy(data)
-        columns_for_discrete = [param for param,
-                                node in node_type.items() if node == 'cont']
-        columns_for_code = [param for param,
-                            node in node_type.items() if node == 'disc']
+        columns_for_discrete = [
+            param for param, node in node_type.items() if node == "cont"
+        ]
+        columns_for_code = [
+            param for param, node in node_type.items() if node == "disc"
+        ]
 
         prod = 1
         for var in columns_for_code:
-            prod *= len(np.unique(data[:, var])
-                        ) if data.ndim != 1 else len(np.unique(data))
+            prod *= (
+                len(np.unique(data[:, var])) if data.ndim != 1 else len(np.unique(data))
+            )
         if columns_for_discrete:
             prod *= len(columns_for_discrete)
 
@@ -152,12 +166,12 @@ def num_params(data):
             return sys.float_info.max
 
     # Raise an error if data type is unexpected
-    print('Num_params: Unexpected data type')
+    print("Num_params: Unexpected data type")
     print(data)
     return None
 
 
-def AIC_local(data, method='AIC'):
+def AIC_local(data, method="AIC"):
     log_score = log_lik_local(data, method=method)
     penalty = num_params(data)
     return log_score - penalty

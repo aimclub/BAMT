@@ -73,6 +73,7 @@ class BayesNet(object):
         """
         if file is not None:
             import pyBN.io.read as ior
+
             bn = ior.read_bn(file)
             self.V = bn.V
             self.E = bn.E
@@ -108,9 +109,9 @@ class BayesNet(object):
         F = {}
         for v in V:
             F[v] = {}
-            F[v]['cpt'] = deepcopy(self.F[v]['cpt'])
-            F[v]['parents'] = deepcopy(self.F[v]['parents'])
-            F[v]['values'] = deepcopy(self.F[v]['values'])
+            F[v]["cpt"] = deepcopy(self.F[v]["cpt"])
+            F[v]["parents"] = deepcopy(self.F[v]["parents"])
+            F[v]["values"] = deepcopy(self.F[v]["values"])
         bn = BayesNet()
         bn.V = V
         bn.E = E
@@ -120,7 +121,7 @@ class BayesNet(object):
 
     def add_node(self, rv, cpt=[], parents=[], values=[]):
         self.V.append(rv)
-        self.F[rv] = {'cpt': cpt, 'parents': parents, 'values': values}
+        self.F[rv] = {"cpt": cpt, "parents": parents, "values": values}
 
     def add_edge(self, u, v):
         if not self.has_node(u):
@@ -128,16 +129,16 @@ class BayesNet(object):
         if not self.has_node(v):
             self.add_node(v)
         if self.has_edge(u, v):
-            print('Edge already exists')
+            print("Edge already exists")
         else:
             self.E[u].append(v)
-            self.F[v]['parents'].append(u)
+            self.F[v]["parents"].append(u)
         # self.V = topsort(self.E)
         # HOW DO I RECALCULATE CPT?
 
     def remove_edge(self, u, v):
         self.E[u].remove(v)
-        self.F[v]['parents'].remove(u)
+        self.F[v]["parents"].remove(u)
 
     def reverse_arc(self, u, v):
         if self.has_edge(u, v):
@@ -145,17 +146,17 @@ class BayesNet(object):
             self.E[v].append(u)
 
     def set_data(self, rv, data):
-        assert (isinstance(data, dict)), 'data must be dictionary'
+        assert isinstance(data, dict), "data must be dictionary"
         self.F[rv] = data
 
     def set_cpt(self, rv, cpt):
-        self.F[rv]['cpt'] = cpt
+        self.F[rv]["cpt"] = cpt
 
     def set_parents(self, rv, parents):
-        self.F[rv]['parents'] = parents
+        self.F[rv]["parents"] = parents
 
     def set_values(self, rv, values):
-        self.F[rv]['values'] = values
+        self.F[rv]["values"] = values
 
     def nodes(self):
         for v in self.V:
@@ -187,28 +188,28 @@ class BayesNet(object):
     def num_params(self):
         num = 0
         for u in self.nodes():
-            num += len(self.F[u]['cpt'])
+            num += len(self.F[u]["cpt"])
         return num
 
     def scope_size(self, rv):
-        return len(self.F[rv]['parents']) + 1
+        return len(self.F[rv]["parents"]) + 1
 
     def num_nodes(self):
         return len(self.V)
 
     def cpt(self, rv):
-        return self.F[rv]['cpt']
+        return self.F[rv]["cpt"]
 
     def card(self, rv):
-        return len(self.F[rv]['values'])
+        return len(self.F[rv]["values"])
 
     def scope(self, rv):
         scope = [rv]
-        scope.extend(self.F[rv]['parents'])
+        scope.extend(self.F[rv]["parents"])
         return scope
 
     def parents(self, rv):
-        return self.F[rv]['parents']
+        return self.F[rv]["parents"]
 
     def children(self, rv):
         return self.E[rv]
@@ -217,11 +218,11 @@ class BayesNet(object):
         return len(self.parents(rv)) + len(self.children(rv))
 
     def values(self, rv):
-        return self.F[rv]['values']
+        return self.F[rv]["values"]
 
     def value_idx(self, rv, val):
         try:
-            return self.F[rv]['values'].index(val)
+            return self.F[rv]["values"].index(val)
         except ValueError:
             print("Value Index Error")
             return -1
@@ -243,11 +244,15 @@ class BayesNet(object):
         if by_var:
             cpt = np.array([sum(self.cpt(rv)) for rv in self.nodes()])
         elif by_parents:
-            cpt = np.array([sum(self.cpt(rv)[i:(i + self.card(rv))])
-                           for rv in self.nodes() for i in range(len(self.cpt(rv)) / self.card(rv))])
+            cpt = np.array(
+                [
+                    sum(self.cpt(rv)[i : (i + self.card(rv))])
+                    for rv in self.nodes()
+                    for i in range(len(self.cpt(rv)) / self.card(rv))
+                ]
+            )
         else:
-            cpt = np.array([val for rv in self.nodes()
-                           for val in self.cpt(rv)])
+            cpt = np.array([val for rv in self.nodes() for val in self.cpt(rv)])
         return cpt
 
     def cpt_indices(self, target, val_dict):
@@ -270,8 +275,7 @@ class BayesNet(object):
             key=rv,val=rv value
 
         """
-        stride = dict([(n, self.stride(target, n))
-                      for n in self.scope(target)])
+        stride = dict([(n, self.stride(target, n)) for n in self.scope(target)])
         # if len(val_dict)==len(self.parents(target)):
         #    idx = sum([self.value_idx(rv,val)*stride[rv] \
         #            for rv,val in val_dict.items()])
@@ -295,14 +299,14 @@ class BayesNet(object):
         Parents=Val for the given idx of the given rv's cpt.
         """
         rv_val = self.values(rv)[idx % self.card(rv)]
-        s = str(rv) + '=' + str(rv_val) + '|'
+        s = str(rv) + "=" + str(rv_val) + "|"
         _idx = 1
         for parent in self.parents(rv):
             for val in self.values(parent):
                 if idx in self.cpt_indices(rv, {rv: rv_val, parent: val}):
-                    s += str(parent) + '=' + str(val)
+                    s += str(parent) + "=" + str(val)
                     if _idx < len(self.parents(rv)):
-                        s += ','
+                        s += ","
                     _idx += 1
         return s
 
@@ -345,12 +349,12 @@ class BayesNet(object):
         self.F = dict([(rv, {}) for rv in self.nodes()])
         for rv in self.nodes():
             self.F[rv] = {
-                'parents': [p for p in self.nodes() if rv in self.children(p)],
-                'cpt': [],
-                'values': []
+                "parents": [p for p in self.nodes() if rv in self.children(p)],
+                "cpt": [],
+                "values": [],
             }
             if value_dict is not None:
-                self.F[rv]['values'] = value_dict[rv]
+                self.F[rv]["values"] = value_dict[rv]
 
     def adj_list(self):
         """

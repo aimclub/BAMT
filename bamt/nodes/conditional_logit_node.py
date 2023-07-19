@@ -23,12 +23,12 @@ class ConditionalLogitNode(BaseNode):
         super(ConditionalLogitNode, self).__init__(name)
         if classifier is None:
             classifier = linear_model.LogisticRegression(
-                multi_class='multinomial', solver='newton-cg', max_iter=100)
+                multi_class="multinomial", solver="newton-cg", max_iter=100
+            )
         self.classifier = classifier
-        self.type = 'ConditionalLogit' + f" ({type(self.classifier).__name__})"
+        self.type = "ConditionalLogit" + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(
-            self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
+    def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
         """
         Train params on data
         Return:
@@ -53,46 +53,62 @@ class ConditionalLogitNode(BaseNode):
                 model = self.classifier
                 values = set(new_data[self.name])
                 if len(values) > 1:
-                    model.fit(new_data[self.cont_parents].values,
-                              new_data[self.name].values)
+                    model.fit(
+                        new_data[self.cont_parents].values, new_data[self.name].values
+                    )
                     classes = list(model.classes_)
                     serialization = self.choose_serialization(model)
 
-                    if serialization == 'pickle':
+                    if serialization == "pickle":
                         ex_b = pickle.dumps(self.classifier, protocol=4)
-                        model_ser = ex_b.decode('latin1')
+                        model_ser = ex_b.decode("latin1")
 
                         # model_ser = pickle.dumps(self.classifier, protocol=4)
-                        hycprob[str(key_comb)] = {'classes': classes,
-                                                  'classifier_obj': model_ser,
-                                                  'classifier': type(self.classifier).__name__,
-                                                  'serialization': 'pickle'}
+                        hycprob[str(key_comb)] = {
+                            "classes": classes,
+                            "classifier_obj": model_ser,
+                            "classifier": type(self.classifier).__name__,
+                            "serialization": "pickle",
+                        }
                     else:
                         logger_nodes.warning(
-                            f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | " + str(serialization.args[0]))
+                            f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | "
+                            + str(serialization.args[0])
+                        )
 
                         path = self.get_path_joblib(
-                            node_name=self.name.replace(
-                                ' ', '_'), specific=comb)
+                            node_name=self.name.replace(" ", "_"), specific=comb
+                        )
                         joblib.dump(model, path, compress=True, protocol=4)
 
-                        hycprob[str(key_comb)] = {'classes': classes,
-                                                  'classifier_obj': path,
-                                                  'classifier': type(self.classifier).__name__,
-                                                  'serialization': 'joblib'}
+                        hycprob[str(key_comb)] = {
+                            "classes": classes,
+                            "classifier_obj": path,
+                            "classifier": type(self.classifier).__name__,
+                            "serialization": "joblib",
+                        }
                 else:
                     classes = list(values)
-                    hycprob[str(key_comb)] = {'classes': classes, 'classifier': type(
-                        self.classifier).__name__, 'classifier_obj': None, 'serialization': None}
+                    hycprob[str(key_comb)] = {
+                        "classes": classes,
+                        "classifier": type(self.classifier).__name__,
+                        "classifier_obj": None,
+                        "serialization": None,
+                    }
 
             else:
-                hycprob[str(key_comb)] = {'classes': list(classes), 'classifier': type(
-                    self.classifier).__name__, 'classifier_obj': None, 'serialization': None}
+                hycprob[str(key_comb)] = {
+                    "classes": list(classes),
+                    "classifier": type(self.classifier).__name__,
+                    "classifier_obj": None,
+                    "serialization": None,
+                }
         return {"hybcprob": hycprob}
 
     @staticmethod
-    def choose(node_info: Dict[str, Dict[str, LogitParams]],
-               pvals: List[Union[str, float]]) -> str:
+    def choose(
+        node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]
+    ) -> str:
         """
         Return value from ConditionalLogit node
         params:
@@ -108,22 +124,21 @@ class ConditionalLogitNode(BaseNode):
             else:
                 lgpvals.append(pval)
 
-        if any(parent_value == 'nan' for parent_value in dispvals):
+        if any(parent_value == "nan" for parent_value in dispvals):
             return np.nan
 
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
         # JOBLIB
         if len(lgdistribution["classes"]) > 1:
-            if lgdistribution["serialization"] == 'joblib':
+            if lgdistribution["serialization"] == "joblib":
                 model = joblib.load(lgdistribution["classifier_obj"])
             else:
                 # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
-                bytes_model = lgdistribution["classifier_obj"].encode('latin1')
+                bytes_model = lgdistribution["classifier_obj"].encode("latin1")
                 model = pickle.loads(bytes_model)
 
-            distribution = model.predict_proba(
-                np.array(lgpvals).reshape(1, -1))[0]
+            distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
             rand = random.random()
             rindex = 0
@@ -142,8 +157,9 @@ class ConditionalLogitNode(BaseNode):
             return str(lgdistribution["classes"][0])
 
     @staticmethod
-    def predict(node_info: Dict[str, Dict[str, LogitParams]],
-                pvals: List[Union[str, float]]) -> str:
+    def predict(
+        node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]
+    ) -> str:
         """
         Return value from ConditionalLogit node
         params:
@@ -163,11 +179,11 @@ class ConditionalLogitNode(BaseNode):
 
         # JOBLIB
         if len(lgdistribution["classes"]) > 1:
-            if lgdistribution["serialization"] == 'joblib':
+            if lgdistribution["serialization"] == "joblib":
                 model = joblib.load(lgdistribution["classifier_obj"])
             else:
                 # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
-                bytes_model = lgdistribution["classifier_obj"].encode('latin1')
+                bytes_model = lgdistribution["classifier_obj"].encode("latin1")
                 model = pickle.loads(bytes_model)
 
             pred = model.predict(np.array(lgpvals).reshape(1, -1))[0]
