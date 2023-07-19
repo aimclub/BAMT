@@ -1,12 +1,12 @@
 import random
 
-from pandas import DataFrame
+from pandas import DataFrame, crosstab
 
 from .base import BaseNode
 from .schema import DiscreteParams
 from typing import Type, Dict, Union, List
+from itertools import product
 
-from pomegranate import DiscreteDistribution, ConditionalProbabilityTable
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -30,27 +30,21 @@ class DiscreteNode(BaseNode):
 
         def worker(node: Type[BaseNode]) -> DiscreteParams:
             parents = node.disc_parents + node.cont_parents
+            dist = data[node.name].value_counts(normalize=True).sort_index()
+            vals = [str(i) for i in dist.index.to_list()]
+
             if not parents:
-                dist = DiscreteDistribution.from_samples(
-                    data[node.name].values)
-                cprob = list(dict(sorted(dist.items())).values())
-                vals = sorted([str(x)
-                               for x in list(dist.parameters[0].keys())])
+                cprob = dist.to_list()
             else:
-                dist = DiscreteDistribution.from_samples(
-                    data[node.name].values)
-                vals = sorted([str(x)
-                               for x in list(dist.parameters[0].keys())])
-                dist = ConditionalProbabilityTable.from_samples(
-                    data[parents + [node.name]].values)
-                params = dist.parameters[0]
-                cprob = dict()
-                for i in range(0, len(params), len(vals)):
-                    probs = []
-                    for j in range(i, (i + len(vals))):
-                        probs.append(params[j][-1])
-                    combination = [str(x) for x in params[i][0:len(parents)]]
-                    cprob[str(combination)] = probs
+                cprob = {str([str(i) for i in comb]): [1 / len(vals) for _ in vals] for comb in
+                         product(*[data[p].unique() for p in parents])}
+
+                conditional_dist = crosstab(data[node.name].to_list(), [data[p] for p in parents],
+                                               normalize='columns').T
+                tight_form = conditional_dist.to_dict("tight")
+
+                for comb, probs in zip(tight_form["index"], tight_form["data"]):
+                    cprob[str([str(i) for i in comb])] = probs
             return {"cprob": cprob, 'vals': vals}
 
         pool = ThreadPoolExecutor(num_workers)
