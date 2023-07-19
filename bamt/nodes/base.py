@@ -6,9 +6,8 @@ import pickle
 import os
 
 STORAGE = config.get(
-    'NODES',
-    'models_storage',
-    fallback='models_storage is not defined')
+    "NODES", "models_storage", fallback="models_storage is not defined"
+)
 
 
 class BaseNode(object):
@@ -25,7 +24,7 @@ class BaseNode(object):
         children: node's children
         """
         self.name = name
-        self.type = 'abstract'
+        self.type = "abstract"
 
         self.disc_parents = []
         self.cont_parents = []
@@ -39,25 +38,27 @@ class BaseNode(object):
             # don't attempt to compare against unrelated types
             return NotImplemented
 
-        return self.name == other.name and \
-            self.type == other.type and \
-            self.disc_parents == other.disc_parents and \
-            self.cont_parents == other.cont_parents and \
-            self.children == other.children
+        return (
+            self.name == other.name
+            and self.type == other.type
+            and self.disc_parents == other.disc_parents
+            and self.cont_parents == other.cont_parents
+            and self.children == other.children
+        )
 
     @staticmethod
     def choose_serialization(model) -> Union[str, Exception]:
         try:
             ex_b = pickle.dumps(model, protocol=4)
-            model_ser = ex_b.decode('latin1').replace('\'', '\"')
+            model_ser = ex_b.decode("latin1").replace("'", '"')
 
             if type(model).__name__ == "CatBoostRegressor":
-                a = model_ser.encode('latin1')
+                a = model_ser.encode("latin1")
             else:
-                a = model_ser.replace('\"', '\'').encode('latin1')
+                a = model_ser.replace('"', "'").encode("latin1")
 
             classifier_body = pickle.loads(a)
-            return 'pickle'
+            return "pickle"
         except Exception as ex:
             return ex
 
@@ -76,18 +77,12 @@ class BaseNode(object):
             specific = str(specific)
 
         index = str(int(os.listdir(STORAGE)[-1]))
-        path_to_check = os.path.join(
-            STORAGE,
-            index,
-            f"{node_name.replace(' ', '_')}")
+        path_to_check = os.path.join(STORAGE, index, f"{node_name.replace(' ', '_')}")
 
         if not os.path.isdir(path_to_check):
-            os.makedirs(
-                os.path.join(
-                    STORAGE,
-                    index,
-                    f"{node_name.replace(' ', '_')}"))
+            os.makedirs(os.path.join(STORAGE, index, f"{node_name.replace(' ', '_')}"))
 
         path = os.path.abspath(
-            os.path.join(path_to_check, f"{specific}.joblib.compressed"))
+            os.path.join(path_to_check, f"{specific}.joblib.compressed")
+        )
         return path
