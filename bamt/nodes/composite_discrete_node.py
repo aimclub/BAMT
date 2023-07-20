@@ -16,7 +16,7 @@ class CompositeDiscreteNode(LogitNode):
 
     def __init__(self, name, classifier: Optional[object] = None):
         super().__init__(name, classifier)
-        self.type = "CompositeDiscrete"
+        self.type = "CompositeDiscrete" + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame):
         parents = self.disc_parents + self.cont_parents

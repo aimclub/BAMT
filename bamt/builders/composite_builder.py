@@ -66,6 +66,8 @@ class CompositeStructureBuilder(CompositeDefiner):
         data (DataFrame): Input data used to build the structure.
         descriptor (dict): Descriptor describing node types and signs.
         regressor (object): A regression model for continuous nodes.
+        has_logit (bool): Indicates whether a logit link function should be used.
+        use_mixture (bool): Indicates whether a mixture model should be used.
     """
 
     def __init__(
@@ -78,6 +80,7 @@ class CompositeStructureBuilder(CompositeDefiner):
             data=data, descriptor=descriptor, regressor=regressor
         )
         self.data = data
+        self.parent_models_dict = {}
         self.descriptor = descriptor
         self.regressor = regressor
         self.params = {
@@ -113,7 +116,6 @@ class CompositeStructureBuilder(CompositeDefiner):
             has_no_cycle,
             evo.has_no_duplicates,
         ]
-        self.default_history_directory = None
 
     def build(
         self,
@@ -130,15 +132,16 @@ class CompositeStructureBuilder(CompositeDefiner):
             classifier (Optional[object]): A classification model for discrete nodes.
             regressor (Optional[object]): A regression model for continuous nodes.
         """
-        best_graph_edge_list = self.search(data, **kwargs)
+        best_graph_edge_list, parent_models = self.search(data, **kwargs)
 
         # Convert the best graph to the format used by the Bayesian Network
         self.skeleton["V"] = self.vertices
         self.skeleton["E"] = best_graph_edge_list
+        self.parent_models_dict = parent_models
 
         self.get_family()
 
-    def search(self, data: DataFrame, **kwargs) -> List[Tuple[str, str]]:
+    def search(self, data: DataFrame, **kwargs) -> [List[Tuple[str, str]], Dict]:
         """
         Executes all the evolutionary computations and returns the best graph's edge list.
 
@@ -180,8 +183,6 @@ class CompositeStructureBuilder(CompositeDefiner):
             max_arity=kwargs.get("max_arity", self.default_max_arity),
             max_depth=kwargs.get("max_depth", self.default_max_depth),
             timeout=timedelta(minutes=kwargs.get("timeout", self.default_timeout)),
-            history_dir=kwargs.get("history_dir", None),
-            early_stopping_iterations=kwargs.get("early_stopping_iterations", None),
             n_jobs=kwargs.get("n_jobs", self.default_n_jobs),
         )
 
@@ -237,12 +238,21 @@ class CompositeStructureBuilder(CompositeDefiner):
         # Run the optimization
         optimized_graph = optimizer.optimise(objective_eval)[0]
 
+        parent_models = self._get_parent_models(optimized_graph)
+
         # Get the best graph
         best_graph_edge_list = optimized_graph.operator.get_edges()
         best_graph_edge_list = self._convert_to_strings(best_graph_edge_list)
 
-        return best_graph_edge_list
+        return best_graph_edge_list, parent_models
 
     @staticmethod
     def _convert_to_strings(nested_list):
         return [[str(item) for item in inner_list] for inner_list in nested_list]
+
+    @staticmethod
+    def _get_parent_models(graph):
+        parent_models = {}
+        for node in graph.nodes:
+            parent_models[node.content["name"]] = node.content["parent_model"]
+        return parent_models
