@@ -1,11 +1,8 @@
 import re
 from bamt.networks.base import BaseNetwork
-from bamt.log import logger_network
 import pandas as pd
-import numpy as np
 from typing import Optional, Dict
-from bamt.builders.builders_base import ParamDict
-from bamt.builders.composite_builder import CompositeStructureBuilder
+from bamt.builders.composite_builder import CompositeStructureBuilder, CompositeDefiner
 from bamt.utils.composite_utils.MLUtils import MlModels
 
 
@@ -19,6 +16,16 @@ class CompositeBN(BaseNetwork):
         self._allowed_dtypes = ["cont", "disc", "disc_num"]
         self.type = "Composite"
         self.parent_models = {}
+
+    def add_nodes(self, descriptor: Dict[str, Dict[str, str]]):
+        """
+        Function for initializing nodes in Bayesian Network
+        descriptor: dict with types and signs of nodes
+        """
+        self.descriptor = descriptor
+
+        worker_1 = CompositeDefiner(descriptor=descriptor, regressor=None)
+        self.nodes = worker_1.vertices
 
     def add_edges(
         self,
@@ -53,6 +60,7 @@ class CompositeBN(BaseNetwork):
             if (
                 type(node).__name__ == "CompositeDiscreteNode"
                 and parent_models[node.name] is not None
+                and len(node.cont_parents + node.disc_parents) > 0
             ):
                 self.set_classifiers(
                     {node.name: ml_models_dict[parent_models[node.name]]}
@@ -61,6 +69,7 @@ class CompositeBN(BaseNetwork):
             elif (
                 type(node).__name__ == "CompositeContinuousNode"
                 and parent_models[node.name] is not None
+                and len(node.cont_parents + node.disc_parents) > 0
             ):
                 self.set_regressor(
                     {node.name: ml_models_dict[parent_models[node.name]]}

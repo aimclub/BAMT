@@ -418,14 +418,6 @@
         "non_linear"
       ]
     },
-    "svr": {
-      "meta": "sklearn_regr",
-      "tags": [
-        "non_multi",
-        "non_linear",
-        "cont"
-      ]
-    },
     "treg": {
       "meta": "sklearn_regr",
       "presets": ["*tree"],

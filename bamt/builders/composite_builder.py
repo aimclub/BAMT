@@ -4,7 +4,7 @@ from pandas import DataFrame
 from sklearn import preprocessing
 import bamt.preprocessors as pp
 
-from bamt.builders.builders_base import BaseDefiner
+from bamt.builders.builders_base import VerticesDefiner, EdgesDefiner
 from bamt.log import logger_builder
 from bamt.utils.composite_utils import CompositeGeneticOperators
 from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
@@ -26,18 +26,17 @@ from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 from typing import Dict, Optional, List, Tuple
 
 
-class CompositeDefiner(BaseDefiner):
+class CompositeDefiner(VerticesDefiner, EdgesDefiner):
     """
     Object that might take additional methods to decompose structure builder class
     """
 
     def __init__(
         self,
-        data: DataFrame,
         descriptor: Dict[str, Dict[str, str]],
         regressor: Optional[object] = None,
     ):
-        super().__init__(data, descriptor, regressor)
+        super().__init__(descriptor, regressor)
 
         # Notice that vertices are used only by Builders
         self.vertices = []
@@ -76,8 +75,7 @@ class CompositeStructureBuilder(CompositeDefiner):
         descriptor: Dict[str, Dict[str, str]],
         regressor: Optional[object],
     ):
-        super(CompositeStructureBuilder, self).__init__(
-            data=data, descriptor=descriptor, regressor=regressor
+        super(CompositeStructureBuilder, self).__init__(descriptor=descriptor, regressor=regressor
         )
         self.data = data
         self.parent_models_dict = {}
@@ -156,7 +154,7 @@ class CompositeStructureBuilder(CompositeDefiner):
 
         encoder = preprocessing.LabelEncoder()
         p = pp.Preprocessor([("encoder", encoder)])
-        discretized_data, _ = p.apply(data)
+        preprocessed_data, _ = p.apply(data)
 
         # Create the initial population
         initial = [
@@ -174,9 +172,6 @@ class CompositeStructureBuilder(CompositeDefiner):
                 ]
             )
         ]
-
-        objective = Objective({"custom": CompositeGeneticOperators.composite_metric})
-        objective_eval = ObjectiveEvaluate(objective, data=discretized_data)
 
         # Define the requirements for the evolutionary algorithm
         requirements = GraphRequirements(
@@ -233,7 +228,7 @@ class CompositeStructureBuilder(CompositeDefiner):
         )
 
         # Define the function to evaluate the objective function
-        objective_eval = ObjectiveEvaluate(objective, data=discretized_data)
+        objective_eval = ObjectiveEvaluate(objective, data=preprocessed_data)
 
         # Run the optimization
         optimized_graph = optimizer.optimise(objective_eval)[0]

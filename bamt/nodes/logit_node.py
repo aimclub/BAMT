@@ -82,7 +82,7 @@ class LogitNode(BaseNode):
             ubound = 0
             for interval in range(len(node_info["classes"])):
                 ubound += distribution[interval]
-                if lbound <= rand and rand < ubound:
+                if lbound <= rand < ubound:
                     rindex = interval
                     break
                 else:
