@@ -32,7 +32,7 @@ class LogitNode(BaseNode):
         path = None
 
         parents = self.disc_parents + self.cont_parents
-        self.classifier.fit(data[parents].values, data[self.name].values)
+        self.classifier.fit(X=data[parents].values, y=data[self.name].values)
         serialization = self.choose_serialization(self.classifier)
 
         if serialization == "pickle":
