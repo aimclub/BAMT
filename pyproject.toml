@@ -34,7 +34,7 @@ scipy = "^1.8.0"
 pyvis = ">=0.2.1"
 missingno = "^0.5.1"
 pgmpy = "0.1.20"
-pyitlib = "0.2.2"
+pyitlib = "0.2.3"
 thegolem = ">=0.3.1"
 
 [tool.poetry.dev-dependencies]
