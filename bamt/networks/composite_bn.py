@@ -65,7 +65,9 @@ class CompositeBN(BaseNetwork):
                 self.set_classifiers(
                     {node.name: ml_models_dict[parent_models[node.name]]}
                 )
-                print(f"{ml_models_dict[parent_models[node.name]]} classifier has been set for {node.name}")
+                print(
+                    f"{ml_models_dict[parent_models[node.name]]} classifier has been set for {node.name}"
+                )
             elif (
                 type(node).__name__ == "CompositeContinuousNode"
                 and parent_models[node.name] is not None

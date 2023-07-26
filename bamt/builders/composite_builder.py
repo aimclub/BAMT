@@ -59,14 +59,11 @@ class CompositeDefiner(VerticesDefiner, EdgesDefiner):
 class CompositeStructureBuilder(CompositeDefiner):
     """
     This class uses an evolutionary algorithm based on GOLEM to generate a Directed Acyclic Graph (DAG) that represents
-    the structure of a Bayesian Network.
+    the structure of a Composite Bayesian Network.
 
     Attributes:
         data (DataFrame): Input data used to build the structure.
         descriptor (dict): Descriptor describing node types and signs.
-        regressor (object): A regression model for continuous nodes.
-        has_logit (bool): Indicates whether a logit link function should be used.
-        use_mixture (bool): Indicates whether a mixture model should be used.
     """
 
     def __init__(
@@ -75,7 +72,8 @@ class CompositeStructureBuilder(CompositeDefiner):
         descriptor: Dict[str, Dict[str, str]],
         regressor: Optional[object],
     ):
-        super(CompositeStructureBuilder, self).__init__(descriptor=descriptor, regressor=regressor
+        super(CompositeStructureBuilder, self).__init__(
+            descriptor=descriptor, regressor=regressor
         )
         self.data = data
         self.parent_models_dict = {}

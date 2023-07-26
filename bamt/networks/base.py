@@ -178,6 +178,9 @@ class BaseNetwork(object):
                 use_mixture=self.use_mixture,
                 regressor=regressor,
             )
+        else:
+            logger_network.error(f"Optimizer {optimizer} is not supported")
+            return None
 
         self.sf_name = scoring_function[0]
 

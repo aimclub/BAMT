@@ -1,6 +1,5 @@
 from .base import BaseNode
 from .gaussian_node import GaussianNode
-from .conditional_gaussian_node import ConditionalGaussianNode
 from .schema import GaussianParams, HybcprobParams
 
 from sklearn import linear_model
