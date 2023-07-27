@@ -29,10 +29,10 @@ class GaussianNode(BaseNode):
         self.regressor = regressor
         self.type = "Gaussian" + f" ({type(self.regressor).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> GaussianParams:
+    def fit_parameters(self, data: DataFrame, **kwargs) -> GaussianParams:
         parents = self.cont_parents
         if parents:
-            self.regressor.fit(data[parents].values, data[self.name].values)
+            self.regressor.fit(data[parents].values, data[self.name].values, **kwargs)
             predicted_value = self.regressor.predict(data[parents].values)
             variance = mse(data[self.name].values, predicted_value, squared=False)
             serialization = self.choose_serialization(self.regressor)

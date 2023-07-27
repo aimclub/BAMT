@@ -63,7 +63,7 @@ class CompositeBN(BaseNetwork):
                 and len(node.cont_parents + node.disc_parents) > 0
             ):
                 self.set_classifiers(
-                    {node.name: ml_models_dict[parent_models[node.name]]}
+                    {node.name: ml_models_dict[parent_models[node.name]]()}
                 )
                 print(
                     f"{ml_models_dict[parent_models[node.name]]} classifier has been set for {node.name}"
@@ -74,7 +74,7 @@ class CompositeBN(BaseNetwork):
                 and len(node.cont_parents + node.disc_parents) > 0
             ):
                 self.set_regressor(
-                    {node.name: ml_models_dict[parent_models[node.name]]}
+                    {node.name: ml_models_dict[parent_models[node.name]]()}
                 )
             else:
                 pass

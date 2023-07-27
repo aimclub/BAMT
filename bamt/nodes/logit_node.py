@@ -27,12 +27,16 @@ class LogitNode(BaseNode):
         self.classifier = classifier
         self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> LogitParams:
+    def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
         model_ser = None
         path = None
 
         parents = self.disc_parents + self.cont_parents
-        self.classifier.fit(X=data[parents].values, y=data[self.name].values)
+        print("name " + self.name)
+        print("data[parents] ", data[parents].dtypes)
+        print("data[self.name] ", data[self.name].dtypes)
+        print(self.classifier)
+        self.classifier.fit(X=data[parents].values, y=data[self.name].values, **kwargs)
         serialization = self.choose_serialization(self.classifier)
 
         if serialization == "pickle":

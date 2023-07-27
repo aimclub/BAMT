@@ -6,6 +6,8 @@ import bamt.preprocessors as pp
 
 from bamt.builders.builders_base import VerticesDefiner, EdgesDefiner
 from bamt.log import logger_builder
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
 from bamt.utils.composite_utils import CompositeGeneticOperators
 from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
 from bamt.nodes.composite_discrete_node import CompositeDiscreteNode
@@ -113,6 +115,30 @@ class CompositeStructureBuilder(CompositeDefiner):
             evo.has_no_duplicates,
         ]
 
+    def overwrite_vertex(
+        self,
+        regressor,
+    ):
+        for node_instance in self.vertices:
+            node = node_instance
+            if (
+                len(node_instance.cont_parents + node_instance.disc_parents) < 1
+                and type(node_instance).__name__ == "CompositeContinuousNode"
+            ):
+                node = GaussianNode(name=node_instance.name, regressor=regressor)
+            elif (
+                len(node_instance.cont_parents + node_instance.disc_parents) < 1
+                and type(node).__name__ == "CompositeDiscreteNode"
+            ):
+                node = DiscreteNode(name=node_instance.name)
+            else:
+                continue
+            id_node = self.skeleton["V"].index(node_instance)
+            node.disc_parents = node_instance.disc_parents
+            node.cont_parents = node_instance.cont_parents
+            node.children = node_instance.children
+            self.skeleton["V"][id_node] = node
+
     def build(
         self,
         data: DataFrame,
@@ -136,6 +162,7 @@ class CompositeStructureBuilder(CompositeDefiner):
         self.parent_models_dict = parent_models
 
         self.get_family()
+        self.overwrite_vertex(regressor=regressor)
 
     def search(self, data: DataFrame, **kwargs) -> [List[Tuple[str, str]], Dict]:
         """
@@ -175,7 +202,9 @@ class CompositeStructureBuilder(CompositeDefiner):
         requirements = GraphRequirements(
             max_arity=kwargs.get("max_arity", self.default_max_arity),
             max_depth=kwargs.get("max_depth", self.default_max_depth),
+            num_of_generations=50,
             timeout=timedelta(minutes=kwargs.get("timeout", self.default_timeout)),
+            early_stopping_iterations=50,
             n_jobs=kwargs.get("n_jobs", self.default_n_jobs),
         )
 
