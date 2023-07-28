@@ -511,7 +511,6 @@ class BaseNetwork(object):
             data[columns_names] = data.loc[:, columns_names].astype("str")
 
         def worker(node):
-            print("FITTING PARAMETERS OF NODE " + node.name)
             return node.fit_parameters(data)
 
         results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)

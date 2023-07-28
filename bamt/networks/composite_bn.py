@@ -76,6 +76,9 @@ class CompositeBN(BaseNetwork):
                 self.set_regressor(
                     {node.name: ml_models_dict[parent_models[node.name]]()}
                 )
+                print(
+                    f"{ml_models_dict[parent_models[node.name]]} regressor has been set for {node.name}"
+                )
             else:
                 pass
 

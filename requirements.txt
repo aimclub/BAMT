@@ -8,6 +8,8 @@ pyvis>=0.2.1
 pgmpy==0.1.20
 pyitlib==0.2.3
 catboost>=1.0.6
+xgboost~=1.7.6
+lightgbm~=3.3.5
 joblib>=1.1.1
 networkx>=3.1
 tqdm>=4.65.0

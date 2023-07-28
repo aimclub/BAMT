@@ -32,10 +32,6 @@ class LogitNode(BaseNode):
         path = None
 
         parents = self.disc_parents + self.cont_parents
-        print("name " + self.name)
-        print("data[parents] ", data[parents].dtypes)
-        print("data[self.name] ", data[self.name].dtypes)
-        print(self.classifier)
         self.classifier.fit(X=data[parents].values, y=data[self.name].values, **kwargs)
         serialization = self.choose_serialization(self.classifier)
 
