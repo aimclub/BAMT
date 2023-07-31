@@ -33,7 +33,7 @@ class TestCaseBase(unittest.TestCase):
 
     def prepare_bn_and_data(self):
         # prepare bn where models were set by set_model
-        hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
+        hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
             [
                 "Tectonic regime",
                 "Period",
@@ -211,11 +211,18 @@ class TestBaseNetwork(TestCaseBase):
             self.bn.sample(100, progress_bar=False).size, 0, "Sampling is broken"
         )
 
-        saveloc = self.bn.distributions["Gross"]["hybcprob"]["['COMPRESSION']"][
-            "regressor_obj"
+        combination_package = self.bn.distributions["Gross"]["hybcprob"][
+            "['COMPRESSION']"
         ]
+        regressor_obj = combination_package["regressor_obj"]
 
-        self.assertIsFile(saveloc)
+        self.assertEqual(
+            combination_package["serialization"],
+            "pickle",
+            msg="Joblib compression was not detected.",
+        )
+
+        self.assertIsFile(regressor_obj)
 
     def test_sample(self):
         data = {
