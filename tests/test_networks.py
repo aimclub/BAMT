@@ -33,7 +33,7 @@ class TestCaseBase(unittest.TestCase):
 
     def prepare_bn_and_data(self):
         # prepare bn where models were set by set_model
-        hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
+        hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
             [
                 "Tectonic regime",
                 "Period",
