@@ -216,7 +216,7 @@ class TestBaseNetwork(TestCaseBase):
         ]
         regressor_obj = combination_package["regressor_obj"]
 
-        if combination_package["serialization"] == "pickle":
+        if combination_package["serialization"] == "joblib":
             self.assertIsFile(regressor_obj)
 
     def test_sample(self):
