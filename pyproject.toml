@@ -1,21 +1,21 @@
 [tool.poetry]
 name = "BAMT"
-version = "1.1.32"
+version = "1.1.44"
 description = "data modeling and analysis tool based on Bayesian networks"
 authors = ["Roman Netrogolov <romius2001@gmail.com>",
-	   "Irina Deeva <iriny.deeva@gmail.com>",
-	   "Karine Shakhkyan <kshahkyan@yandex.ru>",
-	   "Nikita Kovalev Yasen <Nikitoskova123@gmail.com>",
-	   "Anna Bubnova <banuba313@gmail.com>",
-	   "Yury Kaminsky <jkaminski@niuitmo.ru>"]
+    "Irina Deeva <iriny.deeva@gmail.com>",
+    "Karine Shakhkyan <kshahkyan@yandex.ru>",
+    "Nikita Kovalev Yasen <Nikitoskova123@gmail.com>",
+    "Anna Bubnova <banuba313@gmail.com>",
+    "Yury Kaminsky <jkaminski@niuitmo.ru>"]
 
 license = "BSD-3-Clause"
 readme = "readme.rst"
 repository = "https://github.com/ITMO-NSS-team/BAMT"
 
 classifiers = ["Programming Language :: Python :: 3",
-	       "Development Status :: 3 - Alpha",
-	       "Topic :: Scientific/Engineering :: Mathematics"]
+    "Development Status :: 3 - Alpha",
+    "Topic :: Scientific/Engineering :: Mathematics"]
 
 packages = [
     { include = "bamt" }
@@ -28,12 +28,11 @@ numpy = ">=1.24.2"
 matplotlib = "3.6.2"
 pandas = "2.0.3"
 gmr = "1.6.2"
-scikit-learn = "1.2.0"
+scikit-learn = "^1.2.0"
 scipy = "^1.8.0"
 pyvis = ">=0.2.1"
 missingno = "^0.5.1"
 pgmpy = "0.1.20"
-pyitlib = "0.2.2"
 thegolem = ">=0.3.1"
 
 [tool.poetry.dev-dependencies]

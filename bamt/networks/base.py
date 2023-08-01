@@ -11,7 +11,11 @@ import os
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from pyvis.network import Network
-from pyitlib import discrete_random_variable as drv
+from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
+    information_mutual,
+    information_mutual_conditional,
+    entropy_conditional,
+)
 from pgmpy.estimators import K2Score
 
 from bamt.builders.builders_base import ParamDict
@@ -226,8 +230,8 @@ class BaseNetwork(object):
             y = discretized_data[node.name].values
             if len(parents) == 1:
                 x = discretized_data[parents[0]].values
-                ls_true = drv.information_mutual(X=y, Y=x)
-                entropy = drv.entropy(X=y)
+                ls_true = information_mutual(X=y, Y=x)
+                entropy = entropy(X=y)
                 weight = ls_true / entropy
                 weights[(parents[0], node.name)] = weight
             else:
@@ -238,13 +242,13 @@ class BaseNetwork(object):
                     for other_parent in other_parents:
                         z.append(list(discretized_data[other_parent].values))
                     ls_true = np.average(
-                        drv.information_mutual_conditional(
+                        information_mutual_conditional(
                             X=y, Y=x, Z=z, cartesian_product=True
                         )
                     )
                     entropy = (
                         np.average(
-                            drv.entropy_conditional(X=y, Y=z, cartesian_product=True)
+                            entropy_conditional(X=y, Y=z, cartesian_product=True)
                         )
                         + 1e-8
                     )

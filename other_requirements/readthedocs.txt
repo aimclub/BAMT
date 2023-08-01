@@ -10,7 +10,6 @@ pandas
 numpy
 tqdm
 pyvis
-pyitlib
 pgmpy
 setuptools
 gmr
