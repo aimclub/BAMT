@@ -211,11 +211,13 @@ class TestBaseNetwork(TestCaseBase):
             self.bn.sample(100, progress_bar=False).size, 0, "Sampling is broken"
         )
 
-        saveloc = self.bn.distributions["Gross"]["hybcprob"]["['COMPRESSION']"][
-            "regressor_obj"
+        combination_package = self.bn.distributions["Gross"]["hybcprob"][
+            "['COMPRESSION']"
         ]
+        regressor_obj = combination_package["regressor_obj"]
 
-        self.assertIsFile(saveloc)
+        if combination_package["serialization"] == "joblib":
+            self.assertIsFile(regressor_obj)
 
     def test_sample(self):
         data = {
