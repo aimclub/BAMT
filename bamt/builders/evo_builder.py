@@ -15,6 +15,7 @@ from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
 from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
+from golem.core.log import Log
 
 from typing import Dict, Optional, List, Tuple
 
@@ -76,6 +77,10 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_max_arity = 100
         self.default_max_depth = 100
         self.default_timeout = 180
+        self.default_num_of_generations = 50
+        self.default_early_stopping_iterations = 50
+        self.verbose = (True,)
+        self.logging_level = 50
         self.objective_metric = evo.K2_metric
         self.default_crossovers = [
             CrossoverTypesEnum.exchange_edges,
@@ -150,7 +155,13 @@ class EvoStructureBuilder(EvoDefiner):
         requirements = GraphRequirements(
             max_arity=kwargs.get("max_arity", self.default_max_arity),
             max_depth=kwargs.get("max_depth", self.default_max_depth),
+            num_of_generations=kwargs.get(
+                "num_of_generations", self.default_num_of_generations
+            ),
             timeout=timedelta(minutes=kwargs.get("timeout", self.default_timeout)),
+            early_stopping_iterations=kwargs.get(
+                "early_stopping_iterations", self.default_early_stopping_iterations
+            ),
             n_jobs=kwargs.get("n_jobs", self.default_n_jobs),
         )
 
@@ -204,6 +215,9 @@ class EvoStructureBuilder(EvoDefiner):
 
         # Define the function to evaluate the objective function
         objective_eval = ObjectiveEvaluate(objective, data=data)
+
+        if not kwargs.get("verbose", self.verbose):
+            Log().reset_logging_level(logging_level=50)
 
         # Run the optimization
         optimized_graph = optimizer.optimise(objective_eval)[0]

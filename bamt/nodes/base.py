@@ -1,6 +1,9 @@
 from bamt.config import config
 
 from typing import Union
+from sklearn.preprocessing import LabelEncoder
+from functools import wraps
+from bamt.log import logger_nodes
 
 import pickle
 import os
@@ -29,6 +32,7 @@ class BaseNode(object):
         self.disc_parents = []
         self.cont_parents = []
         self.children = []
+        self.encoders = {}
 
     def __repr__(self):
         return f"{self.name}"
@@ -86,3 +90,21 @@ class BaseNode(object):
             os.path.join(path_to_check, f"{specific}.joblib.compressed")
         )
         return path
+
+    @staticmethod
+    def encode_categorical_data_if_any(func):
+        @wraps(func)
+        def wrapper(self, data, *args, **kwargs):
+            for column in self.disc_parents + [self.name]:
+                if data[column].dtype == "object" or data[column].dtype == "str":
+                    encoder = LabelEncoder()
+                    data[column] = encoder.fit_transform(data[column])
+                    self.encoders[column] = encoder
+                else:
+                    logger_nodes.warning(
+                        msg="Wrong datatype passed to categorical data encoder"
+                    )
+            result = func(self, data, *args, **kwargs)
+            return result
+
+        return wrapper

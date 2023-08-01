@@ -27,6 +27,7 @@ class LogitNode(BaseNode):
         self.classifier = classifier
         self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
+    @BaseNode.encode_categorical_data_if_any
     def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
         model_ser = None
         path = None
