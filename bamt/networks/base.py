@@ -649,9 +649,18 @@ class BaseNetwork(object):
         seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
         seq_df.reset_index(inplace=True, drop=True)
         seq = seq_df.to_dict("records")
+        sample_output = pd.DataFrame.from_dict(seq, orient="columns")
 
         if as_df:
-            return pd.DataFrame.from_dict(seq, orient="columns")
+            if self.has_logit or self.type == "Composite":
+                for node in self.nodes:
+                    for feature_key, encoder in node.encoders:
+                        sample_output[feature_key] = encoder[
+                            feature_key
+                        ].inverse_transform(sample_output[feature_key])
+                        pass
+
+            return sample_output
         else:
             return seq
 

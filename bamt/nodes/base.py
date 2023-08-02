@@ -96,7 +96,7 @@ class BaseNode(object):
         @wraps(func)
         def wrapper(self, data, *args, **kwargs):
             for column in self.disc_parents + [self.name]:
-                if data[column].dtype == "object" or data[column].dtype == "str":
+                if data[column].dtype in ("object", "str"):
                     encoder = LabelEncoder()
                     data[column] = encoder.fit_transform(data[column])
                     self.encoders[column] = encoder

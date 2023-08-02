@@ -230,4 +230,4 @@ class EvoStructureBuilder(EvoDefiner):
 
     @staticmethod
     def _convert_to_strings(nested_list):
-        return [[str(item) for item in inner_list] for inner_list in nested_list]
+        return [tuple([str(item) for item in inner_list]) for inner_list in nested_list]

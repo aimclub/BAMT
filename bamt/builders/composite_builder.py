@@ -133,7 +133,7 @@ class CompositeStructureBuilder(CompositeDefiner):
                 node = GaussianNode(name=node_instance.name, regressor=regressor)
             elif (
                 len(node_instance.cont_parents + node_instance.disc_parents) < 1
-                and type(node).__name__ == "CompositeDiscreteNode"
+                and type(node_instance).__name__ == "CompositeDiscreteNode"
             ):
                 node = DiscreteNode(name=node_instance.name)
             else:
