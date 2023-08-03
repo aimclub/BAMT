@@ -100,6 +100,8 @@ class BaseNode(object):
                     encoder = LabelEncoder()
                     data[column] = encoder.fit_transform(data[column])
                     self.encoders[column] = encoder
+                elif data[column].dtype in ("float64", "int64"):
+                    continue
                 else:
                     logger_nodes.warning(
                         msg="Wrong datatype passed to categorical data encoder"

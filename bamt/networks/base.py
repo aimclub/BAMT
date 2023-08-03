@@ -517,7 +517,9 @@ class BaseNetwork(object):
         def worker(node):
             return node.fit_parameters(data)
 
-        results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)
+        # results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)
+
+        results = [worker(node) for node in self.nodes]
 
         for result, node in zip(results, self.nodes):
             self.distributions[node.name] = result
@@ -605,7 +607,7 @@ class BaseNetwork(object):
                         if any(pd.isnull(pvalue) for pvalue in pvals):
                             output[node.name] = np.nan
                             continue
-
+                    print("PVALS \n:", pvals)
                     node_data = self.distributions[node.name]
                     if models_dir and ("hybcprob" in node_data.keys()):
                         for obj, obj_data in node_data["hybcprob"].items():
@@ -633,9 +635,13 @@ class BaseNetwork(object):
             return output
 
         if progress_bar:
-            seq = Parallel(n_jobs=parall_count)(
-                delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
-            )
+            # seq = Parallel(n_jobs=parall_count)(
+            #     delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
+            # )
+            seq = []
+            for _ in tqdm(range(n), position=0, leave=True):
+                result = wrapper()
+                seq.append(result)
         else:
             seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
         seq_df = pd.DataFrame.from_dict(seq, orient="columns")

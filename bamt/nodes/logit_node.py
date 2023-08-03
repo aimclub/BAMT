@@ -27,7 +27,6 @@ class LogitNode(BaseNode):
         self.classifier = classifier
         self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
-    @BaseNode.encode_categorical_data_if_any
     def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
         model_ser = None
         path = None
@@ -58,7 +57,8 @@ class LogitNode(BaseNode):
             "serialization": serialization_name,
         }
 
-    def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
+    @staticmethod
+    def choose(node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return value from Logit node
         params:
@@ -94,7 +94,8 @@ class LogitNode(BaseNode):
         else:
             return str(node_info["classes"][0])
 
-    def predict(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
+    @staticmethod
+    def predict(node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return prediction from Logit node
         params:
