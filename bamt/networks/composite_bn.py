@@ -159,7 +159,7 @@ class CompositeBN(BaseNetwork):
                         if self.type == "Discrete":
                             pvals = [str(output[t]) for t in parents]
                         elif type(node).__name__ in ("CompositeDiscreteNode", "CompositeContinuousNode"):
-                            pvals = [str(output[t]) for t in parents]
+                            pvals = output
                         else:
                             pvals = [output[t] for t in parents]
 

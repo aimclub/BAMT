@@ -4,13 +4,14 @@ import joblib
 import random
 import math
 
+from numpy import array
 from .base import BaseNode
 from .gaussian_node import GaussianNode
 from .schema import GaussianParams, HybcprobParams
 
 from sklearn import linear_model
 from pandas import DataFrame
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 
 from ..log import logger_nodes
 from sklearn.metrics import mean_squared_error as mse
@@ -69,14 +70,25 @@ class CompositeContinuousNode(BaseNode):
                 msg="Composite Continuous Node should always have a parent"
             )
 
-    @staticmethod
-    def choose(node_info: GaussianParams, pvals: List[float]) -> float:
+    def choose(self, node_info: GaussianParams, pvals: Dict) -> float:
         """
         Return value from Logit node
         params:
         node_info: nodes info from distributions
         pvals: parent values
         """
+
+        print("ENCODERS OF", self.name, "\n", self.encoders)
+
+        for parent_key in pvals:
+            if not isinstance(pvals[parent_key], (float, int)):
+                parent_value_array = np.array(pvals[parent_key])
+                pvals[parent_key] = self.encoders[parent_key].transform(parent_value_array.reshape(1, -1))
+
+        pvals = list(pvals.values())
+
+        print("TRANSFORMED PVALS \n", pvals)
+
         if pvals:
             for el in pvals:
                 if str(el) == "nan":

@@ -10,7 +10,7 @@ from bamt.log import logger_nodes
 
 from sklearn import linear_model
 from pandas import DataFrame
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 
 
 class CompositeDiscreteNode(BaseNode):
@@ -58,8 +58,7 @@ class CompositeDiscreteNode(BaseNode):
             "serialization": serialization_name,
         }
 
-    @staticmethod
-    def choose(node_info: LogitParams, pvals: List[Union[float]]) -> str:
+    def choose(self, node_info: LogitParams, pvals: Dict) -> str:
         """
         Return value from Logit node
         params:
@@ -68,6 +67,17 @@ class CompositeDiscreteNode(BaseNode):
         """
 
         rindex = 0
+
+        print("ENCODERS OF", self.name, "\n", self.encoders)
+
+        for parent_key in pvals:
+            if not isinstance(pvals[parent_key], (float, int)):
+                parent_value_array = np.array(pvals[parent_key])
+                pvals[parent_key] = self.encoders[parent_key].transform(parent_value_array.reshape(1, -1))
+
+        pvals = list(pvals.values())
+
+        print("TRANSFORMED PVALS \n", pvals)
 
         if len(node_info["classes"]) > 1:
             if node_info["serialization"] == "joblib":
