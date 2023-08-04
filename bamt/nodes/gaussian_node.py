@@ -97,9 +97,7 @@ class GaussianNode(BaseNode):
                 model = pickle.loads(a)
 
             if type(self).__name__ == "CompositeContinuousNode":
-                pvals = [
-                    int(item) if isinstance(item, str) else item for item in pvals
-                ]
+                pvals = [int(item) if isinstance(item, str) else item for item in pvals]
 
             cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
             var = node_info["variance"]

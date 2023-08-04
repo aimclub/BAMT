@@ -655,7 +655,12 @@ class BaseNetwork(object):
             c.name
             for c in self.nodes
             if type(c).__name__
-            not in ("DiscreteNode", "LogitNode", "CompositeDiscreteNode", "ConditionalLogitNode")
+            not in (
+                "DiscreteNode",
+                "LogitNode",
+                "CompositeDiscreteNode",
+                "ConditionalLogitNode",
+            )
         ]
         positive_columns = [
             c for c in cont_nodes if self.descriptor["signs"][c] == "pos"
@@ -892,7 +897,9 @@ class BaseNetwork(object):
         return data
 
     def _decode_categorical_data(self, data):
-        data = data.apply(lambda col: pd.to_numeric(col).astype(int) if col.dtype == 'object' else col)
+        data = data.apply(
+            lambda col: pd.to_numeric(col).astype(int) if col.dtype == "object" else col
+        )
         for column, encoder in self.encoders.items():
             data[column] = encoder.inverse_transform(data[column])
         return data

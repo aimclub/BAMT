@@ -76,9 +76,7 @@ class LogitNode(BaseNode):
                 model = pickle.loads(a)
 
             if type(self).__name__ == "CompositeDiscreteNode":
-                pvals = [
-                    int(item) if isinstance(item, str) else item for item in pvals
-                ]
+                pvals = [int(item) if isinstance(item, str) else item for item in pvals]
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose
