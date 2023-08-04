@@ -8,6 +8,7 @@ import numpy as np
 import json
 import os
 
+from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from pyvis.network import Network
@@ -55,6 +56,7 @@ class BaseNetwork(object):
         self.distributions = {}
         self.has_logit = False
         self.use_mixture = False
+        self.encoders = {}
 
     @property
     def nodes_names(self) -> List[str]:
@@ -505,6 +507,9 @@ class BaseNetwork(object):
         index = sorted([int(id) for id in os.listdir(STORAGE)])[-1] + 1
         os.makedirs(os.path.join(STORAGE, str(index)))
 
+        if type(self).__name__ == "CompositeBN":
+            data = self._encode_categorical_data(data)
+
         # Turn all discrete values to str for learning algorithm
         if "disc_num" in self.descriptor["types"].values():
             columns_names = [
@@ -517,9 +522,10 @@ class BaseNetwork(object):
         def worker(node):
             return node.fit_parameters(data)
 
-        # results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)
+        results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)
 
-        results = [worker(node) for node in self.nodes]
+        # code for debugging, do not remove
+        # results = [worker(node) for node in self.nodes]
 
         for result, node in zip(results, self.nodes):
             self.distributions[node.name] = result
@@ -607,7 +613,6 @@ class BaseNetwork(object):
                         if any(pd.isnull(pvalue) for pvalue in pvals):
                             output[node.name] = np.nan
                             continue
-                    print("PVALS \n:", pvals)
                     node_data = self.distributions[node.name]
                     if models_dir and ("hybcprob" in node_data.keys()):
                         for obj, obj_data in node_data["hybcprob"].items():
@@ -635,19 +640,22 @@ class BaseNetwork(object):
             return output
 
         if progress_bar:
-            # seq = Parallel(n_jobs=parall_count)(
-            #     delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
-            # )
-            seq = []
-            for _ in tqdm(range(n), position=0, leave=True):
-                result = wrapper()
-                seq.append(result)
+            seq = Parallel(n_jobs=parall_count)(
+                delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
+            )
+            # seq = []
+            # for _ in tqdm(range(n), position=0, leave=True):
+            #     result = wrapper()
+            #     seq.append(result)
         else:
             seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
         seq_df = pd.DataFrame.from_dict(seq, orient="columns")
         seq_df.dropna(inplace=True)
         cont_nodes = [
-            c.name for c in self.nodes if c.type != "Discrete" and "Logit" not in c.type
+            c.name
+            for c in self.nodes
+            if type(c).__name__
+            not in ("DiscreteNode", "LogitNode", "CompositeDiscreteNode", "ConditionalLogitNode")
         ]
         positive_columns = [
             c for c in cont_nodes if self.descriptor["signs"][c] == "pos"
@@ -658,14 +666,8 @@ class BaseNetwork(object):
         sample_output = pd.DataFrame.from_dict(seq, orient="columns")
 
         if as_df:
-            if self.has_logit or self.type == "Composite":
-                for node in self.nodes:
-                    for feature_key, encoder in node.encoders:
-                        sample_output[feature_key] = encoder[
-                            feature_key
-                        ].inverse_transform(sample_output[feature_key])
-                        pass
-
+            if type(self).__name__ == "CompositeBN":
+                sample_output = self._decode_categorical_data(sample_output)
             return sample_output
         else:
             return seq
@@ -881,3 +883,16 @@ class BaseNetwork(object):
             os.mkdir("visualization_result")
 
         return network.show(f"visualization_result/" + output)
+
+    def _encode_categorical_data(self, data):
+        for column in data.select_dtypes(include=["object", "string"]).columns:
+            encoder = LabelEncoder()
+            data[column] = encoder.fit_transform(data[column])
+            self.encoders[column] = encoder
+        return data
+
+    def _decode_categorical_data(self, data):
+        data = data.apply(lambda col: pd.to_numeric(col).astype(int) if col.dtype == 'object' else col)
+        for column, encoder in self.encoders.items():
+            data[column] = encoder.inverse_transform(data[column])
+        return data
