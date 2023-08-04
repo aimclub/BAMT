@@ -7,6 +7,7 @@ and sample some data
 
 .. code-block:: python
 
+    # data reading and preprocessing
     data = pd.read_csv(r"data/benchmark/healthcare.csv", index_col=0)
     print(data.dtypes)
     encoder = preprocessing.LabelEncoder()
@@ -14,15 +15,25 @@ and sample some data
 
     preprocessed_data, _ = p.apply(data)
     print(preprocessed_data.head(5))
+
+    # initialize empty network
     bn = CompositeBN()
 
     info = p.info
 
+    # add initial nodes
     bn.add_nodes(info)
 
+    # learn structure
     bn.add_edges(data)
 
+    # learn parameters
     bn.fit_parameters(data)
+
+    # get info about models in nodes
     bn.get_info(as_df=False)
 
-    print(bn.sample(200))
+    # sample some data
+    data_sampled = bn.sample(200)
+
+    print(data_sampled)
