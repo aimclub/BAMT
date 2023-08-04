@@ -31,6 +31,8 @@ class GaussianNode(BaseNode):
 
     def fit_parameters(self, data: DataFrame, **kwargs) -> GaussianParams:
         parents = self.cont_parents
+        if type(self).__name__ == "CompositeContinuousNode":
+            parents = parents + self.disc_parents
         if parents:
             self.regressor.fit(data[parents].values, data[self.name].values, **kwargs)
             predicted_value = self.regressor.predict(data[parents].values)
@@ -77,8 +79,7 @@ class GaussianNode(BaseNode):
                 "serialization": None,
             }
 
-    @staticmethod
-    def choose(node_info: GaussianParams, pvals: List[float]) -> float:
+    def choose(self, node_info: GaussianParams, pvals: List[float]) -> float:
         """
         Return value from Logit node
         params:
@@ -94,6 +95,11 @@ class GaussianNode(BaseNode):
             else:
                 a = node_info["regressor_obj"].encode("latin1")
                 model = pickle.loads(a)
+
+            if type(self).__name__ == "CompositeContinuousNode":
+                pvals = [
+                    int(item) if isinstance(item, str) else item for item in pvals
+                ]
 
             cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
             var = node_info["variance"]

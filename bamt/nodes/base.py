@@ -1,10 +1,6 @@
 from bamt.config import config
-import numpy as np
 
 from typing import Union
-from sklearn.preprocessing import LabelEncoder
-from functools import wraps
-from bamt.log import logger_nodes
 
 import pickle
 import os
@@ -91,18 +87,3 @@ class BaseNode(object):
             os.path.join(path_to_check, f"{specific}.joblib.compressed")
         )
         return path
-
-    def encode_categorical_data_if_any(self, data):
-        for column in self.disc_parents + [self.name]:
-            if data[column].dtype in ("object", "str", "string"):
-                encoder = LabelEncoder()
-                data[column] = encoder.fit_transform(data[column])
-                self.encoders[column] = encoder
-            elif np.issubdtype(data[column].dtype, np.number):
-                continue
-            else:
-                logger_nodes.warning(
-                    msg="Wrong datatype passed to categorical data encoder"
-                )
-        return data
-

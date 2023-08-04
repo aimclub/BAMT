@@ -57,8 +57,7 @@ class LogitNode(BaseNode):
             "serialization": serialization_name,
         }
 
-    @staticmethod
-    def choose(node_info: LogitParams, pvals: List[Union[float]]) -> str:
+    def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return value from Logit node
         params:
@@ -75,6 +74,11 @@ class LogitNode(BaseNode):
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                 a = node_info["classifier_obj"].encode("latin1")
                 model = pickle.loads(a)
+
+            if type(self).__name__ == "CompositeDiscreteNode":
+                pvals = [
+                    int(item) if isinstance(item, str) else item for item in pvals
+                ]
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose

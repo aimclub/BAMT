@@ -207,9 +207,14 @@ class CompositeBN(BaseNetwork):
             seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
         seq_df = pd.DataFrame.from_dict(seq, orient="columns")
         seq_df.dropna(inplace=True)
+        print("Descriptor \n", self.descriptor)
         cont_nodes = [
-            c.name for c in self.nodes if c.type != "Discrete" and "Logit" not in c.type
+            c.name
+            for c in self.nodes
+            if type(c).__name__
+            not in ("DiscreteNode", "LogitNode", "CompositeDiscreteNode")
         ]
+        print("Cont_nodes \n", cont_nodes)
         positive_columns = [
             c for c in cont_nodes if self.descriptor["signs"][c] == "pos"
         ]
@@ -219,8 +224,7 @@ class CompositeBN(BaseNetwork):
         sample_output = pd.DataFrame.from_dict(seq, orient="columns")
 
         if as_df:
-            sample_output = self.decode_categorical_data(sample_output)
-
+            sample_output = self._decode_categorical_data(sample_output)
             return sample_output
         else:
             return seq
@@ -243,7 +247,7 @@ class CompositeBN(BaseNetwork):
         index = sorted([int(id) for id in os.listdir(STORAGE)])[-1] + 1
         os.makedirs(os.path.join(STORAGE, str(index)))
 
-        data = self.encode_categorical_data(data)
+        data = self._encode_categorical_data(data)
 
         # Turn all discrete values to str for learning algorithm
         if "disc_num" in self.descriptor["types"].values():
@@ -264,14 +268,15 @@ class CompositeBN(BaseNetwork):
         for result, node in zip(results, self.nodes):
             self.distributions[node.name] = result
 
-    def encode_categorical_data(self, data):
-        for column in data.select_dtypes(include=['object', 'string']).columns:
+    def _encode_categorical_data(self, data):
+        for column in data.select_dtypes(include=["object", "string"]).columns:
             encoder = LabelEncoder()
             data[column] = encoder.fit_transform(data[column])
             self.encoders[column] = encoder
         return data
 
-    def decode_categorical_data(self, data):
+    def _decode_categorical_data(self, data):
+        data = data.apply(lambda col: pd.to_numeric(col).astype(int) if col.dtype == 'object' else col)
         for column, encoder in self.encoders.items():
             data[column] = encoder.inverse_transform(data[column])
         return data
