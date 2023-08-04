@@ -1,11 +1,13 @@
+import os
 import re
 import random
 
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 
 from tqdm import tqdm
 from bamt.log import logger_network
-from bamt.networks.base import BaseNetwork
+from bamt.networks.base import BaseNetwork, STORAGE
 import pandas as pd
 from typing import Optional, Dict, Union, List
 from bamt.builders.composite_builder import CompositeStructureBuilder, CompositeDefiner
@@ -22,6 +24,7 @@ class CompositeBN(BaseNetwork):
         self._allowed_dtypes = ["cont", "disc", "disc_num"]
         self.type = "Composite"
         self.parent_models = {}
+        self.encoders = {}
 
     def add_nodes(self, descriptor: Dict[str, Dict[str, str]]):
         """
@@ -158,8 +161,6 @@ class CompositeBN(BaseNetwork):
                     else:
                         if self.type == "Discrete":
                             pvals = [str(output[t]) for t in parents]
-                        elif type(node).__name__ in ("CompositeDiscreteNode", "CompositeContinuousNode"):
-                            pvals = output
                         else:
                             pvals = [output[t] for t in parents]
 
@@ -167,8 +168,7 @@ class CompositeBN(BaseNetwork):
                         if any(pd.isnull(pvalue) for pvalue in pvals):
                             output[node.name] = np.nan
                             continue
-                    print("NODE \n:", node.name)
-                    print("PVALS \n:", pvals)
+
                     node_data = self.distributions[node.name]
                     if models_dir and ("hybcprob" in node_data.keys()):
                         for obj, obj_data in node_data["hybcprob"].items():
@@ -219,14 +219,59 @@ class CompositeBN(BaseNetwork):
         sample_output = pd.DataFrame.from_dict(seq, orient="columns")
 
         if as_df:
-            if self.has_logit or self.type == "Composite":
-                for node in self.nodes:
-                    for feature_key, encoder in node.encoders:
-                        sample_output[feature_key] = encoder[
-                            feature_key
-                        ].inverse_transform(sample_output[feature_key])
-                        pass
+            sample_output = self.decode_categorical_data(sample_output)
 
             return sample_output
         else:
             return seq
+
+    def fit_parameters(self, data: pd.DataFrame, dropna: bool = True, n_jobs: int = -1):
+        """
+        Base function for parameter learning
+        """
+        if dropna:
+            data = data.dropna()
+            data.reset_index(inplace=True, drop=True)
+
+        if not os.path.isdir(STORAGE):
+            os.makedirs(STORAGE)
+
+        # init folder
+        if not os.listdir(STORAGE):
+            os.makedirs(os.path.join(STORAGE, "0"))
+
+        index = sorted([int(id) for id in os.listdir(STORAGE)])[-1] + 1
+        os.makedirs(os.path.join(STORAGE, str(index)))
+
+        data = self.encode_categorical_data(data)
+
+        # Turn all discrete values to str for learning algorithm
+        if "disc_num" in self.descriptor["types"].values():
+            columns_names = [
+                name
+                for name, t in self.descriptor["types"].items()
+                if t in ["disc_num"]
+            ]
+            data[columns_names] = data.loc[:, columns_names].astype("str")
+
+        def worker(node):
+            return node.fit_parameters(data)
+
+        # results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)
+
+        results = [worker(node) for node in self.nodes]
+
+        for result, node in zip(results, self.nodes):
+            self.distributions[node.name] = result
+
+    def encode_categorical_data(self, data):
+        for column in data.select_dtypes(include=['object', 'string']).columns:
+            encoder = LabelEncoder()
+            data[column] = encoder.fit_transform(data[column])
+            self.encoders[column] = encoder
+        return data
+
+    def decode_categorical_data(self, data):
+        for column, encoder in self.encoders.items():
+            data[column] = encoder.inverse_transform(data[column])
+        return data

@@ -27,7 +27,6 @@ class CompositeDiscreteNode(BaseNode):
         self.classifier = classifier
         self.type = "CompositeDiscrete" + f" ({type(self.classifier).__name__})"
 
-    @BaseNode.encode_categorical_data_if_any
     def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
         model_ser = None
         path = None
@@ -58,7 +57,8 @@ class CompositeDiscreteNode(BaseNode):
             "serialization": serialization_name,
         }
 
-    def choose(self, node_info: LogitParams, pvals: Dict) -> str:
+    @staticmethod
+    def choose(node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return value from Logit node
         params:
@@ -68,25 +68,16 @@ class CompositeDiscreteNode(BaseNode):
 
         rindex = 0
 
-        print("ENCODERS OF", self.name, "\n", self.encoders)
-
-        for parent_key in pvals:
-            if not isinstance(pvals[parent_key], (float, int)):
-                parent_value_array = np.array(pvals[parent_key])
-                pvals[parent_key] = self.encoders[parent_key].transform(parent_value_array.reshape(1, -1))
-
-        pvals = list(pvals.values())
-
-        print("TRANSFORMED PVALS \n", pvals)
-
         if len(node_info["classes"]) > 1:
             if node_info["serialization"] == "joblib":
                 model = joblib.load(node_info["classifier_obj"])
             else:
+                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                 a = node_info["classifier_obj"].encode("latin1")
                 model = pickle.loads(a)
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
+            # choose
             rand = random.random()
             lbound = 0
             ubound = 0

@@ -1,4 +1,5 @@
 from bamt.config import config
+import numpy as np
 
 from typing import Union
 from sklearn.preprocessing import LabelEncoder
@@ -91,22 +92,17 @@ class BaseNode(object):
         )
         return path
 
-    @staticmethod
-    def encode_categorical_data_if_any(func):
-        @wraps(func)
-        def wrapper(self, data, *args, **kwargs):
-            for column in self.disc_parents + [self.name]:
-                if data[column].dtype in ("object", "str"):
-                    encoder = LabelEncoder()
-                    data[column] = encoder.fit_transform(data[column])
-                    self.encoders[column] = encoder
-                elif data[column].dtype in ("float64", "int64"):
-                    continue
-                else:
-                    logger_nodes.warning(
-                        msg="Wrong datatype passed to categorical data encoder"
-                    )
-            result = func(self, data, *args, **kwargs)
-            return result
+    def encode_categorical_data_if_any(self, data):
+        for column in self.disc_parents + [self.name]:
+            if data[column].dtype in ("object", "str", "string"):
+                encoder = LabelEncoder()
+                data[column] = encoder.fit_transform(data[column])
+                self.encoders[column] = encoder
+            elif np.issubdtype(data[column].dtype, np.number):
+                continue
+            else:
+                logger_nodes.warning(
+                    msg="Wrong datatype passed to categorical data encoder"
+                )
+        return data
 
-        return wrapper

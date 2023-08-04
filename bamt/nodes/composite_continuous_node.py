@@ -27,7 +27,6 @@ class CompositeContinuousNode(BaseNode):
         self.regressor = regressor
         self.type = "CompositeContinuous" + f" ({type(self.regressor).__name__})"
 
-    @BaseNode.encode_categorical_data_if_any
     def fit_parameters(self, data: DataFrame, **kwargs) -> GaussianParams:
         parents = self.cont_parents + self.disc_parents
         if parents:
@@ -66,29 +65,24 @@ class CompositeContinuousNode(BaseNode):
                     "serialization": "joblib",
                 }
         else:
-            logger_nodes.warning(
-                msg="Composite Continuous Node should always have a parent"
-            )
+            mean_base = np.mean(data[self.name].values)
+            variance = np.var(data[self.name].values)
+            return {
+                "mean": mean_base,
+                "regressor_obj": None,
+                "regressor": None,
+                "variance": variance,
+                "serialization": None,
+            }
 
-    def choose(self, node_info: GaussianParams, pvals: Dict) -> float:
+    @staticmethod
+    def choose(node_info: GaussianParams, pvals: List[float]) -> float:
         """
         Return value from Logit node
         params:
         node_info: nodes info from distributions
         pvals: parent values
         """
-
-        print("ENCODERS OF", self.name, "\n", self.encoders)
-
-        for parent_key in pvals:
-            if not isinstance(pvals[parent_key], (float, int)):
-                parent_value_array = np.array(pvals[parent_key])
-                pvals[parent_key] = self.encoders[parent_key].transform(parent_value_array.reshape(1, -1))
-
-        pvals = list(pvals.values())
-
-        print("TRANSFORMED PVALS \n", pvals)
-
         if pvals:
             for el in pvals:
                 if str(el) == "nan":
