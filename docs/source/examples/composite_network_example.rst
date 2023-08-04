@@ -6,6 +6,7 @@ that were applied to nodes
 and sample some data
 
 .. code-block:: python
+
     data = pd.read_csv(r"data/benchmark/healthcare.csv", index_col=0)
     print(data.dtypes)
     encoder = preprocessing.LabelEncoder()

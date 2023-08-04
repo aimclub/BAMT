@@ -15,3 +15,8 @@ Builders
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. automodule:: bamt.builders.composite_builder
+   :members:
+   :undoc-members:
+   :show-inheritance:
