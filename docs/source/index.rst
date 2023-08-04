@@ -85,6 +85,8 @@ generating synthetic data, assessing edges strength e.t.c.
     examples/read_structure_param_learning.rst
     examples/read_structure_and_params.rst
     examples/learn_sampling_predict.rst
+    examples/add_ml_models_to_nodes.rst
+    examples/composite_network_example.rst
 
 
 
