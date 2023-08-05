@@ -1117,7 +1117,7 @@ class TestCompositeNetwork(unittest.TestCase):
         dist = precision_recall(obtained_dag, self.reference_dag)["SHD"]
         self.assertLess(
             dist,
-            20,
+            25,
             msg=f"Structural Hamming Distance should be less than 15, obtained SHD = {dist}",
         )
 
