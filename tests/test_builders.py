@@ -11,6 +11,7 @@ import pandas as pd
 from bamt.builders.builders_base import StructureBuilder, VerticesDefiner
 from bamt.builders.hc_builder import HCStructureBuilder, HillClimbDefiner
 from bamt.builders.evo_builder import EvoStructureBuilder
+from bamt.builders.composite_builder import CompositeStructureBuilder
 
 from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.discrete_node import DiscreteNode
@@ -728,6 +729,65 @@ class TestEvoStructureBuilder(unittest.TestCase):
             15,
             msg=f"Structural Hamming Distance should be less than 15, obtained SHD = {dist}",
         )
+
+    class TestCompositeBuilder(unittest.TestCase):
+        def setUp(self):
+            self.data = pd.read_csv(r"data/benchmark/healthcare.csv", index_col=0)
+            self.descriptor = {
+                "types": {
+                    "A": "disc",
+                    "C": "disc",
+                    "D": "cont",
+                    "H": "disc",
+                    "I": "cont",
+                    "O": "cont",
+                    "T": "cont",
+                },
+                "signs": {"D": "pos", "I": "neg", "O": "pos", "T": "pos"},
+            }
+            self.comp_builder = CompositeStructureBuilder(
+                data=self.data, descriptor=self.descriptor, regressor=None
+            )
+            self.reference_dag = [
+                ("A", "C"),
+                ("A", "D"),
+                ("A", "H"),
+                ("A", "O"),
+                ("C", "I"),
+                ("D", "I"),
+                ("H", "D"),
+                ("I", "T"),
+                ("O", "T"),
+                ("A", "C"),
+                ("A", "D"),
+                ("A", "H"),
+                ("A", "O"),
+                ("C", "I"),
+                ("D", "I"),
+                ("H", "D"),
+                ("I", "T"),
+                ("O", "T"),
+            ]
+
+        def test_build(self):
+            kwargs = {}
+            self.comp_builder.build(
+                data=self.data, classifier=None, regressor=None, verbose=False, **kwargs
+            )
+
+            obtained_dag = self.comp_builder.skeleton["E"]
+            obtained_dag = [tuple([str(item) for item in inner_list]) for inner_list in obtained_dag]
+            num_edges = len(obtained_dag)
+            self.assertGreaterEqual(
+                num_edges, 1, msg="Obtained graph should have at least one edge."
+            )
+
+            dist = precision_recall(obtained_dag, self.reference_dag)["SHD"]
+            self.assertLess(
+                dist,
+                15,
+                msg=f"Structural Hamming Distance should be less than 15, obtained SHD = {dist}",
+            )
 
 
 if __name__ == "__main__":

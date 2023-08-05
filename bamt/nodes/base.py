@@ -29,7 +29,6 @@ class BaseNode(object):
         self.disc_parents = []
         self.cont_parents = []
         self.children = []
-        self.encoders = {}
 
     def __repr__(self):
         return f"{self.name}"
