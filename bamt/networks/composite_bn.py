@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Optional, Dict
 from bamt.builders.composite_builder import CompositeStructureBuilder, CompositeDefiner
 from bamt.utils.composite_utils.MLUtils import MlModels
+from bamt.log import logger_network
 
 
 class CompositeBN(BaseNetwork):
@@ -66,8 +67,8 @@ class CompositeBN(BaseNetwork):
                 self.set_classifiers(
                     {node.name: ml_models_dict[parent_models[node.name]]()}
                 )
-                print(
-                    f"{ml_models_dict[parent_models[node.name]]} classifier has been set for {node.name}"
+                logger_network.info(
+                    msg=f"{ml_models_dict[parent_models[node.name]]} classifier has been set for {node.name}"
                 )
             elif (
                 type(node).__name__ == "CompositeContinuousNode"
@@ -77,8 +78,8 @@ class CompositeBN(BaseNetwork):
                 self.set_regressor(
                     {node.name: ml_models_dict[parent_models[node.name]]()}
                 )
-                print(
-                    f"{ml_models_dict[parent_models[node.name]]} regressor has been set for {node.name}"
+                logger_network.info(
+                    msg=f"{ml_models_dict[parent_models[node.name]]} regressor has been set for {node.name}"
                 )
             else:
                 pass
@@ -100,7 +101,7 @@ class CompositeBN(BaseNetwork):
     def set_regressor(self, regressors: Dict[str, object]):
         """
         Set regressor for gaussian nodes.
-        classifiers: dict with node_name and Classifier
+        classifiers: dict with node_name and regressors
         """
         for node in self.nodes:
             if node.name in regressors.keys():
