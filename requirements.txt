@@ -13,4 +13,3 @@ tqdm>=4.65.0
 thegolem>=0.3.1
 typing>=3.7.4.3
 xgboost>=1.7.6
-lightgbm>=3.3.5

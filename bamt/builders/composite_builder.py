@@ -44,7 +44,7 @@ class CompositeDefiner(VerticesDefiner, EdgesDefiner):
         # Notice that vertices are used only by Builders
         self.vertices = []
 
-        # LEVEL 1: Define a general type of node: Discrete or Gaussian
+        # LEVEL 1: Define a general type of node: Discrete or Сontinuous
         for vertex, type in self.descriptor["types"].items():
             if type in ["disc_num", "disc"]:
                 node = CompositeDiscreteNode(name=vertex)

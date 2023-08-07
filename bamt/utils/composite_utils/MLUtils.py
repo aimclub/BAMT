@@ -47,7 +47,7 @@ class MlModels:
             "dt": "DecisionTreeClassifier",
             "rf": "RandomForestClassifier",
             "mlp": "MLPClassifier",
-            "lgbm": "LGBMClassifier",
+            # "lgbm": "LGBMClassifier",
             "catboost": "CatBoostClassifier",
             "kmeans": "KMeans",
         }
@@ -63,7 +63,7 @@ class MlModels:
             "Ridge": Ridge,
             "Lasso": Lasso,
             "SGDRegressor": SGDRegressor,
-            "LGBMRegressor": LGBMRegressor,
+            # "LGBMRegressor": LGBMRegressor,
             "CatBoostRegressor": CatBoostRegressor,
             "XGBClassifier": XGBClassifier,
             "LogisticRegression": LogisticRegression,
@@ -72,7 +72,7 @@ class MlModels:
             "DecisionTreeClassifier": DecisionTreeClassifier,
             "RandomForestClassifier": RandomForestClassifier,
             "MLPClassifier": MLPClassifier,
-            "LGBMClassifier": LGBMClassifier,
+            # "LGBMClassifier": LGBMClassifier,
             "CatBoostClassifier": CatBoostClassifier,
             "KMeans": KMeans,
         }

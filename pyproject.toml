@@ -36,7 +36,6 @@ pgmpy = "0.1.20"
 thegolem = ">=0.3.1"
 xgboost = ">=1.7.6"
 catboost = ">=1.0.6"
-lightgbm = ">=3.3.5"
 
 
 [tool.poetry.dev-dependencies]
