@@ -1,5 +1,5 @@
 from catboost import CatBoostClassifier, CatBoostRegressor
-from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
+# from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
 from sklearn.cluster import KMeans
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -17,7 +17,6 @@ from sklearn.linear_model import (
 )
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
-from sklearn.svm import LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from xgboost import XGBClassifier, XGBRegressor
 import json
