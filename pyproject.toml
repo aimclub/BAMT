@@ -36,6 +36,10 @@ pgmpy = "0.1.20"
 thegolem = ">=0.3.1"
 xgboost = ">=1.7.6"
 catboost = ">=1.0.6"
+lightgbm = {version = ">=4.0.0", optional = true }
+
+[tool.poetry.extras]
+composite_extras = ["lightgbm"]
 
 
 [tool.poetry.dev-dependencies]

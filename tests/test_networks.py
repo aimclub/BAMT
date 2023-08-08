@@ -1104,7 +1104,7 @@ class TestCompositeNetwork(unittest.TestCase):
 
         self.bn.add_nodes(info)
 
-        self.bn.add_edges(self.data)
+        self.bn.add_edges(self.data, verbose=False)
 
         self.bn.fit_parameters(self.data)
 

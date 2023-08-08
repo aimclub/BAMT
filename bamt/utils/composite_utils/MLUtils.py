@@ -1,6 +1,6 @@
 from catboost import CatBoostClassifier, CatBoostRegressor
+from bamt.log import logger_network
 
-# from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
 from sklearn.cluster import KMeans
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -23,6 +23,16 @@ from xgboost import XGBClassifier, XGBRegressor
 import json
 from .CompositeModel import CompositeNode
 from random import choice
+
+# Try to import LGBMRegressor and LGBMClassifier from lightgbm, if not available set to None
+try:
+    from lightgbm.sklearn import LGBMRegressor, LGBMClassifier
+except ModuleNotFoundError:
+    LGBMRegressor = None
+    LGBMClassifier = None
+    logger_network.warning(
+        "Install lightgbm (e.g. pip install lightgbm) to use LGBMRegressor and LGBMClassifier"
+    )
 
 
 class MlModels:
@@ -47,7 +57,6 @@ class MlModels:
             "dt": "DecisionTreeClassifier",
             "rf": "RandomForestClassifier",
             "mlp": "MLPClassifier",
-            # "lgbm": "LGBMClassifier",
             "catboost": "CatBoostClassifier",
             "kmeans": "KMeans",
         }
@@ -63,7 +72,7 @@ class MlModels:
             "Ridge": Ridge,
             "Lasso": Lasso,
             "SGDRegressor": SGDRegressor,
-            # "LGBMRegressor": LGBMRegressor,
+            "LGBMRegressor": LGBMRegressor,
             "CatBoostRegressor": CatBoostRegressor,
             "XGBClassifier": XGBClassifier,
             "LogisticRegression": LogisticRegression,
@@ -72,10 +81,22 @@ class MlModels:
             "DecisionTreeClassifier": DecisionTreeClassifier,
             "RandomForestClassifier": RandomForestClassifier,
             "MLPClassifier": MLPClassifier,
-            # "LGBMClassifier": LGBMClassifier,
+            "LGBMClassifier": LGBMClassifier,
             "CatBoostClassifier": CatBoostClassifier,
             "KMeans": KMeans,
         }
+
+        # Include LGBMRegressor and LGBMClassifier if they were imported successfully
+        if LGBMRegressor is not None:
+            self.dict_models["LGBMRegressor"] = LGBMRegressor
+            self.operations_by_types["lgbmreg"] = "LGBMRegressor"
+        if LGBMClassifier is not None:
+            self.dict_models["LGBMClassifier"] = LGBMClassifier
+            self.operations_by_types["lgbm"] = "LGBMClassifier"
+
+        if LGBMClassifier and LGBMRegressor is not None:
+            with open("bamt/utils/composite_utils/lgbm_params.json") as file:
+                self.lgbm_dict = json.load(file)
 
     def get_model_by_children_type(self, node: CompositeNode):
         candidates = []
@@ -87,6 +108,8 @@ class MlModels:
         with open("bamt/utils/composite_utils/models_repo.json", "r") as f:
             models_json = json.load(f)
             models = models_json["operations"]
+            if LGBMClassifier and LGBMRegressor is not None:
+                models = models | self.lgbm_dict
             for model, value in models.items():
                 if (
                     model not in ["knnreg", "knn", "qda"]
