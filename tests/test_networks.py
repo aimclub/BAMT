@@ -1123,9 +1123,15 @@ class TestCompositeNetwork(unittest.TestCase):
 
         for node in self.bn.nodes:
             if type(node).__name__ == "CompositeContinuousNode":
-                self.assertIsNotNone(node.regressor, msg="CompositeContinuousNode does not have regressor")
+                self.assertIsNotNone(
+                    node.regressor,
+                    msg="CompositeContinuousNode does not have regressor",
+                )
             if type(node).__name__ == "CompositeDiscreteNode":
-                self.assertIsNotNone(node.classifier, msg="CompositeDiscreteNode does not have classifier")
+                self.assertIsNotNone(
+                    node.classifier,
+                    msg="CompositeDiscreteNode does not have classifier",
+                )
 
 
 if __name__ == "__main__":
