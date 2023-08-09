@@ -25,6 +25,7 @@ logger_builder = logging.getLogger("builder")
 logger_network = logging.getLogger("network")
 logger_preprocessor = logging.getLogger("preprocessor")
 logger_nodes = logging.getLogger("nodes")
+logger_display = logging.getLogger("display")
 
 logging.captureWarnings(True)
 logger_warnings = logging.getLogger("py.warnings")

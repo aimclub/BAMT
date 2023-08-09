@@ -1,8 +1,5 @@
 import random
 import re
-import networkx as nx
-import matplotlib
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import json
@@ -10,7 +7,6 @@ import os
 
 from tqdm import tqdm
 from joblib import Parallel, delayed
-from pyvis.network import Network
 from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
     information_mutual,
     information_mutual_conditional,
@@ -23,6 +19,7 @@ from bamt.builders.hc_builder import HCStructureBuilder
 from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.log import logger_network
 from bamt.config import config
+from bamt.display.display import Display
 
 from bamt.nodes.base import BaseNode
 
@@ -779,86 +776,6 @@ class BaseNetwork(object):
         in the parent directory in folder visualization_result.
         output: str name of output file
         """
-        if not output.endswith(".html"):
-            logger_network.error("This version allows only html format.")
-            return None
+        Display(output).build(self.nodes, self.edges)
+        return
 
-        G = nx.DiGraph()
-        nodes = [node.name for node in self.nodes]
-        G.add_nodes_from(nodes)
-        G.add_edges_from(self.edges)
-
-        network = Network(
-            height="800px",
-            width="100%",
-            notebook=True,
-            directed=nx.is_directed(G),
-            layout="hierarchical",
-        )
-
-        nodes_sorted = np.array(list(nx.topological_generations(G)), dtype=object)
-
-        # Qualitative class of colormaps
-        q_classes = [
-            "Pastel1",
-            "Pastel2",
-            "Paired",
-            "Accent",
-            "Dark2",
-            "Set1",
-            "Set2",
-            "Set3",
-            "tab10",
-            "tab20",
-            "tab20b",
-            "tab20c",
-        ]
-
-        hex_colors = []
-        for cls in q_classes:
-            rgb_colors = plt.get_cmap(cls).colors
-            hex_colors.extend(
-                [matplotlib.colors.rgb2hex(rgb_color) for rgb_color in rgb_colors]
-            )
-
-        hex_colors = np.array(hex_colors)
-
-        # Number_of_colors in matplotlib in Qualitative class = 144
-
-        class_number = len(set([node.type for node in self.nodes]))
-        hex_colors_indexes = [
-            random.randint(0, len(hex_colors) - 1) for _ in range(class_number)
-        ]
-        hex_colors_picked = hex_colors[hex_colors_indexes]
-        class2color = {
-            cls: color
-            for cls, color in zip(
-                set([node.type for node in self.nodes]), hex_colors_picked
-            )
-        }
-        name2class = {node.name: node.type for node in self.nodes}
-
-        for level in range(len(nodes_sorted)):
-            for node_i in range(len(nodes_sorted[level])):
-                name = nodes_sorted[level][node_i]
-                cls = name2class[name]
-                color = class2color[cls]
-                network.add_node(
-                    name,
-                    label=name,
-                    color=color,
-                    size=45,
-                    level=level,
-                    font={"size": 36},
-                    title=f"Узел байесовской сети {name} ({cls})",
-                )
-
-        for edge in G.edges:
-            network.add_edge(edge[0], edge[1])
-
-        network.hrepulsion(node_distance=300, central_gravity=0.5)
-
-        if not (os.path.exists("visualization_result")):
-            os.mkdir("visualization_result")
-
-        return network.show(f"visualization_result/" + output)
