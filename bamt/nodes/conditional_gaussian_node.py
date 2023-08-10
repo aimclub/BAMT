@@ -109,18 +109,7 @@ class ConditionalGaussianNode(BaseNode):
                 }
         return {"hybcprob": hycprob}
 
-    def choose(
-        self,
-        node_info: Dict[str, Dict[str, CondGaussParams]],
-        pvals: List[Union[str, float]],
-    ) -> float:
-        """
-        Return value from ConditionalLogit node
-        params:
-        node_info: nodes info from distributions
-        pvals: parent values
-        """
-
+    def get_dist(self, node_info, pvals):
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -140,7 +129,7 @@ class ConditionalGaussianNode(BaseNode):
                     flag = True
                     break
             if flag:
-                return np.nan
+                return np.nan, np.nan
             else:
                 if lgdistribution["regressor"]:
                     if lgdistribution["serialization"] == "joblib":
@@ -152,14 +141,30 @@ class ConditionalGaussianNode(BaseNode):
 
                     cond_mean = model.predict(np.array(lgpvals).reshape(1, -1))[0]
                     variance = lgdistribution["variance"]
-                    return random.gauss(cond_mean, variance)
+                    return cond_mean, variance
                 else:
-                    return np.nan
+                    return np.nan, np.nan
 
         else:
-            return random.gauss(
-                lgdistribution["mean"], math.sqrt(lgdistribution["variance"])
-            )
+            return lgdistribution["mean"], math.sqrt(lgdistribution["variance"])
+
+    def choose(
+        self,
+        node_info: Dict[str, Dict[str, CondGaussParams]],
+        pvals: List[Union[str, float]],
+    ) -> float:
+        """
+        Return value from ConditionalLogit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+
+        cond_mean, variance = self.get_dist(node_info, pvals)
+        if not cond_mean or not variance:
+            return np.nan
+
+        return random.gauss(cond_mean, variance)
 
     def predict(
         self,

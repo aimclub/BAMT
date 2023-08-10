@@ -78,13 +78,8 @@ class GaussianNode(BaseNode):
             }
 
     @staticmethod
-    def choose(node_info: GaussianParams, pvals: List[float]) -> float:
-        """
-        Return value from Logit node
-        params:
-        node_info: nodes info from distributions
-        pvals: parent values
-        """
+    def get_dist(node_info, pvals):
+        var = node_info["variance"]
         if pvals:
             for el in pvals:
                 if str(el) == "nan":
@@ -96,10 +91,20 @@ class GaussianNode(BaseNode):
                 model = pickle.loads(a)
 
             cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
-            var = node_info["variance"]
-            return random.gauss(cond_mean, var)
+            return cond_mean, var
         else:
-            return random.gauss(node_info["mean"], math.sqrt(node_info["variance"]))
+            return node_info["mean"], math.sqrt(var)
+
+    def choose(self, node_info: GaussianParams, pvals: List[float]) -> float:
+        """
+        Return value from Logit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+
+        cond_mean, var = self.get_dist(node_info, pvals)
+        return random.gauss(cond_mean, var)
 
     @staticmethod
     def predict(node_info: GaussianParams, pvals: List[float]) -> float:

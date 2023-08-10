@@ -106,16 +106,7 @@ class ConditionalLogitNode(BaseNode):
         return {"hybcprob": hycprob}
 
     @staticmethod
-    def choose(
-        node_info: Dict[str, Dict[str, LogitParams]], pvals: List[Union[str, float]]
-    ) -> str:
-        """
-        Return value from ConditionalLogit node
-        params:
-        node_info: nodes info from distributions
-        pvals: parent values
-        """
-
+    def get_dist(node_info, pvals, **kwargs):
         dispvals = []
         lgpvals = []
         for pval in pvals:
@@ -140,6 +131,32 @@ class ConditionalLogitNode(BaseNode):
 
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
+            if not kwargs.get("inner", False):
+                return distribution
+            else:
+                return distribution, lgdistribution
+        else:
+            if not kwargs.get("inner", False):
+                return np.array([100.0])
+            else:
+                return np.array([100.0]), lgdistribution
+
+    def choose(
+        self,
+        node_info: Dict[str, Dict[str, LogitParams]],
+        pvals: List[Union[str, float]],
+    ) -> str:
+        """
+        Return value from ConditionalLogit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+
+        distribution, lgdistribution = self.get_dist(node_info, pvals, inner=True)
+
+        # JOBLIB
+        if len(lgdistribution["classes"]) > 1:
             rand = random.random()
             rindex = 0
             lbound = 0
@@ -152,7 +169,6 @@ class ConditionalLogitNode(BaseNode):
                 else:
                     lbound = ubound
             return str(lgdistribution["classes"][rindex])
-
         else:
             return str(lgdistribution["classes"][0])
 

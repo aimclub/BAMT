@@ -86,3 +86,7 @@ class BaseNode(object):
             os.path.join(path_to_check, f"{specific}.joblib.compressed")
         )
         return path
+
+    @staticmethod
+    def get_dist(node_info, pvals):
+        pass

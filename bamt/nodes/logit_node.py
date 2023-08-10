@@ -57,6 +57,19 @@ class LogitNode(BaseNode):
             "serialization": serialization_name,
         }
 
+    @staticmethod
+    def get_dist(node_info, pvals):
+        if len(node_info["classes"]) > 1:
+            if node_info["serialization"] == "joblib":
+                model = joblib.load(node_info["classifier_obj"])
+            else:
+                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
+                a = node_info["classifier_obj"].encode("latin1")
+                model = pickle.loads(a)
+            return model.predict_proba(np.array(pvals).reshape(1, -1))[0]
+        else:
+            return np.array([100.])
+
     def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return value from Logit node
@@ -67,29 +80,21 @@ class LogitNode(BaseNode):
 
         rindex = 0
 
-        if len(node_info["classes"]) > 1:
-            if node_info["serialization"] == "joblib":
-                model = joblib.load(node_info["classifier_obj"])
-            else:
-                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
-                a = node_info["classifier_obj"].encode("latin1")
-                model = pickle.loads(a)
-            distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
+        distribution = self.get_dist(node_info, pvals)
 
-            # choose
+        if len(node_info["classes"]) > 1:
             rand = random.random()
             lbound = 0
             ubound = 0
             for interval in range(len(node_info["classes"])):
                 ubound += distribution[interval]
-                if lbound <= rand and rand < ubound:
+                if lbound <= rand < ubound:
                     rindex = interval
                     break
                 else:
                     lbound = ubound
 
             return str(node_info["classes"][rindex])
-
         else:
             return str(node_info["classes"][0])
 

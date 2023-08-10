@@ -862,3 +862,11 @@ class BaseNetwork(object):
             os.mkdir("visualization_result")
 
         return network.show(f"visualization_result/" + output)
+
+    def get_dist(self, node_name: str, pvals: dict):
+        node = self[node_name]
+
+        parents = node.cont_parents + node.disc_parents
+        pvals = [pvals[parent] for parent in parents]
+
+        return node.get_dist(node_info=self.distributions[node_name], pvals=pvals)
