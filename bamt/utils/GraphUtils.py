@@ -1,6 +1,7 @@
 import networkx as nx
-from bamt.log import logger_preprocessor
 from pandas import DataFrame
+
+from bamt.log import logger_preprocessor
 from bamt.nodes.base import BaseNode
 
 from typing import Dict, List, Tuple, Type
@@ -71,3 +72,83 @@ def toporder(nodes: List[Type[BaseNode]], edges: List[Tuple]) -> List[List[str]]
     G.add_nodes_from([node.name for node in nodes])
     G.add_edges_from(edges)
     return list(nx.topological_sort(G))
+
+
+class GraphAnalyzer(object):
+    def __init__(self, bn):
+        self.bn = bn
+
+    def _isolate_structure(self, nodes):
+        isolated_edges = []
+        for edge in self.bn.edges:
+            if edge[0] in nodes and edge[1] in nodes:
+                isolated_edges.append(edge)
+        return isolated_edges
+
+    def markov_blanket(self, node_name: str):
+        node = self.bn[node_name]
+
+        parents = node.cont_parents + node.disc_parents
+        children = node.children
+        fremd_eltern = []
+
+        for child in node.children:
+            all_parents = self.bn[child].cont_parents + self.bn[child].disc_parents
+
+            if all_parents == [node_name]:
+                continue
+            else:
+                new = all_parents
+            fremd_eltern.extend(new)
+
+        nodes = parents + children + fremd_eltern + [node_name]
+
+        edges = self._isolate_structure(nodes)
+        return {"nodes": nodes, "edges": edges}
+
+    def _collect_height(self, node_name, height):
+        nodes = []
+        node = self.bn[node_name]
+        if height <= 0:
+            return []
+
+        if height == 1:
+            return node.disc_parents + node.cont_parents
+
+        for parent in node.cont_parents + node.disc_parents:
+            nodes.append(parent)
+            nodes.extend(self._collect_height(parent, height=height - 1))
+        return nodes
+
+    def _collect_depth(self, node_name, depth):
+        nodes = []
+        node = self.bn[node_name]
+
+        if depth <= 0:
+            return []
+
+        if depth == 1:
+            return node.children
+
+        for child in node.children:
+            nodes.append(child)
+            nodes.extend(self._collect_depth(child, depth=depth - 1))
+
+        return nodes
+
+    def find_family(self, *args):
+        node_name, height, depth, with_nodes = args
+        if not with_nodes:
+            with_nodes = []
+        else:
+            with_nodes = list(with_nodes)
+        nodes = (
+                self._collect_depth(node_name, depth)
+                + self._collect_height(node_name, height)
+                + [node_name]
+        )
+
+        nodes = list(set(nodes + with_nodes))
+
+        return {"nodes": nodes,
+                "edges": self._isolate_structure(nodes + with_nodes)}

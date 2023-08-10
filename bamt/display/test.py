@@ -1,11 +1,9 @@
-from bamt.display.display import GraphAnalyzer
-
 from bamt.networks.hybrid_bn import HybridBN
 from bamt.preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
 
-data = pd.read_csv("../../data/real data/vk_data.csv").iloc[:1000, :20]
+data = pd.read_csv("../../data/real data/vk_data.csv").iloc[:1000, :10]
 print(data.shape)
 # print(data.columns)
 # set encoder and discretizer
@@ -22,7 +20,7 @@ discretized_data, est = p.apply(data)
 info = p.info
 
 # initialize network object
-bn = HybridBN(has_logit=True)
+bn = HybridBN()
 
 # add nodes to network
 bn.add_nodes(info)
@@ -31,5 +29,7 @@ bn.add_nodes(info)
 bn.add_edges(discretized_data, scoring_function=('K2',))
 
 bn.get_info(as_df=False)
-# bn.plot("entire.html")
-print(GraphAnalyzer(bn).markov_blanket(node_name="instagram", plot_to="family.html"))
+bn.plot("entire.html")
+plot_to = "family.html"
+
+bn.find_family("has_high_education", height=1, depth=1, plot_to=plot_to)

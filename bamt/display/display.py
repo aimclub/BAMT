@@ -4,13 +4,14 @@ import os
 import networkx as nx
 import numpy as np
 from pyvis.network import Network
+from pandas import DataFrame
 
 import matplotlib.pyplot as plt
 import matplotlib
 
 from bamt.log import logger_display
 
-from typing import Dict, Optional, List
+from typing import Dict
 
 
 class Display(object):
@@ -144,94 +145,36 @@ class Display(object):
 
         return network.show(f"visualization_result/" + self.output)
 
-
-class GraphAnalyzer(object):
-    def __init__(self, bn):
-        self.bn = bn
-
-    def _isolate_structure(self, nodes):
-        isolated_edges = []
-        for edge in self.bn.edges:
-            if edge[0] in nodes and edge[1] in nodes:
-                isolated_edges.append(edge)
-        return isolated_edges
-
-    def markov_blanket(self, node_name: str, plot_to: Optional[str] = None):
-        if not self.bn.nodes:
-            logger_display.error("Empty nodes")
-            return
-
-        node = self.bn[node_name]
-
-        parents = node.cont_parents + node.disc_parents
-        children = node.children
-        fremd_eltern = []
-
-        for child in node.children:
-            all_parents = self.bn[child].cont_parents + self.bn[child].disc_parents
-
-            if all_parents == [node_name]:
-                continue
-            else:
-                new = all_parents
-            fremd_eltern.extend(new)
-
-        nodes = parents + children + fremd_eltern
-
-        edges = self._isolate_structure(nodes)
-        if plot_to:
-            Display(plot_to).build([self.bn[node] for node in nodes], edges)
-        return {"nodes": nodes, "edges": edges}
-
-    def _collect_height(self, node_name, height):
-        nodes = []
-        node = self.bn[node_name]
-        if height <= 0:
-            return []
-
-        if height == 1:
-            return node.disc_parents + node.cont_parents
-
-        for parent in node.cont_parents + node.disc_parents:
-            nodes.append(parent)
-            nodes.extend(self._collect_height(parent, height=height - 1))
-        return nodes
-
-    def _collect_depth(self, node_name, depth):
-        nodes = []
-        node = self.bn[node_name]
-
-        if depth <= 0:
-            return []
-
-        if depth == 1:
-            return node.children
-
-        for child in node.children:
-            nodes.append(child)
-            nodes.extend(self._collect_depth(child, depth=depth - 1))
-
-        return nodes
-
-    def find_family(
-        self,
-        node_name: str,
-        with_nodes: Optional[List] = None,
-        height: int = 1,
-        depth: int = 1,
-        plot_to: Optional[str] = None,
-    ):
-        if with_nodes is None:
-            with_nodes = []
-        nodes = (
-            self._collect_depth(node_name, depth)
-            + self._collect_height(node_name, height)
-            + [node_name]
-        )
-        nodes = list(set(nodes))
-        if plot_to:
-            Display(plot_to).build(
-                [self.bn[node] for node in nodes + with_nodes],
-                self._isolate_structure(nodes + with_nodes),
+    @staticmethod
+    def get_info(bn, as_df):
+        if as_df:
+            names = []
+            types_n = []
+            types_d = []
+            parents = []
+            parents_types = []
+            for n in bn.nodes:
+                names.append(n)
+                types_n.append(n.type)
+                types_d.append(bn.descriptor["types"][n.name])
+                parents_types.append(
+                    [
+                        bn.descriptor["types"][name]
+                        for name in n.cont_parents + n.disc_parents
+                    ]
+                )
+                parents.append([name for name in n.cont_parents + n.disc_parents])
+            return DataFrame(
+                {
+                    "name": names,
+                    "node_type": types_n,
+                    "data_type": types_d,
+                    "parents": parents,
+                    "parents_types": parents_types,
+                }
             )
-        return nodes
+        else:
+            for n in bn.nodes:
+                print(
+                    f"{n.name: <20} | {n.type: <50} | {bn.descriptor['types'][n.name]: <10} | {str([bn.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}"
+                )

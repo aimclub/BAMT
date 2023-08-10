@@ -19,11 +19,11 @@ from bamt.builders.hc_builder import HCStructureBuilder
 from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.log import logger_network
 from bamt.config import config
-from bamt.display.display import Display
-
+from bamt.display import plot_, get_info_
 from bamt.nodes.base import BaseNode
-
+from bamt.utils import GraphUtils
 import bamt.builders as builders
+
 
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
@@ -387,7 +387,8 @@ class BaseNetwork(object):
                         r"\([\s\S]*\)", f"({model})", self[node].type
                     )
 
-    def save_to_file(self, outdir: str, data: dict):
+    @staticmethod
+    def _save_to_file(outdir: str, data: dict):
         """
         Function to save data to json file
         :param outdir: output directory
@@ -404,14 +405,14 @@ class BaseNetwork(object):
         Function to save BN params to json file
         outdir: output directory
         """
-        return self.save_to_file(outdir, self.distributions)
+        return self._save_to_file(outdir, self.distributions)
 
     def save_structure(self, outdir: str):
         """
         Function to save BN edges to json file
         outdir: output directory
         """
-        return self.save_to_file(outdir, self.edges)
+        return self._save_to_file(outdir, self.edges)
 
     def save(self, outdir: str):
         """
@@ -425,7 +426,7 @@ class BaseNetwork(object):
             "parameters": self.distributions,
             "weights": new_weights,
         }
-        return self.save_to_file(outdir, outdict)
+        return self._save_to_file(outdir, outdict)
 
     def load(self, input_dir: str):
         """
@@ -517,37 +518,7 @@ class BaseNetwork(object):
 
     def get_info(self, as_df: bool = True) -> Optional[pd.DataFrame]:
         """Return a table with name, type, parents_type, parents_names"""
-        if as_df:
-            names = []
-            types_n = []
-            types_d = []
-            parents = []
-            parents_types = []
-            for n in self.nodes:
-                names.append(n)
-                types_n.append(n.type)
-                types_d.append(self.descriptor["types"][n.name])
-                parents_types.append(
-                    [
-                        self.descriptor["types"][name]
-                        for name in n.cont_parents + n.disc_parents
-                    ]
-                )
-                parents.append([name for name in n.cont_parents + n.disc_parents])
-            return pd.DataFrame(
-                {
-                    "name": names,
-                    "node_type": types_n,
-                    "data_type": types_d,
-                    "parents": parents,
-                    "parents_types": parents_types,
-                }
-            )
-        else:
-            for n in self.nodes:
-                print(
-                    f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}"
-                )
+        return get_info_(self, as_df)
 
     def sample(
         self,
@@ -776,6 +747,29 @@ class BaseNetwork(object):
         in the parent directory in folder visualization_result.
         output: str name of output file
         """
-        Display(output).build(self.nodes, self.edges)
+        plot_(output, self.nodes, self.edges)
         return
 
+    def markov_blanket(self, node_name, plot_to: Optional[str] = None):
+        structure = GraphUtils.GraphAnalyzer(self).markov_blanket(node_name)
+        if plot_to:
+            plot_(
+                plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
+            )
+        return structure
+
+    def find_family(
+        self,
+        node_name: str,
+        height: int = 1,
+        depth: int = 1,
+        with_nodes: Optional[List] = None,
+        plot_to: Optional[str] = None,
+    ):
+        structure = GraphUtils.GraphAnalyzer(self).find_family(node_name, height, depth, with_nodes)
+
+        if plot_to:
+            plot_(
+                plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
+            )
+        return structure
