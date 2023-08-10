@@ -187,21 +187,24 @@ class CompositeStructureBuilder(CompositeDefiner):
         preprocessed_data, _ = p.apply(data)
 
         # Create the initial population
-        initial = [
-            CompositeModel(
-                nodes=[
-                    CompositeNode(
-                        nodes_from=None,
-                        content={
-                            "name": vertex,
-                            "type": p.nodes_types[vertex],
-                            "parent_model": None,
-                        },
-                    )
-                    for vertex in vertices
-                ]
-            )
-        ]
+        initial = kwargs.get(
+            "custom_initial_structure",
+            [
+                CompositeModel(
+                    nodes=[
+                        CompositeNode(
+                            nodes_from=None,
+                            content={
+                                "name": vertex,
+                                "type": p.nodes_types[vertex],
+                                "parent_model": None,
+                            },
+                        )
+                        for vertex in vertices
+                    ]
+                )
+            ],
+        )
 
         # Define the requirements for the evolutionary algorithm
         requirements = GraphRequirements(

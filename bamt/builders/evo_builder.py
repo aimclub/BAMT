@@ -79,7 +79,6 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_timeout = 180
         self.default_num_of_generations = 50
         self.default_early_stopping_iterations = 50
-        self.verbose = (True,)
         self.logging_level = 50
         self.objective_metric = evo.K2_metric
         self.default_crossovers = [
@@ -98,6 +97,7 @@ class EvoStructureBuilder(EvoDefiner):
             has_no_cycle,
             evo.has_no_duplicates,
         ]
+        self.verbose = True
 
     def build(
         self,
