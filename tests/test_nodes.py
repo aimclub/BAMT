@@ -4,11 +4,85 @@ import pandas as pd
 import numpy as np
 
 from bamt.nodes import *
+from bamt.networks.hybrid_bn import HybridBN
 
 logging.getLogger("nodes").setLevel(logging.CRITICAL)
 
 
+class DistributionAssertion(unittest.TestCase):
+    unittest.skip("This is an assertion.")
+
+    def assertDist(self, dist, node_type):
+        if node_type in ("disc", "disc_num"):
+            return self.assertAlmostEqual(sum(dist), 1)
+        else:
+            return self.assertEqual(len(dist), 2, msg=f"Error on {dist}")
+
+    def assertDistMixture(self, dist):
+        return self.assertEqual(len(dist), 3, msg=f"Error on {dist}")
+
+
 class TestBaseNode(unittest.TestCase):
+    def setUp(self):
+        np.random.seed(510)
+
+        hybrid_bn = HybridBN(has_logit=True)
+
+        info = {
+            "types": {
+                "Node0": "cont",
+                "Node1": "cont",
+                "Node2": "cont",
+                "Node3": "cont",
+                "Node4": "disc",
+                "Node5": "disc",
+                "Node6": "disc_num",
+                "Node7": "disc_num",
+            },
+            "signs": {"Node0": "pos", "Node1": "neg", "Node2": "neg", "Node3": "neg"},
+        }
+
+        data = pd.DataFrame(
+            {
+                "Node0": np.random.normal(0, 4, 30),
+                "Node1": np.random.normal(0, 0.1, 30),
+                "Node2": np.random.normal(0, 0.3, 30),
+                "Node3": np.random.normal(0, 0.3, 30),
+                "Node4": np.random.choice(["cat1", "cat2", "cat3"], 30),
+                "Node5": np.random.choice(["cat4", "cat5", "cat6"], 30),
+                "Node6": np.random.choice(["cat7", "cat8", "cat9"], 30),
+                "Node7": np.random.choice(["cat7", "cat8", "cat9"], 30),
+            }
+        )
+
+        nodes = [
+            gaussian_node.GaussianNode(name="Node0"),
+            gaussian_node.GaussianNode(name="Node1"),
+            gaussian_node.GaussianNode(name="Node2"),
+            gaussian_node.GaussianNode(name="Node3"),
+            discrete_node.DiscreteNode(name="Node4"),
+            discrete_node.DiscreteNode(name="Node5"),
+            discrete_node.DiscreteNode(name="Node6"),
+            discrete_node.DiscreteNode(name="Node7"),
+        ]
+
+        edges = [
+            ("Node0", "Node7"),
+            ("Node0", "Node1"),
+            ("Node0", "Node2"),
+            ("Node0", "Node5"),
+            ("Node4", "Node2"),
+            ("Node4", "Node5"),
+            ("Node4", "Node6"),
+            ("Node4", "Node3"),
+        ]
+
+        hybrid_bn.set_structure(info, nodes=nodes, edges=edges)
+        hybrid_bn.fit_parameters(data)
+        self.bn = hybrid_bn
+        self.data = data
+        self.info = info
+
     def test_equality(self):
         test = base.BaseNode(name="node0")
         first = base.BaseNode(name="node1")
@@ -51,6 +125,54 @@ class TestBaseNode(unittest.TestCase):
 
         self.assertFalse(test == first)
         self.assertTrue(test == test_clone)
+
+    def test_get_dist_mixture(self):
+        hybrid_bn = HybridBN(use_mixture=True, has_logit=True)
+
+        hybrid_bn.set_structure(self.info, self.bn.nodes, self.bn.edges)
+        hybrid_bn.fit_parameters(self.data)
+
+        mixture_gauss = hybrid_bn["Node1"]
+        cond_mixture_gauss = hybrid_bn["Node2"]
+
+        for i in range(-2, 0, 2):
+            dist = hybrid_bn.get_dist(mixture_gauss.name, pvals={"Node0": i})
+            DistributionAssertion().assertDistMixture(dist)
+
+        for i in range(-2, 0, 2):
+            for j in self.data[cond_mixture_gauss.disc_parents[0]].unique().tolist():
+                dist = hybrid_bn.get_dist(
+                    cond_mixture_gauss.name, pvals={"Node0": float(i), "Node4": j}
+                )
+                DistributionAssertion().assertDistMixture(dist)
+
+    def test_get_dist(self):
+        for node in self.bn.nodes:
+            if not node.cont_parents + node.disc_parents:
+                continue
+            if len(node.cont_parents + node.disc_parents) == 1:
+                if node.disc_parents:
+                    pvals = self.data[node.disc_parents[0]].unique().tolist()
+                    parent = node.disc_parents[0]
+                else:
+                    pvals = range(-5, 5, 1)
+                    parent = node.cont_parents[0]
+
+                for pval in pvals:
+                    dist = self.bn.get_dist(node.name, {parent: pval})
+                    DistributionAssertion().assertDist(
+                        dist, self.info["types"][node.name]
+                    )
+            else:
+                for i in self.data[node.disc_parents[0]].unique().tolist():
+                    for j in range(-5, 5, 1):
+                        dist = self.bn.get_dist(
+                            node.name,
+                            {node.cont_parents[0]: float(j), node.disc_parents[0]: i},
+                        )
+                        DistributionAssertion().assertDist(
+                            dist, self.info["types"][node.name]
+                        )
 
     # ???
     def test_choose_serialization(self):

@@ -864,9 +864,22 @@ class BaseNetwork(object):
         return network.show(f"visualization_result/" + output)
 
     def get_dist(self, node_name: str, pvals: dict):
+        """
+        Get a distribution from node with known parent values (conditional distribution).
+
+        :param node_name: name of node
+        :param pvals: parent values
+        """
+        if not self.distributions:
+            logger_network.error("Empty parameters. Call fit_params first.")
+            return
         node = self[node_name]
 
         parents = node.cont_parents + node.disc_parents
+        if not parents:
+            logger_network.error("No parents")
+            return
+
         pvals = [pvals[parent] for parent in parents]
 
         return node.get_dist(node_info=self.distributions[node_name], pvals=pvals)
