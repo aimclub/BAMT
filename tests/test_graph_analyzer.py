@@ -5,7 +5,6 @@ from bamt.utils import GraphUtils
 from bamt.networks.discrete_bn import DiscreteBN
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.builders.builders_base import VerticesDefiner
-from bamt.display import plot_
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)
 
@@ -80,10 +79,6 @@ class TestGraphAnalyzer(unittest.TestCase):
              'edges': [('Node4', 'Node7'), ('Node7', 'Node0')]},
             without_children
         )
-
-        plot_("here.html",
-              [self.bn[node] for node in without_children["nodes"]],
-              without_children["edges"])
 
 
 if __name__ == "__main__":
