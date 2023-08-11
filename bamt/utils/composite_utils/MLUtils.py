@@ -30,8 +30,8 @@ try:
 except ModuleNotFoundError:
     LGBMRegressor = None
     LGBMClassifier = None
-    logger_network.warning(
-        "Install lightgbm (e.g. pip install lightgbm) to use LGBMRegressor and LGBMClassifier"
+    logger_network.info(
+        "Install lightgbm (e.g. pip install lightgbm) to enable LGBMRegressor and LGBMClassifier"
     )
 
 

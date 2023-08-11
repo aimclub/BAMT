@@ -3,7 +3,7 @@ import json
 import unittest
 
 from sklearn.tree import DecisionTreeRegressor
-from catboost import CatBoostRegressor
+from catboost import CatBoostRegressor, CatBoostClassifier
 from sklearn.ensemble import RandomForestRegressor
 
 from sklearn import preprocessing as pp
@@ -19,8 +19,13 @@ import bamt.preprocessors as bp
 from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.logit_node import LogitNode
+from bamt.utils.composite_utils.CompositeGeneticOperators import (
+    custom_mutation_add_model,
+    custom_crossover_all_model,
+)
 from bamt import preprocessors
 from bamt.utils.MathUtils import precision_recall
+from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
 
 logging.getLogger("network").setLevel(logging.CRITICAL)
 
@@ -1059,7 +1064,7 @@ class TestBigBraveBN(unittest.SkipTest):
 
 class TestCompositeNetwork(unittest.TestCase):
     def setUp(self):
-        self.data = pd.read_csv(r"data/benchmark/healthcare.csv", index_col=0)
+        self.data = pd.read_csv(r"../data/benchmark/healthcare.csv", index_col=0)
         self.descriptor = {
             "types": {
                 "A": "disc",
@@ -1072,17 +1077,7 @@ class TestCompositeNetwork(unittest.TestCase):
             },
             "signs": {"D": "pos", "I": "neg", "O": "pos", "T": "pos"},
         }
-        self.bn = CompositeBN()
         self.reference_dag = [
-            ("A", "C"),
-            ("A", "D"),
-            ("A", "H"),
-            ("A", "O"),
-            ("C", "I"),
-            ("D", "I"),
-            ("H", "D"),
-            ("I", "T"),
-            ("O", "T"),
             ("A", "C"),
             ("A", "D"),
             ("A", "H"),
@@ -1094,21 +1089,16 @@ class TestCompositeNetwork(unittest.TestCase):
             ("O", "T"),
         ]
 
+        self.comparative_dag = [("A", "C"), ("H", "C")]
+
     def test_learning(self):
-        encoder = pp.LabelEncoder()
-        p = bp.Preprocessor([("encoder", encoder)])
+        bn, _ = self._get_starter_bn(self.data)
 
-        _, _ = p.apply(self.data)
+        bn.add_edges(self.data, verbose=False)
 
-        info = p.info
+        bn.fit_parameters(self.data)
 
-        self.bn.add_nodes(info)
-
-        self.bn.add_edges(self.data, verbose=False)
-
-        self.bn.fit_parameters(self.data)
-
-        obtained_dag = self.bn.edges
+        obtained_dag = bn.edges
         num_edges = len(obtained_dag)
         self.assertGreaterEqual(
             num_edges, 1, msg="Obtained graph should have at least one edge."
@@ -1121,7 +1111,7 @@ class TestCompositeNetwork(unittest.TestCase):
             msg=f"Structural Hamming Distance should be less than 15, obtained SHD = {dist}",
         )
 
-        for node in self.bn.nodes:
+        for node in bn.nodes:
             if type(node).__name__ == "CompositeContinuousNode":
                 self.assertIsNotNone(
                     node.regressor,
@@ -1132,6 +1122,70 @@ class TestCompositeNetwork(unittest.TestCase):
                     node.classifier,
                     msg="CompositeDiscreteNode does not have classifier",
                 )
+
+    def test_learning_models(self):
+        bn, p = self._get_starter_bn(self.data[["A", "C", "H"]])
+
+        parent_node_a = CompositeNode(
+            nodes_from=None,
+            content={
+                "name": "A",
+                "type": p.nodes_types["A"],
+                "parent_model": None,
+            },
+        )
+
+        parent_node_h = CompositeNode(
+            nodes_from=None,
+            content={
+                "name": "H",
+                "type": p.nodes_types["H"],
+                "parent_model": None,
+            },
+        )
+
+        child_node = CompositeNode(
+            nodes_from=[parent_node_a, parent_node_h],
+            content={
+                "name": "C",
+                "type": p.nodes_types["C"],
+                "parent_model": CatBoostClassifier(),
+            },
+        )
+
+        comp_model = CompositeModel(nodes=[parent_node_a, parent_node_h, child_node])
+
+        bn.add_edges(
+            self.data[["A", "C", "H"]],
+            verbose=True,
+            custom_mutations=[custom_mutation_add_model],
+            custom_crossovers=[custom_crossover_all_model],
+            custom_initial_structure=[comp_model],
+        )
+
+        output_structure = [
+            tuple([str(item) for item in inner_list]) for inner_list in bn.edges
+        ]
+
+        self.assertEqual(
+            output_structure,
+            self.comparative_dag,
+            msg="Obtained BN should have reference structure",
+        )
+
+    @staticmethod
+    def _get_starter_bn(data):
+        encoder = pp.LabelEncoder()
+        p = bp.Preprocessor([("encoder", encoder)])
+
+        _, _ = p.apply(data)
+
+        info = p.info
+
+        bn = CompositeBN()
+        bn.add_nodes(info)
+
+        return bn, p
 
 
 if __name__ == "__main__":
