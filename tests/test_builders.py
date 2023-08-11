@@ -1,6 +1,3 @@
-from contextlib import redirect_stdout, redirect_stderr
-import os
-
 import itertools
 import unittest
 
@@ -9,7 +6,7 @@ import logging
 import pandas as pd
 
 from bamt.builders.builders_base import StructureBuilder, VerticesDefiner
-from bamt.builders.hc_builder import HCStructureBuilder, HillClimbDefiner
+from bamt.builders.hc_builder import HillClimbDefiner
 from bamt.builders.evo_builder import EvoStructureBuilder
 
 from bamt.nodes.gaussian_node import GaussianNode

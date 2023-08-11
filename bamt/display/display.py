@@ -140,10 +140,7 @@ class Display(object):
 
         network.hrepulsion(node_distance=300, central_gravity=0.5)
 
-        if not (os.path.exists("visualization_result")):
-            os.mkdir("visualization_result")
-
-        return network.show(f"visualization_result/" + self.output)
+        return network.show(self.output)
 
     @staticmethod
     def get_info(bn, as_df):

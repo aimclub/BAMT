@@ -766,7 +766,9 @@ class BaseNetwork(object):
         with_nodes: Optional[List] = None,
         plot_to: Optional[str] = None,
     ):
-        structure = GraphUtils.GraphAnalyzer(self).find_family(node_name, height, depth, with_nodes)
+        structure = GraphUtils.GraphAnalyzer(self).find_family(
+            node_name, height, depth, with_nodes
+        )
 
         if plot_to:
             plot_(

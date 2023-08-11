@@ -1,4 +1,4 @@
-from display import Display
+from .display import Display
 
 
 def plot_(output, *args):

@@ -104,7 +104,7 @@ class GraphAnalyzer(object):
         nodes = parents + children + fremd_eltern + [node_name]
 
         edges = self._isolate_structure(nodes)
-        return {"nodes": nodes, "edges": edges}
+        return {"nodes": list(set(nodes)), "edges": edges}
 
     def _collect_height(self, node_name, height):
         nodes = []
@@ -143,12 +143,11 @@ class GraphAnalyzer(object):
         else:
             with_nodes = list(with_nodes)
         nodes = (
-                self._collect_depth(node_name, depth)
-                + self._collect_height(node_name, height)
-                + [node_name]
+            self._collect_depth(node_name, depth)
+            + self._collect_height(node_name, height)
+            + [node_name]
         )
 
         nodes = list(set(nodes + with_nodes))
 
-        return {"nodes": nodes,
-                "edges": self._isolate_structure(nodes + with_nodes)}
+        return {"nodes": nodes, "edges": self._isolate_structure(nodes + with_nodes)}
