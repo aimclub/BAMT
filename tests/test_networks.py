@@ -1,3 +1,4 @@
+import os
 import pathlib as pl
 import json
 import unittest
@@ -12,6 +13,7 @@ import logging
 
 import pandas as pd
 
+from bamt.utils.composite_utils.CompositeGeneticOperators import composite_metric
 from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
 from bamt.networks.composite_bn import CompositeBN
 import bamt.preprocessors as bp
@@ -1064,7 +1066,7 @@ class TestBigBraveBN(unittest.SkipTest):
 
 class TestCompositeNetwork(unittest.TestCase):
     def setUp(self):
-        self.data = pd.read_csv(r"../data/benchmark/healthcare.csv", index_col=0)
+        self.data = pd.read_csv(r"data/benchmark/healthcare.csv", index_col=0)
         self.descriptor = {
             "types": {
                 "A": "disc",
@@ -1089,7 +1091,7 @@ class TestCompositeNetwork(unittest.TestCase):
             ("O", "T"),
         ]
 
-        self.comparative_dag = [("A", "C"), ("H", "C")]
+        self.comparative_dag = [('I', 'T'), ('O', 'T')]
 
     def test_learning(self):
         bn, _ = self._get_starter_bn(self.data)
@@ -1124,13 +1126,13 @@ class TestCompositeNetwork(unittest.TestCase):
                 )
 
     def test_learning_models(self):
-        bn, p = self._get_starter_bn(self.data[["A", "C", "H"]])
+        bn, p = self._get_starter_bn(self.data[["I", "O", "T"]])
 
         parent_node_a = CompositeNode(
             nodes_from=None,
             content={
-                "name": "A",
-                "type": p.nodes_types["A"],
+                "name": "I",
+                "type": p.nodes_types["I"],
                 "parent_model": None,
             },
         )
@@ -1138,8 +1140,8 @@ class TestCompositeNetwork(unittest.TestCase):
         parent_node_h = CompositeNode(
             nodes_from=None,
             content={
-                "name": "H",
-                "type": p.nodes_types["H"],
+                "name": "O",
+                "type": p.nodes_types["O"],
                 "parent_model": None,
             },
         )
@@ -1147,17 +1149,17 @@ class TestCompositeNetwork(unittest.TestCase):
         child_node = CompositeNode(
             nodes_from=[parent_node_a, parent_node_h],
             content={
-                "name": "C",
-                "type": p.nodes_types["C"],
-                "parent_model": CatBoostClassifier(),
+                "name": "T",
+                "type": p.nodes_types["T"],
+                "parent_model": "CatBoostRegressor",
             },
         )
 
         comp_model = CompositeModel(nodes=[parent_node_a, parent_node_h, child_node])
 
         bn.add_edges(
-            self.data[["A", "C", "H"]],
-            verbose=True,
+            self.data[["I", "O", "T"]],
+            verbose=False,
             custom_mutations=[custom_mutation_add_model],
             custom_crossovers=[custom_crossover_all_model],
             custom_initial_structure=[comp_model],
