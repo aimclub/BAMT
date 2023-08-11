@@ -751,6 +751,13 @@ class BaseNetwork(object):
         return
 
     def markov_blanket(self, node_name, plot_to: Optional[str] = None):
+        """
+        A method to get markov blanket of a node.
+        :param node_name: name of node
+        :param plot_to: directory to plot graph, the file must have html extension.
+
+        :return structure: json with {"nodes": [...], "edges": [...]}
+        """
         structure = GraphUtils.GraphAnalyzer(self).markov_blanket(node_name)
         if plot_to:
             plot_(
@@ -766,6 +773,16 @@ class BaseNetwork(object):
         with_nodes: Optional[List] = None,
         plot_to: Optional[str] = None,
     ):
+        """
+        A method to get markov blanket of a node.
+        :param node_name: name of node
+        :param height: a number of layers up to node (its parents) that will be taken
+        :param depth: a number of layers down to node (its children) that will be taken
+        :param with_nodes: include nodes in return
+        :param plot_to: directory to plot graph, the file must have html extension.
+
+        :return structure: json with {"nodes": [...], "edges": [...]}
+        """
         structure = GraphUtils.GraphAnalyzer(self).find_family(
             node_name, height, depth, with_nodes
         )

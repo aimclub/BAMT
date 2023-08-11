@@ -75,6 +75,9 @@ def toporder(nodes: List[Type[BaseNode]], edges: List[Tuple]) -> List[List[str]]
 
 
 class GraphAnalyzer(object):
+    """
+    Object to analyze DAG.
+    """
     def __init__(self, bn):
         self.bn = bn
 
