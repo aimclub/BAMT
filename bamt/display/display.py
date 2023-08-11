@@ -41,16 +41,13 @@ class Display(object):
         :param kwargs: a dict passed to pyvis.network.Network
         """
         g = nx.DiGraph()
-        if not kwargs:
-            network_params = dict(
-                height="800px",
-                width="100%",
-                notebook=True,
-                directed=nx.is_directed(g),
-                layout="hierarchical",
-            )
-        else:
-            network_params = kwargs
+        network_params = dict(
+            height=kwargs.get('height', "800px"),
+            width=kwargs.get('width', "100%"),
+            notebook=kwargs.get('notebook', True),
+            directed=kwargs.get('directed', nx.is_directed(g)),
+            layout=kwargs.get('layout', "hierarchical")
+        )
 
         g.add_nodes_from(nodes)
         g.add_edges_from(edges)
