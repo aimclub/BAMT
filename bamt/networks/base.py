@@ -863,7 +863,7 @@ class BaseNetwork(object):
 
         return network.show(f"visualization_result/" + output)
 
-    def get_dist(self, node_name: str, pvals: dict):
+    def get_dist(self, node_name: str, pvals: Optional[dict] = None):
         """
         Get a distribution from node with known parent values (conditional distribution).
 
@@ -877,8 +877,7 @@ class BaseNetwork(object):
 
         parents = node.cont_parents + node.disc_parents
         if not parents:
-            logger_network.error("No parents")
-            return
+            return self.distributions[node_name]
 
         pvals = [pvals[parent] for parent in parents]
 

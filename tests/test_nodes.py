@@ -9,7 +9,7 @@ from bamt.networks.hybrid_bn import HybridBN
 logging.getLogger("nodes").setLevel(logging.CRITICAL)
 
 
-class DistributionAssertion(unittest.TestCase):
+class MyTest(unittest.TestCase):
     unittest.skip("This is an assertion.")
 
     def assertDist(self, dist, node_type):
@@ -22,7 +22,7 @@ class DistributionAssertion(unittest.TestCase):
         return self.assertEqual(len(dist), 3, msg=f"Error on {dist}")
 
 
-class TestBaseNode(unittest.TestCase):
+class TestBaseNode(MyTest):
     def setUp(self):
         np.random.seed(510)
 
@@ -137,19 +137,26 @@ class TestBaseNode(unittest.TestCase):
 
         for i in range(-2, 0, 2):
             dist = hybrid_bn.get_dist(mixture_gauss.name, pvals={"Node0": i})
-            DistributionAssertion().assertDistMixture(dist)
+            self.assertDistMixture(dist)
 
         for i in range(-2, 0, 2):
             for j in self.data[cond_mixture_gauss.disc_parents[0]].unique().tolist():
                 dist = hybrid_bn.get_dist(
                     cond_mixture_gauss.name, pvals={"Node0": float(i), "Node4": j}
                 )
-                DistributionAssertion().assertDistMixture(dist)
+                self.assertDistMixture(dist)
 
     def test_get_dist(self):
         for node in self.bn.nodes:
             if not node.cont_parents + node.disc_parents:
+                dist = self.bn.get_dist(node.name)
+                if "mean" in dist.keys():
+                    self.assertTrue(isinstance(dist["mean"], float))
+                    self.assertTrue(isinstance(dist["variance"], float))
+                else:
+                    self.assertAlmostEqual(sum(dist["cprob"]), 1)
                 continue
+
             if len(node.cont_parents + node.disc_parents) == 1:
                 if node.disc_parents:
                     pvals = self.data[node.disc_parents[0]].unique().tolist()
@@ -160,9 +167,7 @@ class TestBaseNode(unittest.TestCase):
 
                 for pval in pvals:
                     dist = self.bn.get_dist(node.name, {parent: pval})
-                    DistributionAssertion().assertDist(
-                        dist, self.info["types"][node.name]
-                    )
+                    self.assertDist(dist, self.info["types"][node.name])
             else:
                 for i in self.data[node.disc_parents[0]].unique().tolist():
                     for j in range(-5, 5, 1):
@@ -170,9 +175,7 @@ class TestBaseNode(unittest.TestCase):
                             node.name,
                             {node.cont_parents[0]: float(j), node.disc_parents[0]: i},
                         )
-                        DistributionAssertion().assertDist(
-                            dist, self.info["types"][node.name]
-                        )
+                        self.assertDist(dist, self.info["types"][node.name])
 
     # ???
     def test_choose_serialization(self):
