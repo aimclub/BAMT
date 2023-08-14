@@ -1,35 +1,32 @@
-import random
-import re
-import networkx as nx
-import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 import json
 import os
+import random
+import re
+from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
+import matplotlib
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+import pandas as pd
+from joblib import Parallel, delayed
+from pgmpy.estimators import K2Score
+from pyvis.network import Network
 from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
-from joblib import Parallel, delayed
-from pyvis.network import Network
+
+import bamt.builders as builders
+from bamt.builders.builders_base import ParamDict
+from bamt.builders.evo_builder import EvoStructureBuilder
+from bamt.builders.hc_builder import HCStructureBuilder
+from bamt.config import config
 from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
     information_mutual,
     information_mutual_conditional,
     entropy_conditional,
 )
-from pgmpy.estimators import K2Score
-
-from bamt.builders.builders_base import ParamDict
-from bamt.builders.hc_builder import HCStructureBuilder
-from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.log import logger_network
-from bamt.config import config
-
 from bamt.nodes.base import BaseNode
-
-import bamt.builders as builders
-
-from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
 STORAGE = config.get(
     "NODES", "models_storage", fallback="models_storage is not defined"

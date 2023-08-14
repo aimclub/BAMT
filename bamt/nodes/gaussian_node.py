@@ -1,20 +1,17 @@
-import pickle
-import numpy as np
-import joblib
-import random
-
 import math
-
-from .base import BaseNode
-from bamt.log import logger_nodes
-
-from .schema import GaussianParams
-
+import pickle
+import random
 from typing import Optional, List
-from pandas import DataFrame
 
+import joblib
+import numpy as np
+from pandas import DataFrame
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
+
+from bamt.log import logger_nodes
+from .base import BaseNode
+from .schema import GaussianParams
 
 
 class GaussianNode(BaseNode):

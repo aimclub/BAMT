@@ -1,15 +1,15 @@
-import pandas as pd
+from math import log10
+from random import choice
 
+import pandas as pd
+from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
+from numpy import std, mean, log
+from scipy.stats import norm
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
 from .CompositeModel import CompositeModel
-from random import choice
-from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from .MLUtils import MlModels
-from scipy.stats import norm
-from numpy import std, mean, log
-from math import log10
 
 
 def custom_crossover_all_model(

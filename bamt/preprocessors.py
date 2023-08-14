@@ -1,8 +1,9 @@
-from bamt.utils import GraphUtils as gru
-from bamt.log import logger_preprocessor
+from typing import Tuple, Dict
+
 from pandas import DataFrame
 
-from typing import Tuple, Dict
+from bamt.log import logger_preprocessor
+from bamt.utils import GraphUtils as gru
 
 
 class BasePreprocessor(object):

@@ -1,9 +1,10 @@
-import networkx as nx
-from bamt.log import logger_preprocessor
-from pandas import DataFrame
-from bamt.nodes.base import BaseNode
-
 from typing import Dict, List, Tuple, Type
+
+import networkx as nx
+from pandas import DataFrame
+
+from bamt.log import logger_preprocessor
+from bamt.nodes.base import BaseNode
 
 
 def nodes_types(data: DataFrame) -> Dict[str, str]:

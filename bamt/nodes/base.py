@@ -1,9 +1,8 @@
-from bamt.config import config
-
+import os
+import pickle
 from typing import Union
 
-import pickle
-import os
+from bamt.config import config
 
 STORAGE = config.get(
     "NODES", "models_storage", fallback="models_storage is not defined"

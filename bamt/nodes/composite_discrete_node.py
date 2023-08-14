@@ -1,7 +1,8 @@
-from .logit_node import LogitNode
+from typing import Optional
 
 from sklearn import linear_model
-from typing import Optional
+
+from .logit_node import LogitNode
 
 
 class CompositeDiscreteNode(LogitNode):

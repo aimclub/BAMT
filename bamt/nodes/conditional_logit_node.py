@@ -1,17 +1,16 @@
-import numpy as np
-
-import pickle
-import joblib
-import random
 import itertools
+import pickle
+import random
+from typing import Optional, List, Union, Dict
 
+import joblib
+import numpy as np
+from pandas import DataFrame
+from sklearn import linear_model
+
+from bamt.log import logger_nodes
 from .base import BaseNode
 from .schema import LogitParams
-from bamt.log import logger_nodes
-
-from sklearn import linear_model
-from pandas import DataFrame
-from typing import Optional, List, Union, Dict
 
 
 class ConditionalLogitNode(BaseNode):

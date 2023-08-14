@@ -1,32 +1,30 @@
 from datetime import timedelta
-
-from pandas import DataFrame
-from sklearn import preprocessing
-import bamt.preprocessors as pp
-
-from bamt.builders.builders_base import VerticesDefiner, EdgesDefiner
-from bamt.log import logger_builder
-from bamt.nodes.discrete_node import DiscreteNode
-from bamt.nodes.gaussian_node import GaussianNode
-from bamt.utils.composite_utils import CompositeGeneticOperators
-from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
-from bamt.nodes.composite_discrete_node import CompositeDiscreteNode
-from bamt.nodes.composite_continuous_node import CompositeContinuousNode
-from bamt.utils import EvoUtils as evo
+from typing import Dict, Optional, List, Tuple, Callable
 
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
+from golem.core.log import Log
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
+from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
-from golem.core.log import Log
+from pandas import DataFrame
+from sklearn import preprocessing
 
-from typing import Dict, Optional, List, Tuple, Callable
+import bamt.preprocessors as pp
+from bamt.builders.builders_base import VerticesDefiner, EdgesDefiner
+from bamt.log import logger_builder
+from bamt.nodes.composite_continuous_node import CompositeContinuousNode
+from bamt.nodes.composite_discrete_node import CompositeDiscreteNode
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.utils import EvoUtils as evo
+from bamt.utils.composite_utils import CompositeGeneticOperators
+from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
 
 
 class CompositeDefiner(VerticesDefiner, EdgesDefiner):

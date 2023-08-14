@@ -1,32 +1,26 @@
-import os
-import pathlib as pl
 import json
+import logging
+import pathlib as pl
 import unittest
 
-from sklearn.tree import DecisionTreeRegressor
-from catboost import CatBoostRegressor, CatBoostClassifier
-from sklearn.ensemble import RandomForestRegressor
-
-from sklearn import preprocessing as pp
-
-import logging
-
 import pandas as pd
+from catboost import CatBoostRegressor
+from sklearn import preprocessing as pp
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
 
-from bamt.utils.composite_utils.CompositeGeneticOperators import composite_metric
-from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
-from bamt.networks.composite_bn import CompositeBN
 import bamt.preprocessors as bp
-
-from bamt.nodes.gaussian_node import GaussianNode
+from bamt import preprocessors
+from bamt.networks.composite_bn import CompositeBN
+from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
 from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.logit_node import LogitNode
+from bamt.utils.MathUtils import precision_recall
 from bamt.utils.composite_utils.CompositeGeneticOperators import (
     custom_mutation_add_model,
     custom_crossover_all_model,
 )
-from bamt import preprocessors
-from bamt.utils.MathUtils import precision_recall
 from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
 
 logging.getLogger("network").setLevel(logging.CRITICAL)

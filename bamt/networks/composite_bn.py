@@ -1,11 +1,12 @@
 import re
-
-from bamt.networks.base import BaseNetwork
-import pandas as pd
 from typing import Optional, Dict
+
+import pandas as pd
+
 from bamt.builders.composite_builder import CompositeStructureBuilder, CompositeDefiner
-from bamt.utils.composite_utils.MLUtils import MlModels
 from bamt.log import logger_network
+from bamt.networks.base import BaseNetwork
+from bamt.utils.composite_utils.MLUtils import MlModels
 
 
 class CompositeBN(BaseNetwork):

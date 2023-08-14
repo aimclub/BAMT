@@ -1,6 +1,7 @@
-from catboost import CatBoostClassifier, CatBoostRegressor
-from bamt.log import logger_network
+import json
+from random import choice
 
+from catboost import CatBoostClassifier, CatBoostRegressor
 from sklearn.cluster import KMeans
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -20,9 +21,9 @@ from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from xgboost import XGBClassifier, XGBRegressor
-import json
+
+from bamt.log import logger_network
 from .CompositeModel import CompositeNode
-from random import choice
 
 # Try to import LGBMRegressor and LGBMClassifier from lightgbm, if not available set to None
 try:

@@ -1,8 +1,9 @@
-from .gaussian_node import GaussianNode
-from .schema import GaussianParams, HybcprobParams
+from typing import Optional, Union
 
 from sklearn import linear_model
-from typing import Optional, Union
+
+from .gaussian_node import GaussianNode
+from .schema import GaussianParams, HybcprobParams
 
 NodeInfo = Union[GaussianParams, HybcprobParams]
 
