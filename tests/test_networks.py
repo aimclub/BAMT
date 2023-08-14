@@ -1085,7 +1085,7 @@ class TestCompositeNetwork(unittest.TestCase):
             ("O", "T"),
         ]
 
-        self.comparative_dag = [('I', 'T'), ('O', 'T')]
+        self.comparative_dag = [("I", "T"), ("O", "T")]
 
     def test_learning(self):
         bn, _ = self._get_starter_bn(self.data)
