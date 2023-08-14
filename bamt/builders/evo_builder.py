@@ -1,9 +1,5 @@
 from datetime import timedelta
-
-from pandas import DataFrame
-
-from bamt.builders.builders_base import BaseDefiner
-from bamt.utils import EvoUtils as evo
+from typing import Dict, Optional
 
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
@@ -11,12 +7,14 @@ from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
+from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
+from pandas import DataFrame
 
-from typing import Dict, Optional
+from bamt.builders.builders_base import BaseDefiner
+from bamt.utils import EvoUtils as evo
 
 
 class EvoDefiner(BaseDefiner):

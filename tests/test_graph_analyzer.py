@@ -1,10 +1,10 @@
-import unittest
 import logging
+import unittest
 
-from bamt.utils import GraphUtils
+from bamt.builders.builders_base import VerticesDefiner
 from bamt.networks.discrete_bn import DiscreteBN
 from bamt.nodes.discrete_node import DiscreteNode
-from bamt.builders.builders_base import VerticesDefiner
+from bamt.utils import GraphUtils
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)
 

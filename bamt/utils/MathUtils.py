@@ -1,10 +1,11 @@
+import math
+
 import numpy as np
 import pandas as pd
-import math
 from scipy import stats
+from scipy.stats.distributions import chi2
 from sklearn.metrics import mutual_info_score
 from sklearn.mixture import GaussianMixture
-from scipy.stats.distributions import chi2
 from sklearn.preprocessing import OrdinalEncoder
 
 

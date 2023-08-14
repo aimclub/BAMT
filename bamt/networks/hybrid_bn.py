@@ -1,6 +1,6 @@
-from .base import BaseNetwork
-
 from typing import Dict
+
+from .base import BaseNetwork
 
 
 class HybridBN(BaseNetwork):

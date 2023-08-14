@@ -1,31 +1,29 @@
-import random
-import re
-import pandas as pd
-import numpy as np
 import json
 import os
+import random
+import re
+from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
-from tqdm import tqdm
+import numpy as np
+import pandas as pd
 from joblib import Parallel, delayed
+from pgmpy.estimators import K2Score
+from tqdm import tqdm
+
+import bamt.builders as builders
+from bamt.builders.builders_base import ParamDict
+from bamt.builders.evo_builder import EvoStructureBuilder
+from bamt.builders.hc_builder import HCStructureBuilder
+from bamt.config import config
+from bamt.display import plot_, get_info_
 from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
     information_mutual,
     information_mutual_conditional,
     entropy_conditional,
 )
-from pgmpy.estimators import K2Score
-
-from bamt.builders.builders_base import ParamDict
-from bamt.builders.hc_builder import HCStructureBuilder
-from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.log import logger_network
-from bamt.config import config
-from bamt.display import plot_, get_info_
 from bamt.nodes.base import BaseNode
 from bamt.utils import GraphUtils
-import bamt.builders as builders
-
-
-from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
 STORAGE = config.get(
     "NODES", "models_storage", fallback="models_storage is not defined"

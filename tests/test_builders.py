@@ -1,17 +1,14 @@
 import itertools
-import unittest
-
 import logging
+import unittest
 
 import pandas as pd
 
 from bamt.builders.builders_base import StructureBuilder, VerticesDefiner
-from bamt.builders.hc_builder import HillClimbDefiner
 from bamt.builders.evo_builder import EvoStructureBuilder
-
-from bamt.nodes.gaussian_node import GaussianNode
+from bamt.builders.hc_builder import HillClimbDefiner
 from bamt.nodes.discrete_node import DiscreteNode
-
+from bamt.nodes.gaussian_node import GaussianNode
 from bamt.utils.MathUtils import precision_recall
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)

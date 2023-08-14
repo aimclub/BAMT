@@ -1,17 +1,14 @@
 import random
-import os
+from typing import Dict
 
+import matplotlib
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from pyvis.network import Network
 from pandas import DataFrame
-
-import matplotlib.pyplot as plt
-import matplotlib
+from pyvis.network import Network
 
 from bamt.log import logger_display
-
-from typing import Dict
 
 
 class Display(object):
@@ -173,5 +170,9 @@ class Display(object):
         else:
             for n in bn.nodes:
                 print(
-                    f"{n.name: <20} | {n.type: <50} | {bn.descriptor['types'][n.name]: <10} | {str([bn.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}"
+                    f"{n.name: <20} | "
+                    f"{n.type: <50} | "
+                    f"{bn.descriptor['types'][n.name]: <10} | "
+                    f"{str([bn.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | "
+                    f"{str([name for name in n.cont_parents + n.disc_parents])}"
                 )

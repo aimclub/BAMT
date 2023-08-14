@@ -1,23 +1,19 @@
-import pathlib as pl
 import json
+import logging
+import pathlib as pl
 import unittest
 
-from sklearn.tree import DecisionTreeRegressor
-from catboost import CatBoostRegressor
-from sklearn.ensemble import RandomForestRegressor
-
-from sklearn import preprocessing as pp
-
-import logging
-
 import pandas as pd
+from catboost import CatBoostRegressor
+from sklearn import preprocessing as pp
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
 
-from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
-
-from bamt.nodes.gaussian_node import GaussianNode
-from bamt.nodes.discrete_node import DiscreteNode
-from bamt.nodes.logit_node import LogitNode
 from bamt import preprocessors
+from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.nodes.logit_node import LogitNode
 
 logging.getLogger("network").setLevel(logging.CRITICAL)
 

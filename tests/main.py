@@ -1,8 +1,8 @@
-from NetworksTest import TestHybridBN, TestContinuousBN, TestDiscreteBN
-
 import logging
 import time
 import traceback
+
+from NetworksTest import TestHybridBN, TestContinuousBN, TestDiscreteBN
 
 # Print only errors
 logging.getLogger("preprocessor").setLevel(logging.ERROR)

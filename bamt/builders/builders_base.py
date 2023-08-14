@@ -1,18 +1,17 @@
 import itertools
+from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Sequence, Union
 
-from bamt.nodes.discrete_node import DiscreteNode
-from bamt.nodes.gaussian_node import GaussianNode
-from bamt.nodes.conditional_logit_node import ConditionalLogitNode
-from bamt.nodes.logit_node import LogitNode
-from bamt.nodes.mixture_gaussian_node import MixtureGaussianNode
-from bamt.nodes.conditional_mixture_gaussian_node import ConditionalMixtureGaussianNode
-from bamt.nodes.conditional_gaussian_node import ConditionalGaussianNode
+from pandas import DataFrame
 
 from bamt.log import logger_builder
-from pandas import DataFrame
+from bamt.nodes.conditional_gaussian_node import ConditionalGaussianNode
+from bamt.nodes.conditional_logit_node import ConditionalLogitNode
+from bamt.nodes.conditional_mixture_gaussian_node import ConditionalMixtureGaussianNode
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.nodes.logit_node import LogitNode
+from bamt.nodes.mixture_gaussian_node import MixtureGaussianNode
 from bamt.utils import GraphUtils as gru
-
-from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Sequence, Union
 
 
 class ParamDict(TypedDict, total=False):
