@@ -10,6 +10,6 @@ catboost>=1.0.6
 joblib>=1.1.1
 networkx>=3.1
 tqdm>=4.65.0
-thegolem>=0.3.1
+thegolem>=0.3.3
 typing>=3.7.4.3
 xgboost>=1.7.6

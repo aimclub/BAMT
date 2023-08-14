@@ -33,7 +33,7 @@ scipy = "^1.8.0"
 pyvis = ">=0.2.1"
 missingno = "^0.5.1"
 pgmpy = "0.1.20"
-thegolem = ">=0.3.2"
+thegolem = ">=0.3.3"
 xgboost = ">=1.7.6"
 catboost = ">=1.0.6"
 lightgbm = {version = ">=3.3.5", optional = true }
