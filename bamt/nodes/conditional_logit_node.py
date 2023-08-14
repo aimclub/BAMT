@@ -137,9 +137,9 @@ class ConditionalLogitNode(BaseNode):
                 return distribution, lgdistribution
         else:
             if not kwargs.get("inner", False):
-                return np.array([100.0])
+                return np.array([1.0])
             else:
-                return np.array([100.0]), lgdistribution
+                return np.array([1.0]), lgdistribution
 
     def choose(
         self,

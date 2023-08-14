@@ -68,7 +68,7 @@ class LogitNode(BaseNode):
                 model = pickle.loads(a)
             return model.predict_proba(np.array(pvals).reshape(1, -1))[0]
         else:
-            return np.array([100.0])
+            return np.array([1.0])
 
     def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
