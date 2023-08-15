@@ -112,27 +112,21 @@ class ConditionalMixtureGaussianNode(BaseNode):
         return {"hybcprob": hycprob}
 
     @staticmethod
-    def choose(
-        node_info: Dict[str, Dict[str, CondMixtureGaussParams]],
-        pvals: List[Union[str, float]],
-    ) -> Optional[float]:
-        """
-        Function to get value from ConditionalMixtureGaussian node
-        params:
-        node_info: nodes info from distributions
-        pvals: parent values
-        """
-        dispvals = []
+    def get_dist(node_info, pvals):
         lgpvals = []
+        dispvals = []
+
         for pval in pvals:
             if (isinstance(pval, str)) | (isinstance(pval, int)):
                 dispvals.append(pval)
             else:
                 lgpvals.append(pval)
+
         lgdistribution = node_info["hybcprob"][str(dispvals)]
         mean = lgdistribution["mean"]
         covariance = lgdistribution["covars"]
         w = lgdistribution["coef"]
+
         if len(w) != 0:
             if len(lgpvals) != 0:
                 indexes = [i for i in range(1, (len(lgpvals) + 1), 1)]
@@ -145,17 +139,40 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         covariances=covariance,
                     )
                     cond_gmm = gmm.condition(indexes, [lgpvals])
-                    sample = cond_gmm.sample(1)[0][0]
+                    return cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
                 else:
-                    sample = np.nan
+                    return np.nan, np.nan, np.nan
             else:
                 n_comp = len(w)
                 gmm = GMM(
                     n_components=n_comp, priors=w, means=mean, covariances=covariance
                 )
-                sample = gmm.sample(1)[0][0]
+                return gmm.means, gmm.covariances, gmm.priors
         else:
-            sample = np.nan
+            return np.nan, np.nan, np.nan
+
+    def choose(
+        self,
+        node_info: Dict[str, Dict[str, CondMixtureGaussParams]],
+        pvals: List[Union[str, float]],
+    ) -> Optional[float]:
+        """
+        Function to get value from ConditionalMixtureGaussian node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+        mean, covariance, w = self.get_dist(node_info, pvals)
+
+        n_comp = len(w)
+
+        gmm = GMM(
+            n_components=n_comp,
+            priors=w,
+            means=mean,
+            covariances=covariance,
+        )
+        sample = gmm.sample(1)[0][0]
         return sample
 
     @staticmethod

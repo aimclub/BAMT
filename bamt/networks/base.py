@@ -816,7 +816,26 @@ class BaseNetwork(object):
             plot_(
                 plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
             )
-        return structure
+
+    def get_dist(self, node_name: str, pvals: Optional[dict] = None):
+        """
+        Get a distribution from node with known parent values (conditional distribution).
+
+        :param node_name: name of node
+        :param pvals: parent values
+        """
+        if not self.distributions:
+            logger_network.error("Empty parameters. Call fit_params first.")
+            return
+        node = self[node_name]
+
+        parents = node.cont_parents + node.disc_parents
+        if not parents:
+            return self.distributions[node_name]
+
+        pvals = [pvals[parent] for parent in parents]
+
+        return node.get_dist(node_info=self.distributions[node_name], pvals=pvals)
 
     def _encode_categorical_data(self, data):
         for column in data.select_dtypes(include=["object", "string"]).columns:
