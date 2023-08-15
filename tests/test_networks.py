@@ -10,7 +10,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 
 import bamt.preprocessors as bp
-from bamt import preprocessors
 from bamt.networks.composite_bn import CompositeBN
 from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
 from bamt.nodes.discrete_node import DiscreteNode
@@ -56,7 +55,7 @@ class TestCaseBase(unittest.TestCase):
             n_bins=5, encode="ordinal", strategy="quantile"
         )
 
-        p = preprocessors.Preprocessor(
+        p = bp.Preprocessor(
             [("encoder", encoder), ("discretizer", discretizer)]
         )
 
