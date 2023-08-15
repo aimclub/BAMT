@@ -707,7 +707,7 @@ class TestEvoStructureBuilder(unittest.TestCase):
         # placeholder kwargs
         kwargs = {}
         self.evo_builder.build(
-            data=self.data, classifier=None, regressor=None, **kwargs
+            data=self.data, classifier=None, regressor=None, verbose=False, **kwargs
         )
 
         obtained_dag = self.evo_builder.skeleton["E"]

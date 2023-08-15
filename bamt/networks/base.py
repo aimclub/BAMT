@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from pgmpy.estimators import K2Score
+
 from tqdm import tqdm
 
 import bamt.builders as builders
@@ -24,6 +25,7 @@ from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
 from bamt.log import logger_network
 from bamt.nodes.base import BaseNode
 from bamt.utils import GraphUtils
+
 
 STORAGE = config.get(
     "NODES", "models_storage", fallback="models_storage is not defined"
@@ -50,6 +52,7 @@ class BaseNetwork(object):
         self.distributions = {}
         self.has_logit = False
         self.use_mixture = False
+        self.encoders = {}
 
     @property
     def nodes_names(self) -> List[str]:
@@ -86,7 +89,7 @@ class BaseNetwork(object):
         descriptor: dict with types and signs of nodes
         """
         if not self.validate(descriptor=descriptor):
-            if not self.type == "Hybrid":
+            if not self.type == "Hybrid" or not self.type == "Composite":
                 logger_network.error(
                     f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data"
                 )
@@ -177,6 +180,9 @@ class BaseNetwork(object):
                 use_mixture=self.use_mixture,
                 regressor=regressor,
             )
+        else:
+            logger_network.error(f"Optimizer {optimizer} is not supported")
+            return None
 
         self.sf_name = scoring_function[0]
 
@@ -497,6 +503,9 @@ class BaseNetwork(object):
         index = sorted([int(id) for id in os.listdir(STORAGE)])[-1] + 1
         os.makedirs(os.path.join(STORAGE, str(index)))
 
+        if type(self).__name__ == "CompositeBN":
+            data = self._encode_categorical_data(data)
+
         # Turn all discrete values to str for learning algorithm
         if "disc_num" in self.descriptor["types"].values():
             columns_names = [
@@ -510,6 +519,9 @@ class BaseNetwork(object):
             return node.fit_parameters(data)
 
         results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)
+
+        # code for debugging, do not remove
+        # results = [worker(node) for node in self.nodes]
 
         for result, node in zip(results, self.nodes):
             self.distributions[node.name] = result
@@ -567,7 +579,6 @@ class BaseNetwork(object):
                         if any(pd.isnull(pvalue) for pvalue in pvals):
                             output[node.name] = np.nan
                             continue
-
                     node_data = self.distributions[node.name]
                     if models_dir and ("hybcprob" in node_data.keys()):
                         for obj, obj_data in node_data["hybcprob"].items():
@@ -598,12 +609,24 @@ class BaseNetwork(object):
             seq = Parallel(n_jobs=parall_count)(
                 delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
             )
+            # seq = []
+            # for _ in tqdm(range(n), position=0, leave=True):
+            #     result = wrapper()
+            #     seq.append(result)
         else:
             seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
         seq_df = pd.DataFrame.from_dict(seq, orient="columns")
         seq_df.dropna(inplace=True)
         cont_nodes = [
-            c.name for c in self.nodes if c.type != "Discrete" and "Logit" not in c.type
+            c.name
+            for c in self.nodes
+            if type(c).__name__
+            not in (
+                "DiscreteNode",
+                "LogitNode",
+                "CompositeDiscreteNode",
+                "ConditionalLogitNode",
+            )
         ]
         positive_columns = [
             c for c in cont_nodes if self.descriptor["signs"][c] == "pos"
@@ -611,9 +634,12 @@ class BaseNetwork(object):
         seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
         seq_df.reset_index(inplace=True, drop=True)
         seq = seq_df.to_dict("records")
+        sample_output = pd.DataFrame.from_dict(seq, orient="columns")
 
         if as_df:
-            return pd.DataFrame.from_dict(seq, orient="columns")
+            if type(self).__name__ == "CompositeBN":
+                sample_output = self._decode_categorical_data(sample_output)
+            return sample_output
         else:
             return seq
 

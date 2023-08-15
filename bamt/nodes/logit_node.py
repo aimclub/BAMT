@@ -26,12 +26,12 @@ class LogitNode(BaseNode):
         self.classifier = classifier
         self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> LogitParams:
+    def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
         model_ser = None
         path = None
 
         parents = self.disc_parents + self.cont_parents
-        self.classifier.fit(data[parents].values, data[self.name].values)
+        self.classifier.fit(X=data[parents].values, y=data[self.name].values, **kwargs)
         serialization = self.choose_serialization(self.classifier)
 
         if serialization == "pickle":
@@ -73,6 +73,9 @@ class LogitNode(BaseNode):
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                 a = node_info["classifier_obj"].encode("latin1")
                 model = pickle.loads(a)
+
+            if type(self).__name__ == "CompositeDiscreteNode":
+                pvals = [int(item) if isinstance(item, str) else item for item in pvals]
             distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
             # choose
@@ -81,7 +84,7 @@ class LogitNode(BaseNode):
             ubound = 0
             for interval in range(len(node_info["classes"])):
                 ubound += distribution[interval]
-                if lbound <= rand and rand < ubound:
+                if lbound <= rand < ubound:
                     rindex = interval
                     break
                 else:
@@ -92,7 +95,8 @@ class LogitNode(BaseNode):
         else:
             return str(node_info["classes"][0])
 
-    def predict(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
+    @staticmethod
+    def predict(node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return prediction from Logit node
         params:

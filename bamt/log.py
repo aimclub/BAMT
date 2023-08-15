@@ -1,7 +1,8 @@
 import logging.config
 import os
-from bamt.config import config
 import warnings
+
+from bamt.config import config
 
 log_file_path = config.get(
     "LOG", "log_conf_loc", fallback="log_conf_path is not defined"

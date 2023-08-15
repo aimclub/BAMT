@@ -53,7 +53,8 @@ class ConditionalLogitNode(BaseNode):
                 values = set(new_data[self.name])
                 if len(values) > 1:
                     model.fit(
-                        new_data[self.cont_parents].values, new_data[self.name].values
+                        X=new_data[self.cont_parents].values,
+                        y=new_data[self.name].values,
                     )
                     classes = list(model.classes_)
                     serialization = self.choose_serialization(model)
