@@ -816,3 +816,18 @@ class BaseNetwork(object):
                 plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
             )
         return structure
+
+    def _encode_categorical_data(self, data):
+        for column in data.select_dtypes(include=["object", "string"]).columns:
+            encoder = LabelEncoder()
+            data[column] = encoder.fit_transform(data[column])
+            self.encoders[column] = encoder
+        return data
+
+    def _decode_categorical_data(self, data):
+        data = data.apply(
+            lambda col: pd.to_numeric(col).astype(int) if col.dtype == "object" else col
+        )
+        for column, encoder in self.encoders.items():
+            data[column] = encoder.inverse_transform(data[column])
+        return data
