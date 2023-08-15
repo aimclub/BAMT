@@ -1,13 +1,12 @@
 import random
+from concurrent.futures import ThreadPoolExecutor
+from itertools import product
+from typing import Type, Dict, Union, List
 
 from pandas import DataFrame, crosstab
 
 from .base import BaseNode
 from .schema import DiscreteParams
-from typing import Type, Dict, Union, List
-from itertools import product
-
-from concurrent.futures import ThreadPoolExecutor
 
 
 class DiscreteNode(BaseNode):

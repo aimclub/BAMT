@@ -1,22 +1,22 @@
 from datetime import timedelta
+from typing import Dict, Optional, List, Tuple
 
-from pandas import DataFrame
-
-from bamt.builders.builders_base import BaseDefiner
-from bamt.utils import EvoUtils as evo
 
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
+from golem.core.log import Log
 from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
 from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
 from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
 from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
+from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
 from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
 from golem.core.optimisers.optimization_parameters import GraphRequirements
 from golem.core.optimisers.optimizer import GraphGenerationParams
-from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
+from pandas import DataFrame
 
-from typing import Dict, Optional
+from bamt.builders.builders_base import BaseDefiner
+from bamt.utils import EvoUtils as evo
 
 
 class EvoDefiner(BaseDefiner):
@@ -76,6 +76,9 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_max_arity = 100
         self.default_max_depth = 100
         self.default_timeout = 180
+        self.default_num_of_generations = 50
+        self.default_early_stopping_iterations = 50
+        self.logging_level = 50
         self.objective_metric = evo.K2_metric
         self.default_crossovers = [
             CrossoverTypesEnum.exchange_edges,
@@ -93,6 +96,7 @@ class EvoStructureBuilder(EvoDefiner):
             has_no_cycle,
             evo.has_no_duplicates,
         ]
+        self.verbose = True
 
     def build(
         self,
@@ -102,18 +106,36 @@ class EvoStructureBuilder(EvoDefiner):
         **kwargs
     ):
         """
-        Builds the structure of a Bayesian network from the given data using an evolutionary algorithm.
+        Calls the search method to execute all the evolutionary computations.
 
         Args:
             data (DataFrame): The data from which to build the structure.
             classifier (Optional[object]): A classification model for discrete nodes.
             regressor (Optional[object]): A regression model for continuous nodes.
+        """
+        best_graph_edge_list = self.search(data, **kwargs)
 
-        Additional optional parameters can be provided as keyword arguments (kwargs) to customize the evolutionary
-        algorithm used to generate the structure. These include parameters to control the size of the population,
-        the probabilities of crossover and mutation, constraints on the structure of the graph, and many others.
+        # Convert the best graph to the format used by the Bayesian Network
+        self.skeleton["V"] = self.vertices
+        self.skeleton["E"] = best_graph_edge_list
 
-        The resulting structure is stored in the `skeleton` attribute of the `EvoStructureBuilder` object.
+        self.get_family()
+        self.overwrite_vertex(
+            has_logit=self.has_logit,
+            use_mixture=self.use_mixture,
+            classifier=classifier,
+            regressor=regressor,
+        )
+
+    def search(self, data: DataFrame, **kwargs) -> List[Tuple[str, str]]:
+        """
+        Executes all the evolutionary computations and returns the best graph's edge list.
+
+        Args:
+            data (DataFrame): The data from which to build the structure.
+
+        Returns:
+            best_graph_edge_list (List[Tuple[str, str]]): The edge list of the best graph found by the search.
         """
         # Get the list of node names
         nodes_types = data.columns.to_list()
@@ -132,7 +154,13 @@ class EvoStructureBuilder(EvoDefiner):
         requirements = GraphRequirements(
             max_arity=kwargs.get("max_arity", self.default_max_arity),
             max_depth=kwargs.get("max_depth", self.default_max_depth),
+            num_of_generations=kwargs.get(
+                "num_of_generations", self.default_num_of_generations
+            ),
             timeout=timedelta(minutes=kwargs.get("timeout", self.default_timeout)),
+            early_stopping_iterations=kwargs.get(
+                "early_stopping_iterations", self.default_early_stopping_iterations
+            ),
             n_jobs=kwargs.get("n_jobs", self.default_n_jobs),
         )
 
@@ -187,6 +215,9 @@ class EvoStructureBuilder(EvoDefiner):
         # Define the function to evaluate the objective function
         objective_eval = ObjectiveEvaluate(objective, data=data)
 
+        if not kwargs.get("verbose", self.verbose):
+            Log().reset_logging_level(logging_level=50)
+
         # Run the optimization
         optimized_graph = optimizer.optimise(objective_eval)[0]
 
@@ -194,18 +225,8 @@ class EvoStructureBuilder(EvoDefiner):
         best_graph_edge_list = optimized_graph.operator.get_edges()
         best_graph_edge_list = self._convert_to_strings(best_graph_edge_list)
 
-        # Convert the best graph to the format used by the Bayesian Network
-        self.skeleton["V"] = self.vertices
-        self.skeleton["E"] = best_graph_edge_list
-
-        self.get_family()
-        self.overwrite_vertex(
-            has_logit=self.has_logit,
-            use_mixture=self.use_mixture,
-            classifier=classifier,
-            regressor=regressor,
-        )
+        return best_graph_edge_list
 
     @staticmethod
     def _convert_to_strings(nested_list):
-        return [[str(item) for item in inner_list] for inner_list in nested_list]
+        return [tuple([str(item) for item in inner_list]) for inner_list in nested_list]

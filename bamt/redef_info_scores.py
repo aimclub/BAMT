@@ -1,11 +1,13 @@
 import sys
+import warnings
+from copy import copy
+
 import numpy as np
 import pandas as pd
-from copy import copy
-import warnings
+
 from bamt.mi_entropy_gauss import mi_gauss as mutual_information, entropy_all as entropy
-from bamt.preprocess.numpy_pandas import get_type_numpy
 from bamt.preprocess.graph import edges_to_dict
+from bamt.preprocess.numpy_pandas import get_type_numpy
 
 
 def info_score(edges: list, data: pd.DataFrame, method="LL"):

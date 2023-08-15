@@ -53,6 +53,7 @@ generating synthetic data, assessing edges strength e.t.c.
    models/bayesiannetworks/base_network.rst
    models/bayesiannetworks/discrete_bn.rst
    models/bayesiannetworks/continuous_bn.rst
+   models/bayesiannetworks/composite_bn.rst
    models/bayesiannetworks/hybrid_bn.rst
    models/bayesiannetworks/sampling_predicting.rst
    models/bayesiannetworks/large_bn_algs.rst
@@ -84,6 +85,8 @@ generating synthetic data, assessing edges strength e.t.c.
     examples/read_structure_param_learning.rst
     examples/read_structure_and_params.rst
     examples/learn_sampling_predict.rst
+    examples/add_ml_models_to_nodes.rst
+    examples/composite_network_example.rst
 
 
 

@@ -1,20 +1,18 @@
-import numpy as np
 import itertools
-
-import pickle
-import joblib
-import random
 import math
+import pickle
+import random
+from typing import Dict, Optional, List, Union
 
-from .base import BaseNode
-from .schema import CondGaussParams
-
-from bamt.log import logger_nodes
-
+import joblib
+import numpy as np
+from pandas import DataFrame
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
-from pandas import DataFrame
-from typing import Dict, Optional, List, Union
+
+from bamt.log import logger_nodes
+from .base import BaseNode
+from .schema import CondGaussParams
 
 
 class ConditionalGaussianNode(BaseNode):

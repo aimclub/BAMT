@@ -33,12 +33,12 @@ assertDictEqual(a, b)	dicts
 """
 __author__ = """Nicholas Cullen <ncullen.th@dartmouth.edu>"""
 
+import os
 import unittest
+from os.path import dirname
+
 from external.pyBN.classes.bayesnet import BayesNet
 from external.pyBN.readwrite.read import read_bn
-
-import os
-from os.path import dirname
 
 
 class BayesNetTestCase(unittest.TestCase):

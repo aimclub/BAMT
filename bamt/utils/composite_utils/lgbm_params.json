@@ -1,0 +1,11 @@
+{
+    "lgbm": {
+        "meta": "sklearn_class",
+        "tags": ["boosting", "tree", "non_linear", "mix"]
+    },
+    "lgbmreg": {
+        "meta": "sklearn_regr",
+        "presets": ["*tree"],
+        "tags": ["boosting", "tree", "non_multi", "non_linear", "mix"]
+    }
+}

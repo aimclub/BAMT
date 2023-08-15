@@ -1,12 +1,11 @@
 import random
 
 import pandas as pd
-
-from pgmpy.estimators import K2Score
-from pgmpy.models import BayesianNetwork
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from golem.core.optimisers.graph import OptGraph, OptNode
+from pgmpy.estimators import K2Score
+from pgmpy.models import BayesianNetwork
 
 
 class CustomGraphModel(OptGraph):

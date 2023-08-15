@@ -1,14 +1,13 @@
+from typing import Dict, List, Optional, Tuple, Callable, Union
+
+from pandas import DataFrame
 from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 
 from bamt.builders.builders_base import ParamDict, BaseDefiner
-from bamt.redef_HC import hc as hc_method
-
 from bamt.log import logger_builder
-from pandas import DataFrame
+from bamt.redef_HC import hc as hc_method
 from bamt.utils import GraphUtils as gru
-
-from typing import Dict, List, Optional, Tuple, Callable, Union
 
 
 class HillClimbDefiner(BaseDefiner):
