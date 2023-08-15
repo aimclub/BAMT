@@ -1,7 +1,7 @@
 Continuous Bayesian Networks
 ----------------------------
 
-.. autoclass:: bamt.networks.ContinuousBN
+.. autoclass:: bamt.networks.continuous_bn.ContinuousBN
    :members:
    :no-undoc-members:
 
@@ -13,9 +13,9 @@ To initialize a ``ContinuousBN`` object, you can use the following code:
 
 .. code-block:: python
 
-    import bamt.Networks as Nets
+    from bamt.networks.continuous_bn import ContinuousBN
     
-    bn = Nets.ContinuousBN(use_mixture=True)
+    bn = ContinuousBN(use_mixture=True)
 
 ContinuousBN has an additional parameter ``use_mixture``. 
 It is used to determine whether to use mixuters of Gaussian distributions  to represent the conditional distribution of continuous variables.

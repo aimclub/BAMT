@@ -13,9 +13,9 @@ To initialize a ``DiscreteBN`` object, you can use the following code:
 
 .. code-block:: python
 
-    import bamt.Networks as Nets
+    from bamt.networks.discrete_bn import DiscreteBN
 
-    bn = Nets.DiscreteBN()
+    bn = DiscreteBN()
 
 Data Preprocessing
 ~~~~~~~~~~~~~~~~~~

@@ -39,6 +39,7 @@ __author__ = """Nicholas Cullen <ncullen.th@dartmouth.edu>"""
 from copy import deepcopy
 
 import numpy as np
+
 from bamt.external.pyBN.utils.class_equivalence import are_class_equivalent
 from bamt.external.pyBN.utils.graph import topsort
 

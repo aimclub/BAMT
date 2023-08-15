@@ -7,11 +7,11 @@ OrientEdges
 """
 __author__ = """Nicholas Cullen <ncullen.th@dartmouth.edu>"""
 
-import unittest
 import os
+import unittest
 from os.path import dirname
-import numpy as np
 
+import numpy as np
 from external.pyBN.structure_learn.orient_edges import orient_edges_gs, orient_edges_pc
 
 

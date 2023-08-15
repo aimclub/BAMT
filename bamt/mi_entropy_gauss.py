@@ -1,17 +1,15 @@
-import os
-import sys
-import inspect
-
-
-from copy import copy
 import math
+import sys
+from copy import copy
 from typing import List
+
 import numpy as np
 import pandas as pd
+
 from bamt.external.pyBN.utils.independence_tests import mutual_information, entropy
 from bamt.preprocess.discretization import get_nodes_type
-from bamt.preprocess.numpy_pandas import loc_to_DataFrame
 from bamt.preprocess.graph import edges_to_dict
+from bamt.preprocess.numpy_pandas import loc_to_DataFrame
 
 
 def query_filter(data: pd.DataFrame, columns: List, values: List):

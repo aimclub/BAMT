@@ -6,6 +6,7 @@ BAMT supports adding machine learning models to Bayesian Network nodes.
 First, lets import BAMT modules and required machine learning modules.
 
 .. code-block:: python
+
     from bamt.networks.hybrid_bn import HybridBN
     import bamt.Preprocessors as pp
 
@@ -25,6 +26,7 @@ First, lets import BAMT modules and required machine learning modules.
 Let's start with data importing and preprocessing.
 
 .. code-block:: python
+
     # Importing data
     data = pd.read_csv(r'../Data/real data/vk_data.csv')
 
@@ -63,18 +65,21 @@ Let's start with data importing and preprocessing.
 Next, we initialize Bayesian Network object and add nodes to it.
 
 .. code-block:: python
+
     bn = HybridBN(has_logit=True, use_mixture=True)
     bn.add_nodes(info)
 
 After adding nodes we can perform structure learning.
 
 .. code-block:: python
+
     bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
 
 Finally, before parameters learning, we can add machine learning models to nodes.
 Let's add classifier models to discrete nodes and regressor models to continuous nodes and perform parameters learning.
 
 .. code-block:: python
+
     bn.set_classifiers(classifiers={'age': DecisionTreeClassifier(),
                              'relation': RandomForestClassifier(),
                              'is_driver': KNeighborsClassifier(n_neighbors=2)})
@@ -86,10 +91,12 @@ Let's add classifier models to discrete nodes and regressor models to continuous
 Now, we can save the model to load it later.
 
 .. code-block:: python
+
     bn.save('vk_model.json')
     bn.load('vk_model.json')
 
 Or visualize it (the html won't be rendered in jupyter notebook, but it will be rendered in html file and saved):
 
 .. code-block:: python
+
     bn.plot('vk_model.html')
