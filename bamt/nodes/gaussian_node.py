@@ -76,8 +76,7 @@ class GaussianNode(BaseNode):
                 "serialization": None,
             }
 
-    @staticmethod
-    def get_dist(node_info, pvals):
+    def get_dist(self, node_info, pvals):
         var = node_info["variance"]
         if pvals:
             for el in pvals:

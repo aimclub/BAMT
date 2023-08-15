@@ -56,8 +56,7 @@ class LogitNode(BaseNode):
             "serialization": serialization_name,
         }
 
-    @staticmethod
-    def get_dist(node_info, pvals):
+    def get_dist(self, node_info, pvals):
         if len(node_info["classes"]) > 1:
             if node_info["serialization"] == "joblib":
                 model = joblib.load(node_info["classifier_obj"])
@@ -65,10 +64,10 @@ class LogitNode(BaseNode):
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                 a = node_info["classifier_obj"].encode("latin1")
                 model = pickle.loads(a)
-                
+
             if type(self).__name__ == "CompositeDiscreteNode":
                 pvals = [int(item) if isinstance(item, str) else item for item in pvals]
-                
+
             return model.predict_proba(np.array(pvals).reshape(1, -1))[0]
         else:
             return np.array([1.0])
