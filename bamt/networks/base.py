@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from pgmpy.estimators import K2Score
+from sklearn.preprocessing import LabelEncoder
 
 from tqdm import tqdm
 
