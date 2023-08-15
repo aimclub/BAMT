@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Tuple
 
 
 from golem.core.adapter import DirectAdapter
