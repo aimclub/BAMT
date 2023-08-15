@@ -56,16 +56,7 @@ class LogitNode(BaseNode):
             "serialization": serialization_name,
         }
 
-    def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
-        """
-        Return value from Logit node
-        params:
-        node_info: nodes info from distributions
-        pvals: parent values
-        """
-
-        rindex = 0
-
+    def get_dist(self, node_info, pvals):
         if len(node_info["classes"]) > 1:
             if node_info["serialization"] == "joblib":
                 model = joblib.load(node_info["classifier_obj"])
@@ -76,9 +67,24 @@ class LogitNode(BaseNode):
 
             if type(self).__name__ == "CompositeDiscreteNode":
                 pvals = [int(item) if isinstance(item, str) else item for item in pvals]
-            distribution = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
 
-            # choose
+            return model.predict_proba(np.array(pvals).reshape(1, -1))[0]
+        else:
+            return np.array([1.0])
+
+    def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
+        """
+        Return value from Logit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+
+        rindex = 0
+
+        distribution = self.get_dist(node_info, pvals)
+
+        if len(node_info["classes"]) > 1:
             rand = random.random()
             lbound = 0
             ubound = 0
@@ -91,7 +97,6 @@ class LogitNode(BaseNode):
                     lbound = ubound
 
             return str(node_info["classes"][rindex])
-
         else:
             return str(node_info["classes"][0])
 

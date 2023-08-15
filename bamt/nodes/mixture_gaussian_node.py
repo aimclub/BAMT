@@ -69,15 +69,7 @@ class MixtureGaussianNode(BaseNode):
                 return {"mean": means, "coef": w, "covars": cov}
 
     @staticmethod
-    def choose(
-        node_info: MixtureGaussianParams, pvals: List[Union[str, float]]
-    ) -> Optional[float]:
-        """
-        Func to get value from current node
-        node_info: nodes info from distributions
-        pvals: parent values
-        Return value from MixtureGaussian node
-        """
+    def get_dist(node_info, pvals):
         mean = node_info["mean"]
         covariance = node_info["covars"]
         w = node_info["coef"]
@@ -93,17 +85,37 @@ class MixtureGaussianNode(BaseNode):
                         covariances=covariance,
                     )
                     cond_gmm = gmm.condition(indexes, [pvals])
-                    sample = cond_gmm.sample(1)[0][0]
+                    return cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
                 else:
-                    sample = np.nan
+                    return np.nan, np.nan, np.nan
             else:
                 gmm = GMM(
                     n_components=n_comp, priors=w, means=mean, covariances=covariance
                 )
-                sample = gmm.sample(1)[0][0]
+                return gmm.means, gmm.covariances, gmm.priors
         else:
-            sample = np.nan
-        return sample
+            return np.nan, np.nan, np.nan
+
+    def choose(
+        self, node_info: MixtureGaussianParams, pvals: List[Union[str, float]]
+    ) -> Optional[float]:
+        """
+        Func to get value from current node
+        node_info: nodes info from distributions
+        pvals: parent values
+        Return value from MixtureGaussian node
+        """
+        mean, covariance, w = self.get_dist(node_info, pvals)
+
+        n_comp = len(w)
+
+        gmm = GMM(
+            n_components=n_comp,
+            priors=w,
+            means=mean,
+            covariances=covariance,
+        )
+        return gmm.sample(1)[0][0]
 
     @staticmethod
     def predict(
