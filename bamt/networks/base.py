@@ -483,13 +483,13 @@ class BaseNetwork(object):
             weights[tuple_key] = input_dict["weights"][str(tuple_key)]
         self.weights = weights
 
-    def fit_parameters(self, data: pd.DataFrame, dropna: bool = True, n_jobs: int = -1):
+    def fit_parameters(self, data: pd.DataFrame, n_jobs: int = -1):
         """
         Base function for parameter learning
         """
-        if dropna:
-            data = data.dropna()
-            data.reset_index(inplace=True, drop=True)
+        if data.isnull().values.any():
+            logger_network.error("Dataframe contains NaNs.")
+            return
 
         if not os.path.isdir(STORAGE):
             os.makedirs(STORAGE)
@@ -862,3 +862,41 @@ class BaseNetwork(object):
             os.mkdir("visualization_result")
 
         return network.show(f"visualization_result/" + output)
+
+    def fill_gaps(self, df: pd.DataFrame, **kwargs):
+        """
+        Fill NaNs with sampled values.
+
+        :param df: dataframe with NaNs
+        :param kwargs: the same params as bn.predict
+
+        :return df, failed: filled DataFrame and list of failed rows (sometimes predict can return np.nan)
+        """
+        if not self.distributions:
+            logger_network.error("To call this method you must train parameters.")
+
+        # create a mimic row to get a dataframe from iloc method
+        list = [np.nan for _ in range(df.shape[1])]
+        df.loc["mimic"] = list
+
+        def fill_row(df, i):
+            row = df.iloc[[i, -1], :].drop(["mimic"], axis=0)
+
+            evidences = row.dropna(axis=1)
+
+            return row.index[0], self.predict(evidences, progress_bar=False, **kwargs)
+
+        failed = []
+        for index in range(df.shape[0] - 1):
+            if df.iloc[index].isna().any():
+                true_pos, result = fill_row(df, index)
+                if any(pd.isna(v[0]) for v in result.values()):
+                    failed.append(true_pos)
+                    continue
+                else:
+                    for column, value in result.items():
+                        df.loc[true_pos, column] = value[0]
+            else:
+                continue
+        df.drop(failed, inplace=True)
+        return df.drop(["mimic"]), failed
