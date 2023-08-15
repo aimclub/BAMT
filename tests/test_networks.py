@@ -56,6 +56,9 @@ class TestCaseBase(unittest.TestCase):
             [("encoder", encoder), ("discretizer", discretizer)]
         )
 
+        hack_data.dropna(inplace=True)
+        hack_data.reset_index(inplace=True, drop=True)
+
         discretized_data, est = p.apply(hack_data)
 
         self.bn = HybridBN(has_logit=True)
