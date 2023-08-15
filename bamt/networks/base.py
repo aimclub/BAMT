@@ -560,13 +560,15 @@ class BaseNetwork(object):
         evidence: Optional[Dict[str, Union[str, int, float]]] = None,
         as_df: bool = True,
         predict: bool = False,
-        parall_count: int = 1,
+        parall_count: int = -1,
+        filter_neg: bool = True,
     ) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
         evidence: values for nodes from user
         parall_count: number of threads. Defaults to 1.
+        filter_neg: either filter negative vals or not.
         """
         from joblib import Parallel, delayed
 
@@ -642,8 +644,10 @@ class BaseNetwork(object):
         positive_columns = [
             c for c in cont_nodes if self.descriptor["signs"][c] == "pos"
         ]
-        seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
-        seq_df.reset_index(inplace=True, drop=True)
+        if filter_neg:
+            seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
+            seq_df.reset_index(inplace=True, drop=True)
+
         seq = seq_df.to_dict("records")
 
         if as_df:
