@@ -1,13 +1,12 @@
-import numpy as np
+from typing import Union, List, Optional
 
+import numpy as np
+from gmr import GMM
+from pandas import DataFrame
+
+from bamt.utils.MathUtils import component
 from .base import BaseNode
 from .schema import MixtureGaussianParams
-
-from pandas import DataFrame
-from bamt.utils.MathUtils import component
-from gmr import GMM
-
-from typing import Union, List, Optional
 
 
 class MixtureGaussianNode(BaseNode):

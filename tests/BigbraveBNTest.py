@@ -1,12 +1,11 @@
-from sklearn import preprocessing
-from pgmpy.estimators import K2Score
-
 import pandas as pd
-from bamt.networks.big_brave_bn import BigBraveBN
-from bamt.networks.discrete_bn import DiscreteBN
-from bamt.networks.continuous_bn import ContinuousBN
+from pgmpy.estimators import K2Score
+from sklearn import preprocessing
 
 import bamt.preprocessors as pp
+from bamt.networks.big_brave_bn import BigBraveBN
+from bamt.networks.continuous_bn import ContinuousBN
+from bamt.networks.discrete_bn import DiscreteBN
 
 data_discrete = pd.read_csv(r"../Data/benchmark/pigs.csv")
 data_continuous = pd.read_csv(r"../Data/benchmark/arth150.csv")

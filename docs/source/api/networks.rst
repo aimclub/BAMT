@@ -21,6 +21,11 @@ Networks Module
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: bamt.networks.composite_bn
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: bamt.networks.big_brave_bn
    :members:
    :undoc-members:

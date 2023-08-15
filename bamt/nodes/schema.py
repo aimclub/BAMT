@@ -1,4 +1,5 @@
 from typing import Dict, List, Any, Union, TypedDict, Optional
+
 from numpy import ndarray
 
 
@@ -40,3 +41,7 @@ class LogitParams(TypedDict):
     classifier: str
     classifier_obj: Optional[Union[str, bool, bytes]]
     serialization: str
+
+
+class HybcprobParams(TypedDict):
+    hybcprob: Dict[str, CondGaussParams]

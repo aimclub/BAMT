@@ -1,15 +1,14 @@
 # import json
 
-from bamt.networks.hybrid_bn import HybridBN
-import bamt.preprocessors as preprocessors
-
-# from sklearn.linear_model import ElasticNet
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
+import pandas as pd
 from catboost import CatBoostRegressor
 from sklearn import preprocessing as pp
+from sklearn.ensemble import RandomForestRegressor
+# from sklearn.linear_model import ElasticNet
+from sklearn.tree import DecisionTreeRegressor
 
-import pandas as pd
+import bamt.preprocessors as preprocessors
+from bamt.networks.hybrid_bn import HybridBN
 
 hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
     [

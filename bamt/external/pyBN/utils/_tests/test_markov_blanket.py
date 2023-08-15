@@ -7,14 +7,12 @@ Unit Test
 
 __author__ = """Nicholas Cullen <ncullen.th@dartmouth.edu>"""
 
-import unittest
 import os
+import unittest
 from os.path import dirname
-import numpy as np
-import pandas as pd
 
-from external.pyBN.readwrite.read import read_bn
 from external.pyBN.independence.markov_blanket import markov_blanket
+from external.pyBN.readwrite.read import read_bn
 
 
 class ConstraintTestsTestCase(unittest.TestCase):

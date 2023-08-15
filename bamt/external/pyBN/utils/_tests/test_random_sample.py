@@ -7,13 +7,13 @@ Misc
 """
 __author__ = """Nicholas Cullen <ncullen.th@dartmouth.edu>"""
 
-import unittest
 import os
+import unittest
 from os.path import dirname
-import numpy as np
 
-from external.pyBN.utils.random_sample import random_sample
+import numpy as np
 from external.pyBN.readwrite.read import read_bn
+from external.pyBN.utils.random_sample import random_sample
 
 
 class RandomSampleTestCase(unittest.TestCase):

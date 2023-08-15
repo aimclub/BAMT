@@ -1,16 +1,15 @@
-import numpy as np
-
 import pickle
-import joblib
 import random
+from typing import Optional, List, Union
 
+import joblib
+import numpy as np
+from pandas import DataFrame
+from sklearn import linear_model
+
+from bamt.log import logger_nodes
 from .base import BaseNode
 from .schema import LogitParams
-from bamt.log import logger_nodes
-
-from sklearn import linear_model
-from pandas import DataFrame
-from typing import Optional, List, Union
 
 
 class LogitNode(BaseNode):
@@ -27,12 +26,12 @@ class LogitNode(BaseNode):
         self.classifier = classifier
         self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> LogitParams:
+    def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
         model_ser = None
         path = None
 
         parents = self.disc_parents + self.cont_parents
-        self.classifier.fit(data[parents].values, data[self.name].values)
+        self.classifier.fit(X=data[parents].values, y=data[self.name].values, **kwargs)
         serialization = self.choose_serialization(self.classifier)
 
         if serialization == "pickle":
@@ -66,6 +65,10 @@ class LogitNode(BaseNode):
                 # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
                 a = node_info["classifier_obj"].encode("latin1")
                 model = pickle.loads(a)
+                
+            if type(self).__name__ == "CompositeDiscreteNode":
+                pvals = [int(item) if isinstance(item, str) else item for item in pvals]
+                
             return model.predict_proba(np.array(pvals).reshape(1, -1))[0]
         else:
             return np.array([1.0])
@@ -98,7 +101,8 @@ class LogitNode(BaseNode):
         else:
             return str(node_info["classes"][0])
 
-    def predict(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
+    @staticmethod
+    def predict(node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
         Return prediction from Logit node
         params:

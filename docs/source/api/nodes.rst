@@ -6,6 +6,16 @@ Nodes module
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: bamt.nodes.composite_continuous_node
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: bamt.nodes.composite_discrete_node
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: bamt.nodes.conditional_gaussian_node
    :members:
    :undoc-members:

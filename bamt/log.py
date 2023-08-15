@@ -1,7 +1,8 @@
 import logging.config
 import os
-from bamt.config import config
 import warnings
+
+from bamt.config import config
 
 log_file_path = config.get(
     "LOG", "log_conf_loc", fallback="log_conf_path is not defined"
@@ -25,6 +26,7 @@ logger_builder = logging.getLogger("builder")
 logger_network = logging.getLogger("network")
 logger_preprocessor = logging.getLogger("preprocessor")
 logger_nodes = logging.getLogger("nodes")
+logger_display = logging.getLogger("display")
 
 logging.captureWarnings(True)
 logger_warnings = logging.getLogger("py.warnings")

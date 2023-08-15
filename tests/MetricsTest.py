@@ -1,8 +1,10 @@
-import bamt.networks as Networks
-from sklearn import preprocessing as pp
-import pandas as pd
-from bamt.preprocessors import Preprocessor
 import time
+
+import pandas as pd
+from sklearn import preprocessing as pp
+
+import bamt.networks as Networks
+from bamt.preprocessors import Preprocessor
 
 start = time.time()
 

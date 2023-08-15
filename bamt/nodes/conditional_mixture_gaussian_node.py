@@ -1,14 +1,13 @@
-import numpy as np
 import itertools
+from typing import Union, List, Optional, Dict
 
+import numpy as np
+from gmr import GMM
+from pandas import DataFrame
+
+from bamt.utils.MathUtils import component
 from .base import BaseNode
 from .schema import CondMixtureGaussParams
-from bamt.utils.MathUtils import component
-
-from pandas import DataFrame
-from gmr import GMM
-
-from typing import Union, List, Optional, Dict
 
 
 class ConditionalMixtureGaussianNode(BaseNode):
