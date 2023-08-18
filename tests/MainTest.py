@@ -1,10 +1,9 @@
 import pandas as pd
-from sklearn import preprocessing as pp
-from sklearn.metrics import mean_squared_error as mse
 from pgmpy.estimators import K2Score
+from sklearn import preprocessing as pp
 
-from bamt.preprocessors import Preprocessor
 import bamt.networks as Networks
+from bamt.preprocessors import Preprocessor
 
 """
 Optional:

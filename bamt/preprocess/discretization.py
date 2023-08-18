@@ -1,8 +1,9 @@
 from copy import copy
+from typing import Tuple
+
 import pandas as pd
 from sklearn import preprocessing
 from sklearn.preprocessing import KBinsDiscretizer
-from typing import Tuple
 
 
 def get_nodes_sign(data: pd.DataFrame) -> dict:

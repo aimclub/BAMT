@@ -1,9 +1,8 @@
-from bamt.config import config
-
+import os
+import pickle
 from typing import Union
 
-import pickle
-import os
+from bamt.config import config
 
 STORAGE = config.get(
     "NODES", "models_storage", fallback="models_storage is not defined"
@@ -86,3 +85,7 @@ class BaseNode(object):
             os.path.join(path_to_check, f"{specific}.joblib.compressed")
         )
         return path
+
+    @staticmethod
+    def get_dist(node_info, pvals):
+        pass

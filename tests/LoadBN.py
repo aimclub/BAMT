@@ -1,8 +1,10 @@
-from bamt.preprocessors import Preprocessor
+import json
+
 import pandas as pd
 from sklearn import preprocessing as pp
+
 import bamt.networks as Networks
-import json
+from bamt.preprocessors import Preprocessor
 
 hack_data = pd.read_csv("data/real data/hack_processed_with_rf.csv")[
     [

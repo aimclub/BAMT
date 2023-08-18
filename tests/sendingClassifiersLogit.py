@@ -1,14 +1,13 @@
 # import json
 
-import bamt.networks as Nets
-import bamt.preprocessors as preprocessors
-
+import pandas as pd
+from sklearn import preprocessing as pp
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import preprocessing as pp
 
-import pandas as pd
+import bamt.networks as Nets
+import bamt.preprocessors as preprocessors
 
 hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
     [

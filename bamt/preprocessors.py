@@ -1,8 +1,9 @@
-from bamt.utils import GraphUtils as gru
-from bamt.log import logger_preprocessor
+from typing import Tuple, Dict
+
 from pandas import DataFrame
 
-from typing import Tuple, Dict
+from bamt.log import logger_preprocessor
+from bamt.utils import GraphUtils as gru
 
 
 class BasePreprocessor(object):
@@ -105,15 +106,11 @@ class Preprocessor(BasePreprocessor):
         if not columns_disc:
             logger_preprocessor.info("No one column is discrete")
 
-    def apply(self, data: DataFrame, dropna: bool = True) -> Tuple[DataFrame, Dict]:
+    def apply(self, data: DataFrame) -> Tuple[DataFrame, Dict]:
         """
         Apply pipeline
         data: data to apply on
-        dropna: drop NaNs with pandas dropna
         """
-        if dropna:
-            data = data.dropna()
-            data.reset_index(inplace=True, drop=True)
         df = data.copy()
         self.nodes_types = self.get_nodes_types(data)
         if list(self.nodes_types.keys()) != data.columns.to_list():

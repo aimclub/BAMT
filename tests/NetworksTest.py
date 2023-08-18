@@ -1,21 +1,21 @@
+import itertools
 import json
 import time
-import itertools
 
-# import abc
-
-import pandas as pd
 import numpy as np
+import pandas as pd
 from pandas.testing import assert_frame_equal
-
+from sklearn import preprocessing as pp
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import preprocessing as pp
 
-from bamt.preprocessors import Preprocessor
 import bamt.networks as Networks
 import bamt.nodes as Nodes
+from bamt.preprocessors import Preprocessor
+
+
+# import abc
 
 
 class NetworkTest(object):

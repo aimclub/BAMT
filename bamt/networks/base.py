@@ -1,34 +1,32 @@
-import random
-import re
-import networkx as nx
-import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 import json
 import os
+import random
+import re
+from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
+
+import numpy as np
+import pandas as pd
+from joblib import Parallel, delayed
+from pgmpy.estimators import K2Score
+from sklearn.preprocessing import LabelEncoder
 
 from tqdm import tqdm
-from joblib import Parallel, delayed
-from pyvis.network import Network
+
+import bamt.builders as builders
+from bamt.builders.builders_base import ParamDict
+from bamt.builders.evo_builder import EvoStructureBuilder
+from bamt.builders.hc_builder import HCStructureBuilder
+from bamt.config import config
+from bamt.display import plot_, get_info_
 from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
     information_mutual,
     information_mutual_conditional,
     entropy_conditional,
 )
-from pgmpy.estimators import K2Score
-
-from bamt.builders.builders_base import ParamDict
-from bamt.builders.hc_builder import HCStructureBuilder
-from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.log import logger_network
-from bamt.config import config
-
 from bamt.nodes.base import BaseNode
+from bamt.utils import GraphUtils
 
-import bamt.builders as builders
-
-from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
 STORAGE = config.get(
     "NODES", "models_storage", fallback="models_storage is not defined"
@@ -55,6 +53,7 @@ class BaseNetwork(object):
         self.distributions = {}
         self.has_logit = False
         self.use_mixture = False
+        self.encoders = {}
 
     @property
     def nodes_names(self) -> List[str]:
@@ -91,7 +90,7 @@ class BaseNetwork(object):
         descriptor: dict with types and signs of nodes
         """
         if not self.validate(descriptor=descriptor):
-            if not self.type == "Hybrid":
+            if not self.type == "Hybrid" or not self.type == "Composite":
                 logger_network.error(
                     f"{self.type} BN does not support {'discrete' if self.type == 'Continuous' else 'continuous'} data"
                 )
@@ -182,6 +181,9 @@ class BaseNetwork(object):
                 use_mixture=self.use_mixture,
                 regressor=regressor,
             )
+        else:
+            logger_network.error(f"Optimizer {optimizer} is not supported")
+            return None
 
         self.sf_name = scoring_function[0]
 
@@ -390,7 +392,8 @@ class BaseNetwork(object):
                         r"\([\s\S]*\)", f"({model})", self[node].type
                     )
 
-    def save_to_file(self, outdir: str, data: dict):
+    @staticmethod
+    def _save_to_file(outdir: str, data: dict):
         """
         Function to save data to json file
         :param outdir: output directory
@@ -407,14 +410,14 @@ class BaseNetwork(object):
         Function to save BN params to json file
         outdir: output directory
         """
-        return self.save_to_file(outdir, self.distributions)
+        return self._save_to_file(outdir, self.distributions)
 
     def save_structure(self, outdir: str):
         """
         Function to save BN edges to json file
         outdir: output directory
         """
-        return self.save_to_file(outdir, self.edges)
+        return self._save_to_file(outdir, self.edges)
 
     def save(self, outdir: str):
         """
@@ -428,7 +431,7 @@ class BaseNetwork(object):
             "parameters": self.distributions,
             "weights": new_weights,
         }
-        return self.save_to_file(outdir, outdict)
+        return self._save_to_file(outdir, outdict)
 
     def load(self, input_dir: str):
         """
@@ -483,13 +486,13 @@ class BaseNetwork(object):
             weights[tuple_key] = input_dict["weights"][str(tuple_key)]
         self.weights = weights
 
-    def fit_parameters(self, data: pd.DataFrame, dropna: bool = True, n_jobs: int = -1):
+    def fit_parameters(self, data: pd.DataFrame, n_jobs: int = -1):
         """
         Base function for parameter learning
         """
-        if dropna:
-            data = data.dropna()
-            data.reset_index(inplace=True, drop=True)
+        if data.isnull().values.any():
+            logger_network.error("Dataframe contains NaNs.")
+            return
 
         if not os.path.isdir(STORAGE):
             os.makedirs(STORAGE)
@@ -500,6 +503,9 @@ class BaseNetwork(object):
 
         index = sorted([int(id) for id in os.listdir(STORAGE)])[-1] + 1
         os.makedirs(os.path.join(STORAGE, str(index)))
+
+        if type(self).__name__ == "CompositeBN":
+            data = self._encode_categorical_data(data)
 
         # Turn all discrete values to str for learning algorithm
         if "disc_num" in self.descriptor["types"].values():
@@ -515,42 +521,15 @@ class BaseNetwork(object):
 
         results = Parallel(n_jobs=n_jobs)(delayed(worker)(node) for node in self.nodes)
 
+        # code for debugging, do not remove
+        # results = [worker(node) for node in self.nodes]
+
         for result, node in zip(results, self.nodes):
             self.distributions[node.name] = result
 
     def get_info(self, as_df: bool = True) -> Optional[pd.DataFrame]:
         """Return a table with name, type, parents_type, parents_names"""
-        if as_df:
-            names = []
-            types_n = []
-            types_d = []
-            parents = []
-            parents_types = []
-            for n in self.nodes:
-                names.append(n)
-                types_n.append(n.type)
-                types_d.append(self.descriptor["types"][n.name])
-                parents_types.append(
-                    [
-                        self.descriptor["types"][name]
-                        for name in n.cont_parents + n.disc_parents
-                    ]
-                )
-                parents.append([name for name in n.cont_parents + n.disc_parents])
-            return pd.DataFrame(
-                {
-                    "name": names,
-                    "node_type": types_n,
-                    "data_type": types_d,
-                    "parents": parents,
-                    "parents_types": parents_types,
-                }
-            )
-        else:
-            for n in self.nodes:
-                print(
-                    f"{n.name: <20} | {n.type: <50} | {self.descriptor['types'][n.name]: <10} | {str([self.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | {str([name for name in n.cont_parents + n.disc_parents])}"
-                )
+        return get_info_(self, as_df)
 
     def sample(
         self,
@@ -560,13 +539,15 @@ class BaseNetwork(object):
         evidence: Optional[Dict[str, Union[str, int, float]]] = None,
         as_df: bool = True,
         predict: bool = False,
-        parall_count: int = 1,
+        parall_count: int = -1,
+        filter_neg: bool = True,
     ) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
         n: int number of samples
         evidence: values for nodes from user
         parall_count: number of threads. Defaults to 1.
+        filter_neg: either filter negative vals or not.
         """
         from joblib import Parallel, delayed
 
@@ -601,7 +582,6 @@ class BaseNetwork(object):
                         if any(pd.isnull(pvalue) for pvalue in pvals):
                             output[node.name] = np.nan
                             continue
-
                     node_data = self.distributions[node.name]
                     if models_dir and ("hybcprob" in node_data.keys()):
                         for obj, obj_data in node_data["hybcprob"].items():
@@ -632,22 +612,39 @@ class BaseNetwork(object):
             seq = Parallel(n_jobs=parall_count)(
                 delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
             )
+            # seq = []
+            # for _ in tqdm(range(n), position=0, leave=True):
+            #     result = wrapper()
+            #     seq.append(result)
         else:
             seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
         seq_df = pd.DataFrame.from_dict(seq, orient="columns")
         seq_df.dropna(inplace=True)
         cont_nodes = [
-            c.name for c in self.nodes if c.type != "Discrete" and "Logit" not in c.type
+            c.name
+            for c in self.nodes
+            if type(c).__name__
+            not in (
+                "DiscreteNode",
+                "LogitNode",
+                "CompositeDiscreteNode",
+                "ConditionalLogitNode",
+            )
         ]
         positive_columns = [
             c for c in cont_nodes if self.descriptor["signs"][c] == "pos"
         ]
-        seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
-        seq_df.reset_index(inplace=True, drop=True)
+        if filter_neg:
+            seq_df = seq_df[(seq_df[positive_columns] >= 0).all(axis=1)]
+            seq_df.reset_index(inplace=True, drop=True)
+
         seq = seq_df.to_dict("records")
+        sample_output = pd.DataFrame.from_dict(seq, orient="columns")
 
         if as_df:
-            return pd.DataFrame.from_dict(seq, orient="columns")
+            if type(self).__name__ == "CompositeBN":
+                sample_output = self._decode_categorical_data(sample_output)
+            return sample_output
         else:
             return seq
 
@@ -779,86 +776,120 @@ class BaseNetwork(object):
         in the parent directory in folder visualization_result.
         output: str name of output file
         """
-        if not output.endswith(".html"):
-            logger_network.error("This version allows only html format.")
-            return None
+        plot_(output, self.nodes, self.edges)
+        return
 
-        G = nx.DiGraph()
-        nodes = [node.name for node in self.nodes]
-        G.add_nodes_from(nodes)
-        G.add_edges_from(self.edges)
+    def markov_blanket(self, node_name, plot_to: Optional[str] = None):
+        """
+        A method to get markov blanket of a node.
+        :param node_name: name of node
+        :param plot_to: directory to plot graph, the file must have html extension.
 
-        network = Network(
-            height="800px",
-            width="100%",
-            notebook=True,
-            directed=nx.is_directed(G),
-            layout="hierarchical",
+        :return structure: json with {"nodes": [...], "edges": [...]}
+        """
+        structure = GraphUtils.GraphAnalyzer(self).markov_blanket(node_name)
+        if plot_to:
+            plot_(
+                plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
+            )
+        return structure
+
+    def find_family(
+        self,
+        node_name: str,
+        height: int = 1,
+        depth: int = 1,
+        with_nodes: Optional[List] = None,
+        plot_to: Optional[str] = None,
+    ):
+        """
+        A method to get markov blanket of a node.
+        :param node_name: name of node
+        :param height: a number of layers up to node (its parents) that will be taken
+        :param depth: a number of layers down to node (its children) that will be taken
+        :param with_nodes: include nodes in return
+        :param plot_to: directory to plot graph, the file must have html extension.
+
+        :return structure: json with {"nodes": [...], "edges": [...]}
+        """
+        structure = GraphUtils.GraphAnalyzer(self).find_family(
+            node_name, height, depth, with_nodes
         )
 
-        nodes_sorted = np.array(list(nx.topological_generations(G)), dtype=object)
-
-        # Qualitative class of colormaps
-        q_classes = [
-            "Pastel1",
-            "Pastel2",
-            "Paired",
-            "Accent",
-            "Dark2",
-            "Set1",
-            "Set2",
-            "Set3",
-            "tab10",
-            "tab20",
-            "tab20b",
-            "tab20c",
-        ]
-
-        hex_colors = []
-        for cls in q_classes:
-            rgb_colors = plt.get_cmap(cls).colors
-            hex_colors.extend(
-                [matplotlib.colors.rgb2hex(rgb_color) for rgb_color in rgb_colors]
+        if plot_to:
+            plot_(
+                plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
             )
+    
+    def fill_gaps(self, df: pd.DataFrame, **kwargs):
+        """
+        Fill NaNs with sampled values.
 
-        hex_colors = np.array(hex_colors)
+        :param df: dataframe with NaNs
+        :param kwargs: the same params as bn.predict
 
-        # Number_of_colors in matplotlib in Qualitative class = 144
+        :return df, failed: filled DataFrame and list of failed rows (sometimes predict can return np.nan)
+        """
+        if not self.distributions:
+            logger_network.error("To call this method you must train parameters.")
 
-        class_number = len(set([node.type for node in self.nodes]))
-        hex_colors_indexes = [
-            random.randint(0, len(hex_colors) - 1) for _ in range(class_number)
-        ]
-        hex_colors_picked = hex_colors[hex_colors_indexes]
-        class2color = {
-            cls: color
-            for cls, color in zip(
-                set([node.type for node in self.nodes]), hex_colors_picked
-            )
-        }
-        name2class = {node.name: node.type for node in self.nodes}
+        # create a mimic row to get a dataframe from iloc method
+        list = [np.nan for _ in range(df.shape[1])]
+        df.loc["mimic"] = list
 
-        for level in range(len(nodes_sorted)):
-            for node_i in range(len(nodes_sorted[level])):
-                name = nodes_sorted[level][node_i]
-                cls = name2class[name]
-                color = class2color[cls]
-                network.add_node(
-                    name,
-                    label=name,
-                    color=color,
-                    size=45,
-                    level=level,
-                    font={"size": 36},
-                    title=f"Узел байесовской сети {name} ({cls})",
-                )
+        def fill_row(df, i):
+            row = df.iloc[[i, -1], :].drop(["mimic"], axis=0)
 
-        for edge in G.edges:
-            network.add_edge(edge[0], edge[1])
+            evidences = row.dropna(axis=1)
 
-        network.hrepulsion(node_distance=300, central_gravity=0.5)
+            return row.index[0], self.predict(evidences, progress_bar=False, **kwargs)
 
-        if not (os.path.exists("visualization_result")):
-            os.mkdir("visualization_result")
+        failed = []
+        for index in range(df.shape[0] - 1):
+            if df.iloc[index].isna().any():
+                true_pos, result = fill_row(df, index)
+                if any(pd.isna(v[0]) for v in result.values()):
+                    failed.append(true_pos)
+                    continue
+                else:
+                    for column, value in result.items():
+                        df.loc[true_pos, column] = value[0]
+            else:
+                continue
+        df.drop(failed, inplace=True)
+        return df.drop(["mimic"]), failed
 
-        return network.show(f"visualization_result/" + output)
+    def get_dist(self, node_name: str, pvals: Optional[dict] = None):
+        """
+        Get a distribution from node with known parent values (conditional distribution).
+
+        :param node_name: name of node
+        :param pvals: parent values
+        """
+        if not self.distributions:
+            logger_network.error("Empty parameters. Call fit_params first.")
+            return
+        node = self[node_name]
+
+        parents = node.cont_parents + node.disc_parents
+        if not parents:
+            return self.distributions[node_name]
+
+        pvals = [pvals[parent] for parent in parents]
+
+        return node.get_dist(node_info=self.distributions[node_name], pvals=pvals)
+
+    def _encode_categorical_data(self, data):
+        for column in data.select_dtypes(include=["object", "string"]).columns:
+            encoder = LabelEncoder()
+            data[column] = encoder.fit_transform(data[column])
+            self.encoders[column] = encoder
+        return data
+
+    def _decode_categorical_data(self, data):
+        data = data.apply(
+            lambda col: pd.to_numeric(col).astype(int) if col.dtype == "object" else col
+        )
+        for column, encoder in self.encoders.items():
+            data[column] = encoder.inverse_transform(data[column])
+        return data

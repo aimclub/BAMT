@@ -1,20 +1,17 @@
-import pickle
-import numpy as np
-import joblib
-import random
-
 import math
-
-from .base import BaseNode
-from bamt.log import logger_nodes
-
-from .schema import GaussianParams
-
+import pickle
+import random
 from typing import Optional, List
-from pandas import DataFrame
 
+import joblib
+import numpy as np
+from pandas import DataFrame
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error as mse
+
+from bamt.log import logger_nodes
+from .base import BaseNode
+from .schema import GaussianParams
 
 
 class GaussianNode(BaseNode):
@@ -29,10 +26,12 @@ class GaussianNode(BaseNode):
         self.regressor = regressor
         self.type = "Gaussian" + f" ({type(self.regressor).__name__})"
 
-    def fit_parameters(self, data: DataFrame) -> GaussianParams:
+    def fit_parameters(self, data: DataFrame, **kwargs) -> GaussianParams:
         parents = self.cont_parents
+        if type(self).__name__ == "CompositeContinuousNode":
+            parents = parents + self.disc_parents
         if parents:
-            self.regressor.fit(data[parents].values, data[self.name].values)
+            self.regressor.fit(data[parents].values, data[self.name].values, **kwargs)
             predicted_value = self.regressor.predict(data[parents].values)
             variance = mse(data[self.name].values, predicted_value, squared=False)
             serialization = self.choose_serialization(self.regressor)
@@ -77,14 +76,8 @@ class GaussianNode(BaseNode):
                 "serialization": None,
             }
 
-    @staticmethod
-    def choose(node_info: GaussianParams, pvals: List[float]) -> float:
-        """
-        Return value from Logit node
-        params:
-        node_info: nodes info from distributions
-        pvals: parent values
-        """
+    def get_dist(self, node_info, pvals):
+        var = node_info["variance"]
         if pvals:
             for el in pvals:
                 if str(el) == "nan":
@@ -95,11 +88,24 @@ class GaussianNode(BaseNode):
                 a = node_info["regressor_obj"].encode("latin1")
                 model = pickle.loads(a)
 
+            if type(self).__name__ == "CompositeContinuousNode":
+                pvals = [int(item) if isinstance(item, str) else item for item in pvals]
+
             cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
-            var = node_info["variance"]
-            return random.gauss(cond_mean, var)
+            return cond_mean, var
         else:
-            return random.gauss(node_info["mean"], math.sqrt(node_info["variance"]))
+            return node_info["mean"], math.sqrt(var)
+
+    def choose(self, node_info: GaussianParams, pvals: List[float]) -> float:
+        """
+        Return value from Logit node
+        params:
+        node_info: nodes info from distributions
+        pvals: parent values
+        """
+
+        cond_mean, var = self.get_dist(node_info, pvals)
+        return random.gauss(cond_mean, var)
 
     @staticmethod
     def predict(node_info: GaussianParams, pvals: List[float]) -> float:

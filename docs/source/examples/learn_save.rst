@@ -46,6 +46,10 @@ Then we create a network object and perform structure and parameters learning:
     # using mutual information as scoring function for structure learning
     bn.add_edges(discretized_data, scoring_function=('MI',))
 
+    # or use evolutionary algorithm to learn structure
+
+    bn.add_edges(discretized_data, optimizer = 'evo')
+
     bn.fit_parameters(data)
 
 To save structure and parameters of the network separately, we can use the following code:

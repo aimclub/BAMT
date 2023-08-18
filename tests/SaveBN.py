@@ -1,7 +1,8 @@
-from bamt.preprocessors import Preprocessor
 import pandas as pd
 from sklearn import preprocessing as pp
+
 import bamt.networks as Networks
+from bamt.preprocessors import Preprocessor
 
 # import json
 

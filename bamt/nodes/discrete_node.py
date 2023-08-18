@@ -1,13 +1,12 @@
 import random
+from concurrent.futures import ThreadPoolExecutor
+from itertools import product
+from typing import Type, Dict, Union, List
 
 from pandas import DataFrame, crosstab
 
 from .base import BaseNode
 from .schema import DiscreteParams
-from typing import Type, Dict, Union, List
-from itertools import product
-
-from concurrent.futures import ThreadPoolExecutor
 
 
 class DiscreteNode(BaseNode):
@@ -49,7 +48,10 @@ class DiscreteNode(BaseNode):
                 tight_form = conditional_dist.to_dict("tight")
 
                 for comb, probs in zip(tight_form["index"], tight_form["data"]):
-                    cprob[str([str(i) for i in comb])] = probs
+                    if len(parents) > 1:
+                        cprob[str([str(i) for i in comb])] = probs
+                    else:
+                        cprob[f"['{comb}']"] = probs
             return {"cprob": cprob, "vals": vals}
 
         pool = ThreadPoolExecutor(num_workers)
@@ -57,7 +59,14 @@ class DiscreteNode(BaseNode):
         return future.result()
 
     @staticmethod
-    def choose(node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
+    def get_dist(node_info, pvals):
+        if not pvals:
+            return node_info["cprob"]
+        else:
+            # noinspection PyTypeChecker
+            return node_info["cprob"][str(pvals)]
+
+    def choose(self, node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
         """
         Return value from discrete node
         params:
@@ -67,11 +76,9 @@ class DiscreteNode(BaseNode):
         rindex = 0
         random.seed()
         vals = node_info["vals"]
-        if not pvals:
-            dist = node_info["cprob"]
-        else:
-            # noinspection PyTypeChecker
-            dist = node_info["cprob"][str(pvals)]
+
+        dist = self.get_dist(node_info, pvals)
+
         lbound = 0
         ubound = 0
         rand = random.random()
