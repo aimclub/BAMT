@@ -91,7 +91,7 @@ Next, a network instance is created and training (structure and parameters) is p
 .. code-block:: python
 
    bn = Nets.HybridBN(has_logit=False, use_mixture=True)
-   bn.add_edges(discretized_data, scoring_function=('K2',K2Score))
+   bn.add_edges(discretized_data)
    bn.fit_parameters(data)
 
 
@@ -99,7 +99,7 @@ Next, a network instance is created and training (structure and parameters) is p
 Examples & Tutorials
 ^^^^^^^^^^^^^^^^^^^^^^
 
-More examples can be found in `tutorials <https://github.com/ITMO-NSS-team/BAMT/tree/master/tutorials>`__  and `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>`__.
+More examples can be found in `Documentation <https://bamt.readthedocs.io/en/latest/examples/learn_save.html>`__.
 
 Publications about BAMT
 ^^^^^^^^^^^^^^^^^^^^^^^

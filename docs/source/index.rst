@@ -88,6 +88,13 @@ generating synthetic data, assessing edges strength e.t.c.
     examples/add_ml_models_to_nodes.rst
     examples/composite_network_example.rst
 
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Tutorials
+
+    tutorials/tutorials_gists.rst
+
 
 
 Indices and tables
