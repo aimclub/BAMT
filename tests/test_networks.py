@@ -55,9 +55,7 @@ class TestCaseBase(unittest.TestCase):
             n_bins=5, encode="ordinal", strategy="quantile"
         )
 
-        p = bp.Preprocessor(
-            [("encoder", encoder), ("discretizer", discretizer)]
-        )
+        p = bp.Preprocessor([("encoder", encoder), ("discretizer", discretizer)])
 
         hack_data.dropna(inplace=True)
         hack_data.reset_index(inplace=True, drop=True)

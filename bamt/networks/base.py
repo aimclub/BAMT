@@ -820,7 +820,7 @@ class BaseNetwork(object):
             plot_(
                 plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
             )
-    
+
     def fill_gaps(self, df: pd.DataFrame, **kwargs):
         """
         Fill NaNs with sampled values.
