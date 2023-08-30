@@ -1,5 +1,6 @@
 import json
 from random import choice
+import pkg_resources
 
 from catboost import CatBoostClassifier, CatBoostRegressor
 from sklearn.cluster import KMeans
@@ -34,6 +35,11 @@ except ModuleNotFoundError:
     logger_network.info(
         "Install lightgbm (e.g. pip install lightgbm) to enable LGBMRegressor and LGBMClassifier"
     )
+
+lgbm_params = "lgbm_params.json"
+models_repo = "models_repo.json"
+lgbm_params_path = pkg_resources.resource_filename(__name__, lgbm_params)
+models_repo_path = pkg_resources.resource_filename(__name__, models_repo)
 
 
 class MlModels:
@@ -96,7 +102,7 @@ class MlModels:
             self.operations_by_types["lgbm"] = "LGBMClassifier"
 
         if LGBMClassifier and LGBMRegressor is not None:
-            with open("bamt/utils/composite_utils/lgbm_params.json") as file:
+            with open(lgbm_params_path) as file:
                 self.lgbm_dict = json.load(file)
 
     def get_model_by_children_type(self, node: CompositeNode):
@@ -106,7 +112,7 @@ class MlModels:
         else:
             type_model = "class"
         forbidden_tags = ["non-default", "expensive"]
-        with open("bamt/utils/composite_utils/models_repo.json", "r") as f:
+        with open(models_repo_path, "r") as f:
             models_json = json.load(f)
             models = models_json["operations"]
             if LGBMClassifier and LGBMRegressor is not None:
