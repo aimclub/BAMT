@@ -84,14 +84,14 @@ Then the necessary classes are imported from the library:
 
 .. code-block:: python
 
-   import bamt.networks as Nets
+   from bamt.networks.hybrid_bn import HybridBN
 
 Next, a network instance is created and training (structure and parameters) is performed:
 
 .. code-block:: python
 
-   bn = Nets.HybridBN(has_logit=False, use_mixture=True)
-   bn.add_edges(discretized_data)
+   bn = HybridBN(has_logit=False, use_mixture=True)
+   bn.add_edges(preprocessed_data)
    bn.fit_parameters(data)
 
 
