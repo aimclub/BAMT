@@ -159,7 +159,7 @@ class ConditionalGaussianNode(BaseNode):
         """
 
         cond_mean, variance = self.get_dist(node_info, pvals)
-        if not cond_mean or not variance:
+        if np.isnan(cond_mean) or np.isnan(variance):
             return np.nan
 
         return random.gauss(cond_mean, variance)
