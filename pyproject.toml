@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "BAMT"
-version = "1.1.44"
+version = "1.2.01"
 description = "data modeling and analysis tool based on Bayesian networks"
 authors = ["Roman Netrogolov <romius2001@gmail.com>",
     "Irina Deeva <iriny.deeva@gmail.com>",

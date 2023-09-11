@@ -103,8 +103,15 @@ class BaseNetwork(object):
         elif ["Abstract"] in self._allowed_dtypes:
             return None
         self.descriptor = descriptor
-        # LEVEL 1
         worker_1 = builders.builders_base.VerticesDefiner(descriptor, regressor=None)
+
+        # first stage
+        worker_1.skeleton["V"] = worker_1.vertices
+        # second stage
+        worker_1.overwrite_vertex(has_logit=False,
+                                  use_mixture=self.use_mixture,
+                                  classifier=None,
+                                  regressor=None)
         self.nodes = worker_1.vertices
 
     def add_edges(
@@ -317,35 +324,43 @@ class BaseNetwork(object):
         info: Optional[Dict] = None,
         nodes: Optional[List] = None,
         edges: Optional[List[Sequence[str]]] = None,
-        overwrite: bool = True,
     ):
         """
         Function to set structure manually
         info: Descriptor
         nodes, edges:
-        overwrite: use 2nd stage of defining or not
         """
         if nodes and (info or (self.descriptor["types"] and self.descriptor["signs"])):
+            if any("mixture" in node.type.lower() for node in nodes) and not self.use_mixture:
+                logger_network.error("Compatibility error: use mixture.")
+                return
+            if any("logit" in node.type.lower() for node in nodes) and not self.has_logit:
+                logger_network.error("Compatibility error: has logit.")
+                return
             self.set_nodes(nodes=nodes, info=info)
-        if edges:
-            self.set_edges(edges=edges)
-            if overwrite:
-                builder = builders.builders_base.VerticesDefiner(
-                    descriptor=self.descriptor, regressor=None
-                )  # init worker
-                builder.skeleton["V"] = builder.vertices  # 1 stage
+        if isinstance(edges, list):
+            if not self.nodes:
+                logger_network.error("Nodes/info detection failed.")
+                return
+
+            builder = builders.builders_base.VerticesDefiner(
+                descriptor=self.descriptor, regressor=None
+            )  # init worker
+            builder.skeleton["V"] = builder.vertices  # 1 stage
+            if len(edges) != 0:
+                # set edges and register members
+                self.set_edges(edges=edges)
                 builder.skeleton["E"] = self.edges
                 builder.get_family()
-                if self.edges:
-                    builder.overwrite_vertex(
-                        has_logit=self.has_logit,
-                        use_mixture=self.use_mixture,
-                        classifier=None,
-                        regressor=None,
-                    )
-                    self.set_nodes(nodes=builder.skeleton["V"])
-                else:
-                    logger_network.error("Empty set of edges")
+
+            builder.overwrite_vertex(
+                has_logit=self.has_logit,
+                use_mixture=self.use_mixture,
+                classifier=None,
+                regressor=None,
+            )
+
+            self.set_nodes(nodes=builder.skeleton["V"])
 
     def _param_validation(self, params: Dict[str, Any]) -> bool:
         if all(self[i] for i in params.keys()):
@@ -438,17 +453,6 @@ class BaseNetwork(object):
         Function to load the whole BN from json file
         :param input_dir: input directory
         """
-
-        class CompatibilityError(Exception):
-            def __init__(self, type: str):
-                """
-                Args:
-                    type: either use_mixture or has_logit is wrong
-                """
-                super().__init__(
-                    f"This parameter is not the same as father's parameter: {type}"
-                )
-
         with open(input_dir) as f:
             input_dict = json.load(f)
 
@@ -467,7 +471,9 @@ class BaseNetwork(object):
                         list(node_keys.keys()) == ["covars", "mean", "coef"]
                         for node_keys in node_data["hybcprob"].values()
                     ):
-                        raise CompatibilityError("use_mixture")
+                        logger_network.error(
+                            f"This crucial parameter is not the same as father's parameter: use_mixture.")
+                        return
 
         # check if edges before and after are the same.They can be different in
         # the case when user sets forbidden edges.
@@ -476,7 +482,9 @@ class BaseNetwork(object):
                 edges_before == [edges_after[0], edges_after[1]]
                 for edges_before, edges_after in zip(input_dict["edges"], self.edges)
             ):
-                raise CompatibilityError("has_logit")
+                logger_network.error(
+                    f"This crucial parameter is not the same as father's parameter: has_logit.")
+                return
 
         self.set_parameters(parameters=input_dict["parameters"])
         str_keys = list(input_dict["weights"].keys())
