@@ -539,7 +539,7 @@ class BaseNetwork(object):
         evidence: Optional[Dict[str, Union[str, int, float]]] = None,
         as_df: bool = True,
         predict: bool = False,
-        parall_count: int = -1,
+        parall_count: int = 1,
         filter_neg: bool = True,
     ) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
