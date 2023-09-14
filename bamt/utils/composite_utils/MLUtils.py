@@ -1,7 +1,9 @@
 import json
+from typing import Union
 from random import choice
 
 from catboost import CatBoostClassifier, CatBoostRegressor
+from golem.core.dag.graph_node import GraphNode
 from sklearn.cluster import KMeans
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -99,7 +101,7 @@ class MlModels:
             with open("bamt/utils/composite_utils/lgbm_params.json") as file:
                 self.lgbm_dict = json.load(file)
 
-    def get_model_by_children_type(self, node: CompositeNode):
+    def get_model_by_children_type(self, node: Union[GraphNode, CompositeNode]):
         candidates = []
         if node.content["type"] == "cont":
             type_model = "regr"

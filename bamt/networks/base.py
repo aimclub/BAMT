@@ -44,6 +44,7 @@ class BaseNetwork(object):
         edges: a list of edges
         distributions: dict
         """
+        self.sf_name = None
         self.type = "Abstract"
         self._allowed_dtypes = ["Abstract"]
         self.nodes = []
@@ -127,7 +128,7 @@ class BaseNetwork(object):
     ):
         """
         Base function for Structure learning
-        scoring_function: tuple with the following format (NAME, scoring_function) or (NAME,)
+        scoring_function: tuple with the following format (NAME, scoring_function) or (NAME, )
         Params:
         init_edges: list of tuples, a graph to start learning with
         remove_init_edges: allows changes in a model defined by user
@@ -249,7 +250,7 @@ class BaseNetwork(object):
                         z.append(list(discretized_data[other_parent].values))
                     ls_true = np.average(
                         information_mutual_conditional(
-                            X=y, Y=x, Z=z, cartesian_product=True
+                            x=y, y=x, z=z, cartesian_product=True
                         )
                     )
                     entropy = (
@@ -408,7 +409,7 @@ class BaseNetwork(object):
                     )
 
     @staticmethod
-    def _save_to_file(outdir: str, data: dict):
+    def _save_to_file(outdir: str, data: Union[dict, list]):
         """
         Function to save data to json file
         :param outdir: output directory
@@ -547,7 +548,7 @@ class BaseNetwork(object):
         evidence: Optional[Dict[str, Union[str, int, float]]] = None,
         as_df: bool = True,
         predict: bool = False,
-        parall_count: int = -1,
+        parall_count: int = 1,
         filter_neg: bool = True,
     ) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
