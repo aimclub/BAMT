@@ -79,6 +79,7 @@ class GraphAnalyzer(object):
     """
     Object to analyze DAG.
     """
+
     def __init__(self, bn):
         self.bn = bn
 

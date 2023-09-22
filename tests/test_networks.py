@@ -14,7 +14,6 @@ from bamt.networks.composite_bn import CompositeBN
 from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.gaussian_node import GaussianNode
-from bamt.nodes.logit_node import LogitNode
 from bamt.utils.MathUtils import precision_recall
 from bamt.utils.composite_utils.CompositeGeneticOperators import (
     custom_mutation_add_model,
@@ -55,9 +54,7 @@ class TestCaseBase(unittest.TestCase):
             n_bins=5, encode="ordinal", strategy="quantile"
         )
 
-        p = bp.Preprocessor(
-            [("encoder", encoder), ("discretizer", discretizer)]
-        )
+        p = bp.Preprocessor([("encoder", encoder), ("discretizer", discretizer)])
 
         hack_data.dropna(inplace=True)
         hack_data.reset_index(inplace=True, drop=True)
@@ -171,7 +168,8 @@ class TestBaseNetwork(TestCaseBase):
 
     def test_save_params(self):
         self.bn.distributions = {"AAA": "BBB"}
-        self.assertIsNone(self.bn.save_params("out.txt"))
+        with self.assertRaises(TypeError):
+            self.bn.save_params("out.txt")
 
         self.assertTrue(self.bn.save_params("out.json"))
 
@@ -182,7 +180,10 @@ class TestBaseNetwork(TestCaseBase):
 
     def test_save_structure(self):
         self.bn.edges = self.edges
-        self.assertIsNone(self.bn.save_structure("out.txt"))
+
+        with self.assertRaises(TypeError):
+            self.bn.save_structure("out.txt")
+
         self.assertTrue(self.bn.save_structure("out.json"))
         self.assertIsFile("out.json")
         f = json.load(open("out.json"))
@@ -195,19 +196,20 @@ class TestBaseNetwork(TestCaseBase):
         pass
 
     def test_fit_parameters(self):
-        from bamt.networks.base import STORAGE
-
-        # here we test only initialization of the folder
-        self.bn.has_logit = True
-        self.bn.nodes = [LogitNode(name="Node0")]
-
-        try:
-            self.bn.fit_parameters(data=pd.DataFrame())
-        except KeyError:
-            pass
-
-        self.assertIsDir(STORAGE)
-        self.assertIsDir(pl.Path(STORAGE).joinpath("0"))
+        """
+        General test, the full one is in the tests of each node.
+        It is frozen for a while.
+        """
+        pass
+        # bn = BaseNetwork()
+        # shape = 500
+        # data = pd.DataFrame({"Node0": np.random.poisson(5, shape),
+        #                      "Node1": np.random.choice(["cat1", "cat2", "cat3"], shape),
+        #                      "Node2": np.random.normal(1.5, 4, shape)})
+        #
+        #
+        # bn.set_structure(info=self.descriptor, nodes=self.nodes, edges=self.edges)
+        # bn.get_info(as_df=False)
 
     def test_joblib_pathsave(self):
         hack_data = self.prepare_bn_and_data()

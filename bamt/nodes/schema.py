@@ -16,18 +16,18 @@ class MixtureGaussianParams(TypedDict):
 
 class GaussianParams(TypedDict):
     regressor: str
-    regressor_obj: Optional[Union[str, bool, bytes]]
+    regressor_obj: Optional[object]
     variance: Union[ndarray, float]
     mean: Union[ndarray, float]
-    serialization: str
+    serialization: Optional[str]
 
 
 class CondGaussParams(TypedDict):
     regressor: str
-    regressor_obj: Optional[Union[str, bool, bytes]]
+    regressor_obj: Optional[object]
     variance: Union[ndarray, float]
     mean: Union[ndarray, float]
-    serialization: str
+    serialization: Optional[str]
 
 
 class CondMixtureGaussParams(TypedDict):
@@ -39,8 +39,8 @@ class CondMixtureGaussParams(TypedDict):
 class LogitParams(TypedDict):
     classes: List[int]
     classifier: str
-    classifier_obj: Optional[Union[str, bool, bytes]]
-    serialization: str
+    classifier_obj: Optional[object]
+    serialization: Optional[str]
 
 
 class HybcprobParams(TypedDict):

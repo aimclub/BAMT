@@ -1,6 +1,6 @@
 import json
-from typing import Union
 from random import choice
+from typing import Union
 
 from catboost import CatBoostClassifier, CatBoostRegressor
 from golem.core.dag.graph_node import GraphNode
@@ -24,7 +24,6 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from xgboost import XGBClassifier, XGBRegressor
 
-from bamt.log import logger_network
 from .CompositeModel import CompositeNode
 
 # Try to import LGBMRegressor and LGBMClassifier from lightgbm, if not available set to None
@@ -33,9 +32,6 @@ try:
 except ModuleNotFoundError:
     LGBMRegressor = None
     LGBMClassifier = None
-    logger_network.info(
-        "Install lightgbm (e.g. pip install lightgbm) to enable LGBMRegressor and LGBMClassifier"
-    )
 
 
 class MlModels:

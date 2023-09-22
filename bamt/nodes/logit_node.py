@@ -1,13 +1,10 @@
-import pickle
 import random
 from typing import Optional, List, Union
 
-import joblib
 import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
 
-from bamt.log import logger_nodes
 from .base import BaseNode
 from .schema import LogitParams
 
@@ -27,44 +24,19 @@ class LogitNode(BaseNode):
         self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
-        model_ser = None
-        path = None
-
-        parents = self.disc_parents + self.cont_parents
+        parents = self.cont_parents + self.disc_parents
         self.classifier.fit(X=data[parents].values, y=data[self.name].values, **kwargs)
-        serialization = self.choose_serialization(self.classifier)
 
-        if serialization == "pickle":
-            ex_b = pickle.dumps(self.classifier, protocol=4)
-            # model_ser = ex_b.decode('latin1').replace('\'', '\"')
-            model_ser = ex_b.decode("latin1")
-            serialization_name = "pickle"
-        else:
-            logger_nodes.warning(
-                f"{self.name}::Pickle failed. BAMT will use Joblib. | "
-                + str(serialization.args[0])
-            )
-
-            path = self.get_path_joblib(self.name, specific=self.name.replace(" ", "_"))
-
-            joblib.dump(self.classifier, path, compress=True, protocol=4)
-            serialization_name = "joblib"
         return {
             "classes": list(self.classifier.classes_),
-            "classifier_obj": path or model_ser,
+            "classifier_obj": self.classifier,
             "classifier": type(self.classifier).__name__,
-            "serialization": serialization_name,
+            "serialization": None,
         }
 
     def get_dist(self, node_info, pvals):
         if len(node_info["classes"]) > 1:
-            if node_info["serialization"] == "joblib":
-                model = joblib.load(node_info["classifier_obj"])
-            else:
-                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
-                a = node_info["classifier_obj"].encode("latin1")
-                model = pickle.loads(a)
-
+            model = node_info["classifier_obj"]
             if type(self).__name__ == "CompositeDiscreteNode":
                 pvals = [int(item) if isinstance(item, str) else item for item in pvals]
 
@@ -110,13 +82,7 @@ class LogitNode(BaseNode):
         """
 
         if len(node_info["classes"]) > 1:
-            if node_info["serialization"] == "joblib":
-                model = joblib.load(node_info["classifier_obj"])
-            else:
-                # str_model = node_info["classifier_obj"].decode('latin1').replace('\'', '\"')
-                a = node_info["classifier_obj"].encode("latin1")
-                model = pickle.loads(a)
-
+            model = node_info["classifier_obj"]
             pred = model.predict(np.array(pvals).reshape(1, -1))[0]
 
             return str(pred)

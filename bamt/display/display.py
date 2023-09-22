@@ -39,11 +39,11 @@ class Display(object):
         """
         g = nx.DiGraph()
         network_params = dict(
-            height=kwargs.get('height', "800px"),
-            width=kwargs.get('width', "100%"),
-            notebook=kwargs.get('notebook', True),
-            directed=kwargs.get('directed', nx.is_directed(g)),
-            layout=kwargs.get('layout', "hierarchical")
+            height=kwargs.get("height", "800px"),
+            width=kwargs.get("width", "100%"),
+            notebook=kwargs.get("notebook", True),
+            directed=kwargs.get("directed", nx.is_directed(g)),
+            layout=kwargs.get("layout", "hierarchical"),
         )
 
         g.add_nodes_from(nodes)
