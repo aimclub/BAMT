@@ -13,9 +13,9 @@ To initialize a ``HybridBN`` object, you can use the following code:
 
 .. code-block:: python
 
-    from  bamt.networks.hybrid_bn import HybridBN
+    import bamt.networks as networks
     
-    bn = HybridBN(has_logit=True, use_mixture=True)
+    bn = networks.HybridBN(has_logit=True, use_mixture=True)
 
 HybridBN has two additional parameters ``has_logit`` and ``use_mixture``.
 ``has_logit`` is used to determine whether to use logit nodes. Logit nodes use machine learning algorithms to represent variable.

@@ -8,7 +8,7 @@ Used imports:
     from bamt.preprocessors import Preprocessor
     import pandas as pd
     from sklearn import preprocessing as pp
-    from bamt.networks.hybrid_bn import HybridBN
+    from bamt.networks import HybridBN
 
 
 Let's start with data loading and preprocessing: 

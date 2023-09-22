@@ -13,9 +13,9 @@ To initialize a ``CompositeBN`` object, you can use the following code:
 
 .. code-block:: python
 
-    from  bamt.networks.composite_bn import CompositeBN
+    import bamt.networks as networks
 
-    bn = CompositeBN()
+    bn = networks.CompositeBN()
 
 
 Data Preprocessing

@@ -50,7 +50,7 @@ Then perform structure learning as usual, but use ``ps`` as ``white_list``:
 
 .. code-block:: python
 
-    bn = Nets.ContinuousBN()
+    bn = networks.ContinuousBN()
 
     bn.add_nodes(descriptor=info)
 

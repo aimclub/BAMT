@@ -27,7 +27,7 @@ For Example:
 
 .. code-block:: python
 
-    from bamt.networks.discrete_bn import DiscreteBN
+    import bamt.networks as networks
     import bamt.preprocessors as pp
     import pandas as pd
 
@@ -38,7 +38,7 @@ For Example:
     p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
     discretized_data, est = p.apply(asia)
 
-    bn = DiscreteBN()
+    bn = networks.DiscreteBN()
     info = p.info
     info
 

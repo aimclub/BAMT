@@ -13,9 +13,9 @@ To initialize a ``ContinuousBN`` object, you can use the following code:
 
 .. code-block:: python
 
-    from bamt.networks.continuous_bn import ContinuousBN
+    import bamt.networks as networks
     
-    bn = ContinuousBN(use_mixture=True)
+    bn = networks.ContinuousBN(use_mixture=True)
 
 ContinuousBN has an additional parameter ``use_mixture``. 
 It is used to determine whether to use mixuters of Gaussian distributions  to represent the conditional distribution of continuous variables.
