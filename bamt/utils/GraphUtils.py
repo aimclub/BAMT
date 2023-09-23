@@ -43,6 +43,7 @@ def nodes_signs(nodes_types: dict, data: DataFrame) -> Dict[str, str]:
 
     Args:
         data (pd.DataFrame): input dataset
+        nodes_types (dict): dict with nodes_types
 
     Returns:
         dict: output dictionary where 'key' - node name and 'value' - sign of data

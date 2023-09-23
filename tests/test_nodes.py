@@ -4,8 +4,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from bamt.nodes import *
 from bamt.networks.hybrid_bn import HybridBN
+from bamt.nodes import *
 
 logging.getLogger("nodes").setLevel(logging.CRITICAL)
 

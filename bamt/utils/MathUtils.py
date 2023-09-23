@@ -154,7 +154,6 @@ def get_proximity_matrix(df, proximity_metric) -> pd.DataFrame:
 
     Args:
         df (DataFrame): data
-        df_coded (DataFrame): same data, but coded
         proximity_metric (str): 'MI' or 'corr'
 
     Returns:

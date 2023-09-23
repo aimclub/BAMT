@@ -1,8 +1,11 @@
 import json
 from random import choice
+
 import pkg_resources
+from typing import Union
 
 from catboost import CatBoostClassifier, CatBoostRegressor
+from golem.core.dag.graph_node import GraphNode
 from sklearn.cluster import KMeans
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -23,7 +26,6 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from xgboost import XGBClassifier, XGBRegressor
 
-from bamt.log import logger_network
 from .CompositeModel import CompositeNode
 
 # Try to import LGBMRegressor and LGBMClassifier from lightgbm, if not available set to None
@@ -32,9 +34,6 @@ try:
 except ModuleNotFoundError:
     LGBMRegressor = None
     LGBMClassifier = None
-    logger_network.info(
-        "Install lightgbm (e.g. pip install lightgbm) to enable LGBMRegressor and LGBMClassifier"
-    )
 
 lgbm_params = "lgbm_params.json"
 models_repo = "models_repo.json"
@@ -105,7 +104,7 @@ class MlModels:
             with open(lgbm_params_path) as file:
                 self.lgbm_dict = json.load(file)
 
-    def get_model_by_children_type(self, node: CompositeNode):
+    def get_model_by_children_type(self, node: Union[GraphNode, CompositeNode]):
         candidates = []
         if node.content["type"] == "cont":
             type_model = "regr"

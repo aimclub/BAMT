@@ -1,14 +1,12 @@
 import itertools
-import pickle
 import random
 from typing import Optional, List, Union, Dict
 
-import joblib
 import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
+from sklearn.base import clone
 
-from bamt.log import logger_nodes
 from .base import BaseNode
 from .schema import LogitParams
 
@@ -49,7 +47,7 @@ class ConditionalLogitNode(BaseNode):
             classes = [np.nan]
             key_comb = [str(x) for x in comb]
             if new_data.shape[0] != 0:
-                model = self.classifier
+                model = clone(self.classifier)
                 values = set(new_data[self.name])
                 if len(values) > 1:
                     model.fit(
@@ -57,36 +55,12 @@ class ConditionalLogitNode(BaseNode):
                         y=new_data[self.name].values,
                     )
                     classes = list(model.classes_)
-                    serialization = self.choose_serialization(model)
-
-                    if serialization == "pickle":
-                        ex_b = pickle.dumps(self.classifier, protocol=4)
-                        model_ser = ex_b.decode("latin1")
-
-                        # model_ser = pickle.dumps(self.classifier, protocol=4)
-                        hycprob[str(key_comb)] = {
-                            "classes": classes,
-                            "classifier_obj": model_ser,
-                            "classifier": type(self.classifier).__name__,
-                            "serialization": "pickle",
-                        }
-                    else:
-                        logger_nodes.warning(
-                            f"{self.name} {comb}::Pickle failed. BAMT will use Joblib. | "
-                            + str(serialization.args[0])
-                        )
-
-                        path = self.get_path_joblib(
-                            node_name=self.name.replace(" ", "_"), specific=comb
-                        )
-                        joblib.dump(model, path, compress=True, protocol=4)
-
-                        hycprob[str(key_comb)] = {
-                            "classes": classes,
-                            "classifier_obj": path,
-                            "classifier": type(self.classifier).__name__,
-                            "serialization": "joblib",
-                        }
+                    hycprob[str(key_comb)] = {
+                        "classes": classes,
+                        "classifier_obj": model,
+                        "classifier": type(self.classifier).__name__,
+                        "serialization": None,
+                    }
                 else:
                     classes = list(values)
                     hycprob[str(key_comb)] = {
@@ -122,13 +96,7 @@ class ConditionalLogitNode(BaseNode):
 
         # JOBLIB
         if len(lgdistribution["classes"]) > 1:
-            if lgdistribution["serialization"] == "joblib":
-                model = joblib.load(lgdistribution["classifier_obj"])
-            else:
-                # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
-                bytes_model = lgdistribution["classifier_obj"].encode("latin1")
-                model = pickle.loads(bytes_model)
-
+            model = lgdistribution["classifier_obj"]
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
             if not kwargs.get("inner", False):
@@ -195,13 +163,7 @@ class ConditionalLogitNode(BaseNode):
 
         # JOBLIB
         if len(lgdistribution["classes"]) > 1:
-            if lgdistribution["serialization"] == "joblib":
-                model = joblib.load(lgdistribution["classifier_obj"])
-            else:
-                # str_model = lgdistribution["classifier_obj"].decode('latin1').replace('\'', '\"')
-                bytes_model = lgdistribution["classifier_obj"].encode("latin1")
-                model = pickle.loads(bytes_model)
-
+            model = lgdistribution["classifier_obj"]
             pred = model.predict(np.array(lgpvals).reshape(1, -1))[0]
 
             return str(pred)

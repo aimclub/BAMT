@@ -1,5 +1,5 @@
 import json
-import os
+import os.path as path
 import random
 import re
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
@@ -9,14 +9,12 @@ import pandas as pd
 from joblib import Parallel, delayed
 from pgmpy.estimators import K2Score
 from sklearn.preprocessing import LabelEncoder
-
 from tqdm import tqdm
 
 import bamt.builders as builders
 from bamt.builders.builders_base import ParamDict
 from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.builders.hc_builder import HCStructureBuilder
-from bamt.config import config
 from bamt.display import plot_, get_info_
 from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
     information_mutual,
@@ -25,12 +23,7 @@ from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
 )
 from bamt.log import logger_network
 from bamt.nodes.base import BaseNode
-from bamt.utils import GraphUtils
-
-
-STORAGE = config.get(
-    "NODES", "models_storage", fallback="models_storage is not defined"
-)
+from bamt.utils import GraphUtils, serialization_utils, check_utils
 
 
 class BaseNetwork(object):
@@ -44,6 +37,7 @@ class BaseNetwork(object):
         edges: a list of edges
         distributions: dict
         """
+        self.sf_name = None
         self.type = "Abstract"
         self._allowed_dtypes = ["Abstract"]
         self.nodes = []
@@ -103,8 +97,17 @@ class BaseNetwork(object):
         elif ["Abstract"] in self._allowed_dtypes:
             return None
         self.descriptor = descriptor
-        # LEVEL 1
         worker_1 = builders.builders_base.VerticesDefiner(descriptor, regressor=None)
+
+        # first stage
+        worker_1.skeleton["V"] = worker_1.vertices
+        # second stage
+        worker_1.overwrite_vertex(
+            has_logit=False,
+            use_mixture=self.use_mixture,
+            classifier=None,
+            regressor=None,
+        )
         self.nodes = worker_1.vertices
 
     def add_edges(
@@ -120,16 +123,14 @@ class BaseNetwork(object):
     ):
         """
         Base function for Structure learning
-        scoring_function: tuple with the following format (NAME, scoring_function) or (NAME,)
+        scoring_function: tuple with the following format (NAME, scoring_function) or (NAME, )
         Params:
         init_edges: list of tuples, a graph to start learning with
         remove_init_edges: allows changes in a model defined by user
         white_list: list of allowed edges
         """
-        if not self.has_logit and classifier:
-            logger_network.error(
-                "Classifiers dict will be ignored since logit nodes are forbidden."
-            )
+        if not self.has_logit and check_utils.is_model(classifier):
+            logger_network.error("Classifiers dict with use_logit=False is forbidden.")
             return None
 
         # params validation
@@ -242,7 +243,7 @@ class BaseNetwork(object):
                         z.append(list(discretized_data[other_parent].values))
                     ls_true = np.average(
                         information_mutual_conditional(
-                            X=y, Y=x, Z=z, cartesian_product=True
+                            x=y, y=x, z=z, cartesian_product=True
                         )
                     )
                     entropy = (
@@ -317,35 +318,49 @@ class BaseNetwork(object):
         info: Optional[Dict] = None,
         nodes: Optional[List] = None,
         edges: Optional[List[Sequence[str]]] = None,
-        overwrite: bool = True,
     ):
         """
         Function to set structure manually
         info: Descriptor
         nodes, edges:
-        overwrite: use 2nd stage of defining or not
         """
         if nodes and (info or (self.descriptor["types"] and self.descriptor["signs"])):
+            if (
+                any("mixture" in node.type.lower() for node in nodes)
+                and not self.use_mixture
+            ):
+                logger_network.error("Compatibility error: use mixture.")
+                return
+            if (
+                any("logit" in node.type.lower() for node in nodes)
+                and not self.has_logit
+            ):
+                logger_network.error("Compatibility error: has logit.")
+                return
             self.set_nodes(nodes=nodes, info=info)
-        if edges:
-            self.set_edges(edges=edges)
-            if overwrite:
-                builder = builders.builders_base.VerticesDefiner(
-                    descriptor=self.descriptor, regressor=None
-                )  # init worker
-                builder.skeleton["V"] = builder.vertices  # 1 stage
+        if isinstance(edges, list):
+            if not self.nodes:
+                logger_network.error("Nodes/info detection failed.")
+                return
+
+            builder = builders.builders_base.VerticesDefiner(
+                descriptor=self.descriptor, regressor=None
+            )  # init worker
+            builder.skeleton["V"] = builder.vertices  # 1 stage
+            if len(edges) != 0:
+                # set edges and register members
+                self.set_edges(edges=edges)
                 builder.skeleton["E"] = self.edges
                 builder.get_family()
-                if self.edges:
-                    builder.overwrite_vertex(
-                        has_logit=self.has_logit,
-                        use_mixture=self.use_mixture,
-                        classifier=None,
-                        regressor=None,
-                    )
-                    self.set_nodes(nodes=builder.skeleton["V"])
-                else:
-                    logger_network.error("Empty set of edges")
+
+            builder.overwrite_vertex(
+                has_logit=self.has_logit,
+                use_mixture=self.use_mixture,
+                classifier=None,
+                regressor=None,
+            )
+
+            self.set_nodes(nodes=builder.skeleton["V"])
 
     def _param_validation(self, params: Dict[str, Any]) -> bool:
         if all(self[i] for i in params.keys()):
@@ -391,16 +406,29 @@ class BaseNetwork(object):
                     self[node].type = re.sub(
                         r"\([\s\S]*\)", f"({model})", self[node].type
                     )
+            else:
+                if data["serialization"] is not None:
+                    regressor = data.get("regressor", None)
+                    classifier = data.get("classifier", None)
+                    self[node].type = re.sub(
+                        r"\([\s\S]*\)", f"({regressor or classifier})", self[node].type
+                    )
+                else:
+                    self[node].type = re.sub(
+                        r"\([\s\S]*\)", f"({None})", self[node].type
+                    )
 
     @staticmethod
-    def _save_to_file(outdir: str, data: dict):
+    def _save_to_file(outdir: str, data: Union[dict, list]):
         """
         Function to save data to json file
         :param outdir: output directory
         :param data: dictionary to be saved
         """
         if not outdir.endswith(".json"):
-            return None
+            raise TypeError(
+                f"Unappropriated file format. Expected: .json. Got: {path.splitext(outdir)[-1]}"
+            )
         with open(outdir, "w+") as out:
             json.dump(data, out)
         return True
@@ -419,36 +447,57 @@ class BaseNetwork(object):
         """
         return self._save_to_file(outdir, self.edges)
 
-    def save(self, outdir: str):
+    def save(self, bn_name, models_dir: str = "models_dir"):
         """
-        Function to save the whole BN to json file
-        :param outdir: output directory
+        Function to save the whole BN to json file.
+
+        :param bn_name: unique name of bn user want to save. It will be used as file name (e.g. bn_name.json).
+        :param models_dir: if picklization is broken, joblib will serialize models in compressed files
+        in models directory.
+
+        :return: saving status.
         """
+        distributions = self.distributions.copy()
         new_weights = {str(key): self.weights[key] for key in self.weights}
+
+        to_serialize = {}
+        # separate logit and gaussian nodes from distributions to serialize bn's models
+        for node_name in self.distributions.keys():
+            if (
+                "Gaussian" in self[node_name].type
+                or "Logit" in self[node_name].type
+                or "ConditionalLogit" in self[node_name].type
+                or "ConditionalGaussian" in self[node_name].type
+            ):
+                to_serialize[node_name] = [
+                    self[node_name].type,
+                    self.distributions[node_name],
+                ]
+
+        serializer = serialization_utils.ModelsSerializer(
+            bn_name=bn_name, models_dir=models_dir
+        )
+        serialized_dist = serializer.serialize(to_serialize)
+
+        for serialized_node in serialized_dist.keys():
+            distributions[serialized_node] = serialized_dist[serialized_node]
+
         outdict = {
             "info": self.descriptor,
             "edges": self.edges,
-            "parameters": self.distributions,
+            "parameters": distributions,
             "weights": new_weights,
         }
-        return self._save_to_file(outdir, outdict)
+        return self._save_to_file(bn_name, outdict)
 
-    def load(self, input_dir: str):
+    def load(self, input_dir: str, models_dir: str = "/"):
         """
-        Function to load the whole BN from json file
-        :param input_dir: input directory
+        Function to load the whole BN from json file.
+        :param input_dir: input path to json file with bn.
+        :param models_dir: directory with models.
+
+        :return: loading status.
         """
-
-        class CompatibilityError(Exception):
-            def __init__(self, type: str):
-                """
-                Args:
-                    type: either use_mixture or has_logit is wrong
-                """
-                super().__init__(
-                    f"This parameter is not the same as father's parameter: {type}"
-                )
-
         with open(input_dir) as f:
             input_dict = json.load(f)
 
@@ -467,7 +516,10 @@ class BaseNetwork(object):
                         list(node_keys.keys()) == ["covars", "mean", "coef"]
                         for node_keys in node_data["hybcprob"].values()
                     ):
-                        raise CompatibilityError("use_mixture")
+                        logger_network.error(
+                            f"This crucial parameter is not the same as father's parameter: use_mixture."
+                        )
+                        return
 
         # check if edges before and after are the same.They can be different in
         # the case when user sets forbidden edges.
@@ -476,33 +528,58 @@ class BaseNetwork(object):
                 edges_before == [edges_after[0], edges_after[1]]
                 for edges_before, edges_after in zip(input_dict["edges"], self.edges)
             ):
-                raise CompatibilityError("has_logit")
+                logger_network.error(
+                    f"This crucial parameter is not the same as father's parameter: has_logit."
+                )
+                return
 
-        self.set_parameters(parameters=input_dict["parameters"])
+        deserializer = serialization_utils.Deserializer(models_dir)
+
+        to_deserialize = {}
+        # separate logit and gaussian nodes from distributions to deserialize bn's models
+        for node_name in input_dict["parameters"].keys():
+            if (
+                "Gaussian" in self[node_name].type
+                or "Logit" in self[node_name].type
+                or "ConditionalLogit" in self[node_name].type
+                or "ConditionalGaussian" in self[node_name].type
+            ):
+                if input_dict["parameters"][node_name].get("serialization", False):
+                    to_deserialize[node_name] = [
+                        self[node_name].type,
+                        input_dict["parameters"][node_name],
+                    ]
+                elif "hybcprob" in input_dict["parameters"][node_name].keys():
+                    to_deserialize[node_name] = [
+                        self[node_name].type,
+                        input_dict["parameters"][node_name],
+                    ]
+                else:
+                    continue
+
+        deserialized_parameters = deserializer.apply(to_deserialize)
+        distributions = input_dict["parameters"].copy()
+
+        for serialized_node in deserialized_parameters.keys():
+            distributions[serialized_node] = deserialized_parameters[serialized_node]
+
+        self.set_parameters(parameters=distributions)
+
         str_keys = list(input_dict["weights"].keys())
         tuple_keys = [eval(key) for key in str_keys]
         weights = {}
         for tuple_key in tuple_keys:
             weights[tuple_key] = input_dict["weights"][str(tuple_key)]
         self.weights = weights
+        return True
 
-    def fit_parameters(self, data: pd.DataFrame, n_jobs: int = -1):
+    def fit_parameters(self, data: pd.DataFrame, n_jobs: int = 1):
         """
         Base function for parameter learning
         """
         if data.isnull().values.any():
             logger_network.error("Dataframe contains NaNs.")
             return
-
-        if not os.path.isdir(STORAGE):
-            os.makedirs(STORAGE)
-
-        # init folder
-        if not os.listdir(STORAGE):
-            os.makedirs(os.path.join(STORAGE, "0"))
-
-        index = sorted([int(id) for id in os.listdir(STORAGE)])[-1] + 1
-        os.makedirs(os.path.join(STORAGE, str(index)))
 
         if type(self).__name__ == "CompositeBN":
             data = self._encode_categorical_data(data)
@@ -601,7 +678,6 @@ class BaseNetwork(object):
                                     node_data["hybcprob"][obj][
                                         f"{model_type}_obj"
                                     ] = new_path
-
                     if predict:
                         output[node.name] = node.predict(node_data, pvals=pvals)
                     else:
@@ -612,12 +688,15 @@ class BaseNetwork(object):
             seq = Parallel(n_jobs=parall_count)(
                 delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
             )
-            # seq = []
-            # for _ in tqdm(range(n), position=0, leave=True):
-            #     result = wrapper()
-            #     seq.append(result)
         else:
             seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
+
+        # code for debugging, don't remove
+        # seq = []
+        # for _ in tqdm(range(n), position=0, leave=True):
+        #     result = wrapper()
+        #     seq.append(result)
+
         seq_df = pd.DataFrame.from_dict(seq, orient="columns")
         seq_df.dropna(inplace=True)
         cont_nodes = [
