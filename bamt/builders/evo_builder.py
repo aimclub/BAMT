@@ -1,7 +1,6 @@
 from datetime import timedelta
 from typing import Dict, Optional, List, Tuple
 
-
 from golem.core.adapter import DirectAdapter
 from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
 from golem.core.log import Log

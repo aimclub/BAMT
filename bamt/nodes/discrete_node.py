@@ -1,5 +1,4 @@
 import random
-from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 from typing import Type, Dict, Union, List
 
@@ -54,9 +53,10 @@ class DiscreteNode(BaseNode):
                         cprob[f"['{comb}']"] = probs
             return {"cprob": cprob, "vals": vals}
 
-        pool = ThreadPoolExecutor(num_workers)
-        future = pool.submit(worker, self)
-        return future.result()
+        # pool = ThreadPoolExecutor(num_workers)
+        # future = pool.submit(worker, self)
+        result = worker(self)
+        return result
 
     @staticmethod
     def get_dist(node_info, pvals):
