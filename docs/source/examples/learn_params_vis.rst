@@ -5,7 +5,7 @@ Used imports:
 
 .. code-block:: python
 
-    from bamt.networks.hybrid_bn import HybridBN
+    import bamt.networks as networks
     import bamt.Preprocessors as pp
 
     import pandas as pd
@@ -44,7 +44,7 @@ Preprocessing data, encode categorical features and discretize numerical feature
     p = pp.Preprocessor([('encoder', encoder), ('discretizer', discretizer)])
     discretized_data, est = p.apply(data)
 
-    bn = HybridBN(has_logit=True, use_mixture=True) # init BN
+    bn = networks.HybridBN(has_logit=True, use_mixture=True) # init BN
     info = p.info
     info
     bn.add_nodes(info)

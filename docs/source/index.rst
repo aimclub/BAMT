@@ -57,7 +57,6 @@ generating synthetic data, assessing edges strength e.t.c.
    models/bayesiannetworks/hybrid_bn.rst
    models/bayesiannetworks/sampling_predicting.rst
    models/bayesiannetworks/large_bn_algs.rst
-   models/bayesiannetworks/models_storing.rst
 
 .. toctree::
    :maxdepth: 1
@@ -66,7 +65,6 @@ generating synthetic data, assessing edges strength e.t.c.
 
    bnalgs/bn_learning.rst
    bnalgs/big_bns.rst
-   bnalgs/applied_tasks.rst
 
 .. toctree::
     :maxdepth: 1
@@ -87,6 +85,13 @@ generating synthetic data, assessing edges strength e.t.c.
     examples/learn_sampling_predict.rst
     examples/add_ml_models_to_nodes.rst
     examples/composite_network_example.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Tutorials
+
+    tutorials/tutorials_gists.rst
 
 
 
