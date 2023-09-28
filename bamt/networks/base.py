@@ -407,7 +407,7 @@ class BaseNetwork(object):
                         r"\([\s\S]*\)", f"({model})", self[node].type
                     )
             else:
-                if data["serialization"] is not None:
+                if data.get("serialization", False):
                     regressor = data.get("regressor", None)
                     classifier = data.get("classifier", None)
                     self[node].type = re.sub(
