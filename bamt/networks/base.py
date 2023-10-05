@@ -684,7 +684,12 @@ class BaseNetwork(object):
                         output[node.name] = node.choose(node_data, pvals=pvals)
             return output
 
-        if progress_bar:
+        if predict:
+            seq = []
+            for _ in tqdm(range(n), position=0, leave=True):
+                result = wrapper()
+                seq.append(result)
+        elif progress_bar:
             seq = Parallel(n_jobs=parall_count)(
                 delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
             )
