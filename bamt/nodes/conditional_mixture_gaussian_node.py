@@ -166,7 +166,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
 
         n_comp = len(w)
 
-        if np.isna(w):
+        if np.isnan(w):
             return np.nan
 
         gmm = GMM(
