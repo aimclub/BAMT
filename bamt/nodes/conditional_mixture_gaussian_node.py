@@ -163,12 +163,12 @@ class ConditionalMixtureGaussianNode(BaseNode):
         pvals: parent values
         """
         mean, covariance, w = self.get_dist(node_info, pvals)
-
-        n_comp = len(w)
-
+        
         if np.isnan(w):
             return np.nan
-
+            
+        n_comp = len(w)
+        
         gmm = GMM(
             n_components=n_comp,
             priors=w,
