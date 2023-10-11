@@ -163,8 +163,9 @@ class ConditionalMixtureGaussianNode(BaseNode):
         pvals: parent values
         """
         mean, covariance, w = self.get_dist(node_info, pvals)
-        
-        if np.isnan(w):
+
+        # check if w is nan or list of weights
+        if not isinstance(w, list):
             return np.nan
             
         n_comp = len(w)
