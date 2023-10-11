@@ -7,7 +7,7 @@ First, lets import BAMT modules and required machine learning modules.
 
 .. code-block:: python
 
-    from bamt.networks.hybrid_bn import HybridBN
+    import bamt.networks as networks
     import bamt.Preprocessors as pp
 
     import pandas as pd
@@ -66,7 +66,7 @@ Next, we initialize Bayesian Network object and add nodes to it.
 
 .. code-block:: python
 
-    bn = HybridBN(has_logit=True, use_mixture=True)
+    bn = networks.HybridBN(has_logit=True, use_mixture=True)
     bn.add_nodes(info)
 
 After adding nodes we can perform structure learning.

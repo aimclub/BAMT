@@ -5,7 +5,7 @@ Used imports:
 
 .. code-block:: python
 
-    from bamt.networks.hybrid_bn import HybridBN
+    import bamt.networks as networks
     import bamt.Preprocessors as pp
 
     import pandas as pd

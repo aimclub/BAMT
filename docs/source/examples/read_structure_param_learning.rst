@@ -8,7 +8,7 @@ Used imports:
     from bamt.preprocessors import Preprocessor
     import pandas as pd
     from sklearn import preprocessing as pp
-    from bamt.networks.hybrid_bn import HybridBN
+    from bamt.networks import HybridBN
     import json
 
 There are two options for loading a BN structure. The first is to read it directly from a JSON file:
