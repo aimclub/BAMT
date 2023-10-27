@@ -6,7 +6,7 @@ Used imports:
 .. code-block:: python
 
     import bamt.networks as networks
-    import bamt.Preprocessors as pp
+    import bamt.preprocessors as pp
 
     import pandas as pd
     import numpy as np
