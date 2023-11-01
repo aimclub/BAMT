@@ -1,5 +1,5 @@
 import random
-from itertools import product, accumulate
+from itertools import product
 from typing import Type, Dict, Union, List
 
 import numpy as np
