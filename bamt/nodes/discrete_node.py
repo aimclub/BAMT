@@ -2,6 +2,7 @@ import random
 from itertools import product
 from typing import Type, Dict, Union, List
 
+import numpy as np
 from pandas import DataFrame, crosstab
 
 from .base import BaseNode
@@ -73,22 +74,13 @@ class DiscreteNode(BaseNode):
         node_info: nodes info from distributions
         pvals: parent values
         """
-        rindex = 0
-        random.seed()
         vals = node_info["vals"]
+        dist = np.array(self.get_dist(node_info, pvals))
 
-        dist = self.get_dist(node_info, pvals)
+        cumulative_dist = np.cumsum(dist)
 
-        lbound = 0
-        ubound = 0
-        rand = random.random()
-        for interval in range(len(dist)):
-            ubound += dist[interval]
-            if lbound <= rand < ubound:
-                rindex = interval
-                break
-            else:
-                lbound = ubound
+        rand = np.random.random()
+        rindex = np.searchsorted(cumulative_dist, rand)
 
         return vals[rindex]
 
