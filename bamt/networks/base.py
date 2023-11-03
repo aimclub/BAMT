@@ -2,6 +2,7 @@ import json
 import os.path as path
 import random
 import re
+from copy import deepcopy
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
 import numpy as np
@@ -457,21 +458,23 @@ class BaseNetwork(object):
 
         :return: saving status.
         """
-        distributions = self.distributions.copy()
+        distributions = deepcopy(self.distributions)
         new_weights = {str(key): self.weights[key] for key in self.weights}
 
         to_serialize = {}
         # separate logit and gaussian nodes from distributions to serialize bn's models
-        for node_name in self.distributions.keys():
+        for node_name in distributions.keys():
+            if self[node_name].type.startswith("Gaussian"):
+                if not distributions[node_name]["regressor"]:
+                    continue
             if (
                 "Gaussian" in self[node_name].type
                 or "Logit" in self[node_name].type
                 or "ConditionalLogit" in self[node_name].type
-                or "ConditionalGaussian" in self[node_name].type
             ):
                 to_serialize[node_name] = [
                     self[node_name].type,
-                    self.distributions[node_name],
+                    distributions[node_name],
                 ]
 
         serializer = serialization_utils.ModelsSerializer(
