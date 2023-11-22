@@ -464,6 +464,8 @@ class BaseNetwork(object):
         to_serialize = {}
         # separate logit and gaussian nodes from distributions to serialize bn's models
         for node_name in distributions.keys():
+            if "Mixture" in self[node_name].type:
+                continue
             if self[node_name].type.startswith("Gaussian"):
                 if not distributions[node_name]["regressor"]:
                     continue
@@ -491,7 +493,7 @@ class BaseNetwork(object):
             "parameters": distributions,
             "weights": new_weights,
         }
-        return self._save_to_file(bn_name, outdict)
+        return self._save_to_file(f"{bn_name}.json", outdict)
 
     def load(self, input_dir: str, models_dir: str = "/"):
         """
