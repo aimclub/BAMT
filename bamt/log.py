@@ -1,27 +1,29 @@
 import logging.config
 import os
-import warnings
+# import warnings
 
-from bamt.config import config
+# from bamt.config import config
 
 
 class BamtLogger:
     def __init__(self):
         self.file_handler = False
         self.enabled = True
-        self.log_file_path = config.get(
-            "LOG", "log_conf_loc", fallback="log_conf_path is not defined"
-        )
-        try:
-            logging.config.fileConfig(self.log_file_path)
-        except BaseException:
-            log_file_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "logging.conf"
-            )
-            logging.config.fileConfig(log_file_path)
-            warnings.warn(
-                "Reading log path location from config file failed. Default location will be used instead."
-            )
+        # self.log_file_path = config.get(
+        #     "LOG", "log_conf_loc", fallback="log_conf_path is not defined"
+        # )
+        self.log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging.conf")
+        logging.config.fileConfig(self.log_file_path)
+        # try:
+        #     logging.config.fileConfig(self.log_file_path)
+        # except BaseException:
+        #     log_file_path = os.path.join(
+        #         os.path.dirname(os.path.abspath(__file__)), "logging.conf"
+        #     )
+        #     logging.config.fileConfig(log_file_path)
+        #     warnings.warn(
+        #         "Reading log path location from config file failed. Default location will be used instead."
+        #     )
 
         self.loggers = dict(
             logger_builder=logging.getLogger("builder"),
