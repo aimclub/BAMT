@@ -22,7 +22,7 @@ from bamt.nodes.composite_continuous_node import CompositeContinuousNode
 from bamt.nodes.composite_discrete_node import CompositeDiscreteNode
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.gaussian_node import GaussianNode
-from bamt.utils import EvoUtils as evo
+from bamt.utils import evo_utils as evo
 from bamt.utils.composite_utils import CompositeGeneticOperators
 from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
 

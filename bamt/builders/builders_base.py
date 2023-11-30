@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List, Optional, Tuple, Callable, TypedDict, Sequence, Union
+from typing import Dict, List, Optional, Tuple, Callable, Union
 
 from pandas import DataFrame
 
@@ -11,15 +11,7 @@ from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.logit_node import LogitNode
 from bamt.nodes.mixture_gaussian_node import MixtureGaussianNode
-from bamt.utils import GraphUtils as gru
-
-
-class ParamDict(TypedDict, total=False):
-    init_edges: Optional[Sequence[str]]
-    init_nodes: Optional[List[str]]
-    remove_init_edges: bool
-    white_list: Optional[Tuple[str, str]]
-    bl_add: Optional[List[str]]
+from bamt.utils import graph_utils as gru
 
 
 class StructureBuilder(object):

@@ -13,7 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
 import bamt.builders as builders
-from bamt.builders.builders_base import ParamDict
+from bamt.builders.schema import ParamDict
 from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.builders.hc_builder import HCStructureBuilder
 from bamt.display import plot_, get_info_
@@ -24,7 +24,7 @@ from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
 )
 from bamt.log import logger_network
 from bamt.nodes.base import BaseNode
-from bamt.utils import GraphUtils, serialization_utils, check_utils
+from bamt.utils import graph_utils, serialization_utils, check_utils
 
 
 class BaseNetwork(object):
@@ -206,7 +206,7 @@ class BaseNetwork(object):
         """
         Provide calculation of link strength according mutual information between node and its parent(-s) values.
         """
-        import bamt.utils.GraphUtils as gru
+        import bamt.utils.graph_utils as gru
 
         data_descriptor = gru.nodes_types(discretized_data)
         if not all([i in ["disc", "disc_num"] for i in data_descriptor.values()]):

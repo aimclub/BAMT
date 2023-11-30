@@ -3,7 +3,7 @@ from typing import Tuple, Dict
 from pandas import DataFrame
 
 from bamt.log import logger_preprocessor
-from bamt.utils import GraphUtils as gru
+from bamt.utils import graph_utils as gru
 
 
 class BasePreprocessor(object):

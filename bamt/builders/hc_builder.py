@@ -4,10 +4,11 @@ from pandas import DataFrame
 from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 
-from bamt.builders.builders_base import ParamDict, BaseDefiner
+from bamt.builders.builders_base import BaseDefiner
 from bamt.log import logger_builder
 from bamt.redef_HC import hc as hc_method
-from bamt.utils import GraphUtils as gru
+from bamt.utils import graph_utils as gru
+from bamt.builders.schema import ParamDict
 
 
 class HillClimbDefiner(BaseDefiner):

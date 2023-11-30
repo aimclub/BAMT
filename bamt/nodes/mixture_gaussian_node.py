@@ -4,7 +4,7 @@ import numpy as np
 from gmr import GMM
 from pandas import DataFrame
 
-from bamt.utils.MathUtils import component
+from bamt.utils.math_utils import component
 from .base import BaseNode
 from .schema import MixtureGaussianParams
 

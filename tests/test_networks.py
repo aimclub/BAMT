@@ -14,7 +14,7 @@ from bamt.networks.composite_bn import CompositeBN
 from bamt.networks.hybrid_bn import BaseNetwork, HybridBN
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.gaussian_node import GaussianNode
-from bamt.utils.MathUtils import precision_recall
+from bamt.utils.math_utils import precision_recall
 from bamt.utils.composite_utils.CompositeGeneticOperators import (
     custom_mutation_add_model,
     custom_crossover_all_model,
