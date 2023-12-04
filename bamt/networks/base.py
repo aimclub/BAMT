@@ -495,16 +495,24 @@ class BaseNetwork(object):
         }
         return self._save_to_file(f"{bn_name}.json", outdict)
 
-    def load(self, input_dir: str, models_dir: str = "/"):
+    def load(self,
+             input_data: Union[str, Dict],
+             models_dir: str = "/"):
         """
         Function to load the whole BN from json file.
-        :param input_dir: input path to json file with bn.
+        :param input_data: input path to json file with bn.
         :param models_dir: directory with models.
 
         :return: loading status.
         """
-        with open(input_dir) as f:
-            input_dict = json.load(f)
+        if isinstance(input_data, str):
+            with open(input_data) as f:
+                input_dict = json.load(f)
+        elif isinstance(input_data, dict):
+            input_dict = input_data
+        else:
+            logger_network.error(f"Unknown input type: {type(input_data)}")
+            return
 
         self.add_nodes(input_dict["info"])
         self.set_structure(edges=input_dict["edges"])
@@ -543,11 +551,16 @@ class BaseNetwork(object):
         to_deserialize = {}
         # separate logit and gaussian nodes from distributions to deserialize bn's models
         for node_name in input_dict["parameters"].keys():
+            if "Mixture" in self[node_name].type:
+                continue
+            if self[node_name].type.startswith("Gaussian"):
+                if not input_dict["parameters"][node_name]["regressor"]:
+                    continue
+
             if (
                 "Gaussian" in self[node_name].type
                 or "Logit" in self[node_name].type
                 or "ConditionalLogit" in self[node_name].type
-                or "ConditionalGaussian" in self[node_name].type
             ):
                 if input_dict["parameters"][node_name].get("serialization", False):
                     to_deserialize[node_name] = [
