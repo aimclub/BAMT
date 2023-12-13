@@ -8,17 +8,17 @@ NONE_REPLACEMENT = -32768
 
 
 def information_mutual_conditional(
-    x,
-    y,
-    z,
-    cartesian_product=False,
-    base=2,
-    fill_value=-1,
-    estimator="ML",
-    alphabet_x=None,
-    alphabet_y=None,
-    Alphabet_Z=None,
-    keep_dims=False,
+        x,
+        y,
+        z,
+        cartesian_product=False,
+        base=2,
+        fill_value=-1,
+        estimator="ML",
+        alphabet_x=None,
+        alphabet_y=None,
+        Alphabet_Z=None,
+        keep_dims=False,
 ):
     x, fill_value_X = _sanitise_array_input(x, fill_value)
     y, fill_value_Y = _sanitise_array_input(y, fill_value)
@@ -113,7 +113,6 @@ def information_mutual_conditional(
         Alphabet_Z = np.reshape(Alphabet_Z, (-1, Alphabet_Z.shape[-1]))
         I = []
         for i in range(z.shape[0]):
-
             def f(X, Y, Alphabet_X, Alphabet_Y):
                 return information_mutual_conditional(
                     X,
@@ -151,28 +150,28 @@ def information_mutual_conditional(
 
     for i in range(x.shape[0]):
         I_ = (
-            entropy_joint(
-                np.vstack((x[i], z[i])),
-                base,
-                fill_value,
-                estimator,
-                _vstack_pad((alphabet_x[i], Alphabet_Z[i]), fill_value),
-            )
-            + entropy_joint(
-                np.vstack((y[i], z[i])),
-                base,
-                fill_value,
-                estimator,
-                _vstack_pad((alphabet_y[i], Alphabet_Z[i]), fill_value),
-            )
-            - entropy_joint(
-                np.vstack((x[i], y[i], z[i])),
-                base,
-                fill_value,
-                estimator,
-                _vstack_pad((alphabet_x[i], alphabet_y[i], Alphabet_Z[i]), fill_value),
-            )
-            - entropy_joint(z[i], base, fill_value, estimator, Alphabet_Z[i])
+                entropy_joint(
+                    np.vstack((x[i], z[i])),
+                    base,
+                    fill_value,
+                    estimator,
+                    _vstack_pad((alphabet_x[i], Alphabet_Z[i]), fill_value),
+                )
+                + entropy_joint(
+            np.vstack((y[i], z[i])),
+            base,
+            fill_value,
+            estimator,
+            _vstack_pad((alphabet_y[i], Alphabet_Z[i]), fill_value),
+        )
+                - entropy_joint(
+            np.vstack((x[i], y[i], z[i])),
+            base,
+            fill_value,
+            estimator,
+            _vstack_pad((alphabet_x[i], alphabet_y[i], Alphabet_Z[i]), fill_value),
+        )
+                - entropy_joint(z[i], base, fill_value, estimator, Alphabet_Z[i])
         )
         I[i] = I_
 
@@ -186,15 +185,15 @@ def information_mutual_conditional(
 
 
 def information_mutual(
-    X,
-    Y=None,
-    cartesian_product=False,
-    base=2,
-    fill_value=-1,
-    estimator="ML",
-    Alphabet_X=None,
-    Alphabet_Y=None,
-    keep_dims=False,
+        X,
+        Y=None,
+        cartesian_product=False,
+        base=2,
+        fill_value=-1,
+        estimator="ML",
+        Alphabet_X=None,
+        Alphabet_Y=None,
+        keep_dims=False,
 ):
     H_conditional = entropy_conditional(
         X, Y, cartesian_product, base, fill_value, estimator, Alphabet_X, Alphabet_Y
@@ -237,7 +236,7 @@ def entropy_pmf(P, base=2, require_valid_pmf=True, keep_dims=False):
 
 
 def entropy_joint(
-    X, base=2, fill_value=-1, estimator="ML", Alphabet_X=None, keep_dims=False
+        X, base=2, fill_value=-1, estimator="ML", Alphabet_X=None, keep_dims=False
 ):
     X, fill_value_X = _sanitise_array_input(X, fill_value)
     if Alphabet_X is not None:
@@ -303,15 +302,15 @@ def entropy_joint(
 
 
 def entropy_conditional(
-    X,
-    Y=None,
-    cartesian_product=False,
-    base=2,
-    fill_value=-1,
-    estimator="ML",
-    Alphabet_X=None,
-    Alphabet_Y=None,
-    keep_dims=False,
+        X,
+        Y=None,
+        cartesian_product=False,
+        base=2,
+        fill_value=-1,
+        estimator="ML",
+        Alphabet_X=None,
+        Alphabet_Y=None,
+        keep_dims=False,
 ):
     if Y is None:
         Y = X
@@ -486,10 +485,10 @@ def entropy(X, base=2, fill_value=-1, estimator="ML", Alphabet_X=None, keep_dims
         # P_0 is the probability mass assigned to each additional empty bin
         P, P_0 = _estimate_probabilities(L, estimator, n_additional_empty_bins)
         H_0 = (
-            n_additional_empty_bins
-            * P_0
-            * -np.log2(P_0 + np.spacing(0))
-            / np.log2(base)
+                n_additional_empty_bins
+                * P_0
+                * -np.log2(P_0 + np.spacing(0))
+                / np.log2(base)
         )
         H[i] = entropy_pmf(P, base, require_valid_pmf=False) + H_0
 
@@ -572,7 +571,7 @@ def _map_observations_to_integers(Symbol_matrices, Fill_values):
     assert len(Symbol_matrices) == len(Fill_values)
     FILL_VALUE = -1
     if np.any([A.dtype != "int" for A in Symbol_matrices]) or np.any(
-        np.array(Fill_values) != FILL_VALUE
+            np.array(Fill_values) != FILL_VALUE
     ):
         L = sklearn.preprocessing.LabelEncoder()
         F = [np.atleast_1d(v) for v in Fill_values]
@@ -607,7 +606,7 @@ def _isnan_element(x):
 
 
 def _determine_number_additional_empty_bins(
-    Counts, Alphabet, Full_Alphabet, fill_value
+        Counts, Alphabet, Full_Alphabet, fill_value
 ):
     alphabet_sizes = np.sum(np.atleast_2d(Full_Alphabet) != fill_value, axis=-1)
     if np.any(alphabet_sizes != fill_value):
@@ -631,9 +630,9 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
     # 2) James-Stein approach may be used as an alternative
     # 3) Dirichlet prior may be used in all other cases
 
-    assert(np.sum(Counts) > 0)
-    assert(np.all(Counts.astype('int') == Counts))
-    assert(n_additional_empty_bins >= 0)
+    assert (np.sum(Counts) > 0)
+    assert (np.all(Counts.astype('int') == Counts))
+    assert (n_additional_empty_bins >= 0)
     Counts = Counts.astype('int')
 
     if isinstance(estimator, str):
@@ -643,18 +642,18 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
         if np.isreal(estimator):
             alpha = estimator
         elif estimator == 'PERKS':
-            alpha = 1.0 / (Counts.size+n_additional_empty_bins)
+            alpha = 1.0 / (Counts.size + n_additional_empty_bins)
         elif estimator == 'MINIMAX':
             alpha = np.sqrt(np.sum(Counts)) / \
-                (Counts.size+n_additional_empty_bins)
+                    (Counts.size + n_additional_empty_bins)
         else:
             alpha = 0
-        Theta = (Counts+alpha) / \
-            (1.0*np.sum(Counts) + alpha*(Counts.size+n_additional_empty_bins))
+        Theta = (Counts + alpha) / \
+                (1.0 * np.sum(Counts) + alpha * (Counts.size + n_additional_empty_bins))
         # Theta_0 is the probability mass assigned to each additional empty bin
         if n_additional_empty_bins > 0:
-            Theta_0 = alpha / (1.0*np.sum(Counts) +
-                               alpha*(Counts.size+n_additional_empty_bins))
+            Theta_0 = alpha / (1.0 * np.sum(Counts) +
+                               alpha * (Counts.size + n_additional_empty_bins))
         else:
             Theta_0 = 0
 
@@ -666,17 +665,17 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
         # Determine histogram of counts N_r (index r denotes count)
         X = np.sort(Counts)
         B = X[1:] != X[:-1]  # Compute symbol change indicators
-        I = np.append(np.where(B), X.size-1)  # Obtain symbol change positions
-        N_r = np.zeros(X[I[-1]]+1)
+        I = np.append(np.where(B), X.size - 1)  # Obtain symbol change positions
+        N_r = np.zeros(X[I[-1]] + 1)
         N_r[X[I]] = np.diff(np.append(-1, I))  # Compute run lengths
         N_r[0] = 0  # Ensures that unobserved symbols do not interfere
 
         # Compute Z_r, a locally averaged version of N_r
         R = np.where(N_r)[0]
         Q = np.append(0, R[:-1])
-        T = np.append(R[1:], 2*R[-1]-Q[-1])
+        T = np.append(R[1:], 2 * R[-1] - Q[-1])
         Z_r = np.zeros_like(N_r)
-        Z_r[R] = N_r[R] / (0.5*(T-Q))
+        Z_r[R] = N_r[R] / (0.5 * (T - Q))
 
         # Fit least squares regression line to plot of log(Z_r) versus log(r)
         x = np.log10(np.arange(1, Z_r.size))
@@ -691,23 +690,23 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
                           "Good-Turing estimate not satisfied")
         # Compute smoothed value of N_r based on interpolation
         # We need to refer to SmoothedN_{r+1} for all observed values of r
-        SmoothedN_r = np.zeros(N_r.size+1)
-        SmoothedN_r[1:] = 10**(np.log10(np.arange(1, SmoothedN_r.size)) *
-                               m + c)
+        SmoothedN_r = np.zeros(N_r.size + 1)
+        SmoothedN_r[1:] = 10 ** (np.log10(np.arange(1, SmoothedN_r.size)) *
+                                 m + c)
 
         # Determine threshold value of r at which to use smoothed values of N_r
         # (SmoothedN_r), as apposed to straightforward N_r.
         # Variance of Turing estimate
         with np.errstate(invalid='ignore', divide='ignore'):
-            VARr_T = (np.arange(N_r.size)+1)**2 * \
-                (1.0*np.append(N_r[1:], 0)/(N_r**2)) * \
-                (1 + np.append(N_r[1:], 0)/N_r)
-            x = (np.arange(N_r.size)+1) * 1.0*np.append(N_r[1:], 0) / N_r
-            y = (np.arange(N_r.size)+1) * \
-                1.0*SmoothedN_r[1:] / (SmoothedN_r[:-1])
-            assert(np.isinf(VARr_T[0]) or np.isnan(VARr_T[0]))
-            turing_is_sig_diff = np.abs(x-y) > 1.96 * np.sqrt(VARr_T)
-        assert(turing_is_sig_diff[0] == np.array(False))
+            VARr_T = (np.arange(N_r.size) + 1) ** 2 * \
+                     (1.0 * np.append(N_r[1:], 0) / (N_r ** 2)) * \
+                     (1 + np.append(N_r[1:], 0) / N_r)
+            x = (np.arange(N_r.size) + 1) * 1.0 * np.append(N_r[1:], 0) / N_r
+            y = (np.arange(N_r.size) + 1) * \
+                1.0 * SmoothedN_r[1:] / (SmoothedN_r[:-1])
+            assert (np.isinf(VARr_T[0]) or np.isnan(VARr_T[0]))
+            turing_is_sig_diff = np.abs(x - y) > 1.96 * np.sqrt(VARr_T)
+        assert (turing_is_sig_diff[0] == np.array(False))
         # NB: 0th element can be safely ignored, since always 0
         T = np.where(turing_is_sig_diff == np.array(False))[0]
         if T.size > 1:
@@ -723,8 +722,8 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
         # objects observed r times, r>0
         p_r = np.zeros(N_r.size)
         N = np.sum(Counts)
-        p_r[1:] = (np.arange(1, N_r.size)+1) * \
-            1.0*SmoothedN_r[2:] / (SmoothedN_r[1:-1] * N)
+        p_r[1:] = (np.arange(1, N_r.size) + 1) * \
+                  1.0 * SmoothedN_r[2:] / (SmoothedN_r[1:-1] * N)
         # Estimate probability of observing any unseen symbol
         p_r[0] = 1.0 * N_r[1] / N
 
@@ -734,7 +733,7 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
 
         # Normalise probabilities for observed symbols, so that they sum to one
         if np.any(Counts == 0) or n_additional_empty_bins > 0:
-            Theta = (1-p_r[0]) * Theta / np.sum(Theta)
+            Theta = (1 - p_r[0]) * Theta / np.sum(Theta)
         else:
             warnings.warn("No unobserved outcomes specified. Disregarding the "
                           "probability mass allocated to any unobserved "
@@ -756,10 +755,10 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
         Theta, _ = _estimate_probabilities(Counts, 'ML')
         p_uniform = 1.0 / (Counts.size + n_additional_empty_bins)
         with np.errstate(invalid='ignore', divide='ignore'):
-            Lambda = (1-np.sum(Theta**2)) / \
-                ((np.sum(Counts)-1) *
-                 (np.sum((p_uniform-Theta)**2) +
-                  n_additional_empty_bins*p_uniform**2))
+            Lambda = (1 - np.sum(Theta ** 2)) / \
+                     ((np.sum(Counts) - 1) *
+                      (np.sum((p_uniform - Theta) ** 2) +
+                       n_additional_empty_bins * p_uniform ** 2))
 
         if Lambda > 1:
             Lambda = 1
@@ -768,10 +767,10 @@ def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
         elif np.isnan(Lambda):
             Lambda = 1
 
-        Theta = Lambda*p_uniform + (1-Lambda)*Theta
+        Theta = Lambda * p_uniform + (1 - Lambda) * Theta
         # Theta_0 is the probability mass assigned to each additional empty bin
         if n_additional_empty_bins > 0:
-            Theta_0 = Lambda*p_uniform
+            Theta_0 = Lambda * p_uniform
         else:
             Theta_0 = 0
     else:
