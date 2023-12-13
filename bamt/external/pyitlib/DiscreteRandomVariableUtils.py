@@ -624,33 +624,160 @@ def _determine_number_additional_empty_bins(
 
 
 def _estimate_probabilities(Counts, estimator, n_additional_empty_bins=0):
-    assert np.sum(Counts) > 0
-    assert np.all(Counts.astype("int") == Counts)
-    assert n_additional_empty_bins >= 0
-    Counts = Counts.astype("int")
+    # TODO Documentation should present the following guidelines:
+    # 1) Good-Turing may be used if slope requirement satisfied and if
+    # unobserved symbols have been defined (TODO Clarify what the requirement
+    # is)
+    # 2) James-Stein approach may be used as an alternative
+    # 3) Dirichlet prior may be used in all other cases
+
+    assert(np.sum(Counts) > 0)
+    assert(np.all(Counts.astype('int') == Counts))
+    assert(n_additional_empty_bins >= 0)
+    Counts = Counts.astype('int')
 
     if isinstance(estimator, str):
-        estimator = estimator.upper().replace(" ", "")
+        estimator = estimator.upper().replace(' ', '')
 
-    if np.isreal(estimator) or estimator in ("ML", "PERKS", "MINIMAX"):
+    if np.isreal(estimator) or estimator in ('ML', 'PERKS', 'MINIMAX'):
         if np.isreal(estimator):
             alpha = estimator
-        elif estimator == "PERKS":
-            alpha = 1.0 / (Counts.size + n_additional_empty_bins)
-        elif estimator == "MINIMAX":
-            alpha = np.sqrt(np.sum(Counts)) / (Counts.size + n_additional_empty_bins)
+        elif estimator == 'PERKS':
+            alpha = 1.0 / (Counts.size+n_additional_empty_bins)
+        elif estimator == 'MINIMAX':
+            alpha = np.sqrt(np.sum(Counts)) / \
+                (Counts.size+n_additional_empty_bins)
         else:
             alpha = 0
-        Theta = (Counts + alpha) / (
-            1.0 * np.sum(Counts) + alpha * (Counts.size + n_additional_empty_bins)
-        )
+        Theta = (Counts+alpha) / \
+            (1.0*np.sum(Counts) + alpha*(Counts.size+n_additional_empty_bins))
         # Theta_0 is the probability mass assigned to each additional empty bin
         if n_additional_empty_bins > 0:
-            Theta_0 = alpha / (
-                1.0 * np.sum(Counts) + alpha * (Counts.size + n_additional_empty_bins)
-            )
+            Theta_0 = alpha / (1.0*np.sum(Counts) +
+                               alpha*(Counts.size+n_additional_empty_bins))
         else:
             Theta_0 = 0
+
+    elif estimator == 'GOOD-TURING':
+        # TODO We could also add a Chen-Chao vocabulary size estimator (See
+        # Bhat Suma's thesis)
+
+        # The following notation is based on Gale and Sampson (1995)
+        # Determine histogram of counts N_r (index r denotes count)
+        X = np.sort(Counts)
+        B = X[1:] != X[:-1]  # Compute symbol change indicators
+        I = np.append(np.where(B), X.size-1)  # Obtain symbol change positions
+        N_r = np.zeros(X[I[-1]]+1)
+        N_r[X[I]] = np.diff(np.append(-1, I))  # Compute run lengths
+        N_r[0] = 0  # Ensures that unobserved symbols do not interfere
+
+        # Compute Z_r, a locally averaged version of N_r
+        R = np.where(N_r)[0]
+        Q = np.append(0, R[:-1])
+        T = np.append(R[1:], 2*R[-1]-Q[-1])
+        Z_r = np.zeros_like(N_r)
+        Z_r[R] = N_r[R] / (0.5*(T-Q))
+
+        # Fit least squares regression line to plot of log(Z_r) versus log(r)
+        x = np.log10(np.arange(1, Z_r.size))
+        with np.errstate(invalid='ignore', divide='ignore'):
+            y = np.log10(Z_r[1:])
+        x = x[np.isfinite(y)]
+        y = y[np.isfinite(y)]
+        m, c = np.linalg.lstsq(np.vstack([x, np.ones(x.size)]).T, y,
+                               rcond=None)[0]
+        if m >= -1:
+            warnings.warn("Regression slope < -1 requirement in linear "
+                          "Good-Turing estimate not satisfied")
+        # Compute smoothed value of N_r based on interpolation
+        # We need to refer to SmoothedN_{r+1} for all observed values of r
+        SmoothedN_r = np.zeros(N_r.size+1)
+        SmoothedN_r[1:] = 10**(np.log10(np.arange(1, SmoothedN_r.size)) *
+                               m + c)
+
+        # Determine threshold value of r at which to use smoothed values of N_r
+        # (SmoothedN_r), as apposed to straightforward N_r.
+        # Variance of Turing estimate
+        with np.errstate(invalid='ignore', divide='ignore'):
+            VARr_T = (np.arange(N_r.size)+1)**2 * \
+                (1.0*np.append(N_r[1:], 0)/(N_r**2)) * \
+                (1 + np.append(N_r[1:], 0)/N_r)
+            x = (np.arange(N_r.size)+1) * 1.0*np.append(N_r[1:], 0) / N_r
+            y = (np.arange(N_r.size)+1) * \
+                1.0*SmoothedN_r[1:] / (SmoothedN_r[:-1])
+            assert(np.isinf(VARr_T[0]) or np.isnan(VARr_T[0]))
+            turing_is_sig_diff = np.abs(x-y) > 1.96 * np.sqrt(VARr_T)
+        assert(turing_is_sig_diff[0] == np.array(False))
+        # NB: 0th element can be safely ignored, since always 0
+        T = np.where(turing_is_sig_diff == np.array(False))[0]
+        if T.size > 1:
+            thresh_r = T[1]
+            # Use smoothed estimates from the first non-significant
+            # np.abs(SmoothedN_r-N_r) position onwards
+            SmoothedN_r[:thresh_r] = N_r[:thresh_r]
+        else:
+            # Use only non-smoothed estimates (except for SmoothedN_r[-1])
+            SmoothedN_r[:-1] = N_r
+
+        # Estimate probability of encountering one particular symbol among the
+        # objects observed r times, r>0
+        p_r = np.zeros(N_r.size)
+        N = np.sum(Counts)
+        p_r[1:] = (np.arange(1, N_r.size)+1) * \
+            1.0*SmoothedN_r[2:] / (SmoothedN_r[1:-1] * N)
+        # Estimate probability of observing any unseen symbol
+        p_r[0] = 1.0 * N_r[1] / N
+
+        # Assign probabilities to observed symbols
+        Theta = np.array([p_r[r] for r in Counts])
+        Theta[Counts == 0] = 0
+
+        # Normalise probabilities for observed symbols, so that they sum to one
+        if np.any(Counts == 0) or n_additional_empty_bins > 0:
+            Theta = (1-p_r[0]) * Theta / np.sum(Theta)
+        else:
+            warnings.warn("No unobserved outcomes specified. Disregarding the "
+                          "probability mass allocated to any unobserved "
+                          "outcomes.")
+            Theta = Theta / np.sum(Theta)
+
+        # Divide p_0 among unobserved symbols
+        with np.errstate(invalid='ignore', divide='ignore'):
+            p_emptybin = p_r[0] / (np.sum(Counts == 0) +
+                                   n_additional_empty_bins)
+        Theta[Counts == 0] = p_emptybin
+        # Theta_0 is the probability mass assigned to each additional empty bin
+        if n_additional_empty_bins > 0:
+            Theta_0 = p_emptybin
+        else:
+            Theta_0 = 0
+
+    elif estimator == 'JAMES-STEIN':
+        Theta, _ = _estimate_probabilities(Counts, 'ML')
+        p_uniform = 1.0 / (Counts.size + n_additional_empty_bins)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            Lambda = (1-np.sum(Theta**2)) / \
+                ((np.sum(Counts)-1) *
+                 (np.sum((p_uniform-Theta)**2) +
+                  n_additional_empty_bins*p_uniform**2))
+
+        if Lambda > 1:
+            Lambda = 1
+        elif Lambda < 0:
+            Lambda = 0
+        elif np.isnan(Lambda):
+            Lambda = 1
+
+        Theta = Lambda*p_uniform + (1-Lambda)*Theta
+        # Theta_0 is the probability mass assigned to each additional empty bin
+        if n_additional_empty_bins > 0:
+            Theta_0 = Lambda*p_uniform
+        else:
+            Theta_0 = 0
+    else:
+        raise ValueError("invalid value specified for estimator")
+
+    return Theta, Theta_0
 
 
 def _remove_counts_at_fill_value(Counts, Alphabet, fill_value):
