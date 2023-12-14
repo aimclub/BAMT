@@ -233,8 +233,8 @@ class BaseNetwork(object):
             if len(parents) == 1:
                 x = discretized_data[parents[0]].values
                 ls_true = information_mutual(X=y, Y=x)
-                entropy = entropy(X=y)
-                weight = ls_true / entropy
+                entropy_value = entropy(X=y)
+                weight = ls_true / entropy_value
                 weights[(parents[0], node.name)] = weight
             else:
                 for parent_node in parents:
@@ -248,13 +248,13 @@ class BaseNetwork(object):
                             x=y, y=x, z=z, cartesian_product=True
                         )
                     )
-                    entropy = (
+                    entropy_value = (
                         np.average(
                             entropy_conditional(X=y, Y=z, cartesian_product=True)
                         )
                         + 1e-8
                     )
-                    weight = ls_true / entropy
+                    weight = ls_true / entropy_value
                     weights[(parent_node, node.name)] = weight
         self.weights = weights
 
