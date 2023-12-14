@@ -44,7 +44,7 @@ class ConditionalGaussianNode(BaseNode):
                 mask = (mask) & (data[col] == val)
             new_data = data[mask]
             key_comb = [str(x) for x in comb]
-            if new_data.shape[0] > 1:
+            if new_data.shape[0] > 0:
                 if self.cont_parents:
                     model = clone(self.regressor)
                     model.fit(
