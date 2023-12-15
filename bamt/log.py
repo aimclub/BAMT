@@ -1,29 +1,15 @@
+import logging
 import logging.config
 import os
-# import warnings
-
-# from bamt.config import config
 
 
 class BamtLogger:
     def __init__(self):
         self.file_handler = False
         self.enabled = True
-        # self.log_file_path = config.get(
-        #     "LOG", "log_conf_loc", fallback="log_conf_path is not defined"
-        # )
-        self.log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logging.conf")
+        self.base = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+        self.log_file_path = os.path.join(self.base, "logging.conf")
         logging.config.fileConfig(self.log_file_path)
-        # try:
-        #     logging.config.fileConfig(self.log_file_path)
-        # except BaseException:
-        #     log_file_path = os.path.join(
-        #         os.path.dirname(os.path.abspath(__file__)), "logging.conf"
-        #     )
-        #     logging.config.fileConfig(log_file_path)
-        #     warnings.warn(
-        #         "Reading log path location from config file failed. Default location will be used instead."
-        #     )
 
         self.loggers = dict(
             logger_builder=logging.getLogger("builder"),
@@ -34,6 +20,12 @@ class BamtLogger:
         )
 
     def switch_console_out(self, value: bool):
+        """
+        Turn off console output from logger.
+        By default, all loggers print out messages in console.
+
+        :param value: If False, remove all handlers and pass a NullHandler in order to prevent messages.
+        """
         assert isinstance(value, bool)
         if not value:
             for logger in self.loggers.values():
@@ -42,21 +34,36 @@ class BamtLogger:
                         logger.removeHandler(handler)
                         logger.addHandler(logging.NullHandler())
         else:
-            # will be done by release date
-            pass
+            for logger in self.loggers.values():
+                for handler in logger.handlers:
+                    if handler.__class__.__name__ == "NullHandler":
+                        logger.removeHandler(handler)
+                        logger.addHandler(logging.root.handlers[0])
 
-    def switch_file_out(self, value: bool):
+    def switch_file_out(self, value: bool, log_file: str):
+        """
+        Send all messages in file
+        By default, all loggers print out messages in console.
+
+        :param value: If True, create stdout log file and write messages here as well.
+        :param log_file: absolute path to log file, file will be created if not any.
+
+        By default, no log files are created.
+        """
         assert isinstance(value, bool)
-        if not value:
-            pass
+        if value:
+            for logger in self.loggers.values():
+                file_handler = logging.FileHandler(log_file, mode="a")
+                file_handler.setFormatter(logging.root.handlers[0].formatter)
+                logger.addHandler(file_handler)
         else:
-            # will be done by release date. NOT FINISHED!
-            pass
+            for logger in self.loggers.values():
+                for handler in logger.handlers:
+                    if handler.__class__.__name__ == "FileHandler":
+                        logger.removeHandler(handler)
 
 
 bamt_logger = BamtLogger()
-
-bamt_logger.switch_console_out(False)
 
 (
     logger_builder,
