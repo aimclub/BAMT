@@ -19,48 +19,42 @@ class BamtLogger:
             logger_display=logging.getLogger("display"),
         )
 
+    @property
+    def has_handler(logger, handler_type):
+        """Check if a logger has a handler of a specific type."""
+        return any(isinstance(handler, handler_type) for handler in logger.handlers)
+
+    def remove_handler_type(self, logger, handler_type):
+        """Remove all handlers of a specific type from a logger."""
+        for handler in logger.handlers[:]:
+            if isinstance(handler, handler_type):
+                logger.removeHandler(handler)
+
     def switch_console_out(self, value: bool):
         """
         Turn off console output from logger.
-        By default, all loggers print out messages in console.
-
-        :param value: If False, remove all handlers and pass a NullHandler in order to prevent messages.
         """
         assert isinstance(value, bool)
-        if not value:
-            for logger in self.loggers.values():
-                for handler in logger.handlers:
-                    if handler.__class__.__name__ == "StreamHandler":
-                        logger.removeHandler(handler)
-                        logger.addHandler(logging.NullHandler())
-        else:
-            for logger in self.loggers.values():
-                for handler in logger.handlers:
-                    if handler.__class__.__name__ == "NullHandler":
-                        logger.removeHandler(handler)
-                        logger.addHandler(logging.root.handlers[0])
+        handler_class = logging.StreamHandler if not value else logging.NullHandler
+
+        for logger in self.loggers.values():
+            if self.has_handler(logger, handler_class):
+                self.remove_handler_type(logger, handler_class)
+                logger.addHandler(logging.NullHandler() if not value else logging.root.handlers[0])
 
     def switch_file_out(self, value: bool, log_file: str):
         """
         Send all messages in file
-        By default, all loggers print out messages in console.
-
-        :param value: If True, create stdout log file and write messages here as well.
-        :param log_file: absolute path to log file, file will be created if not any.
-
-        By default, no log files are created.
         """
         assert isinstance(value, bool)
-        if value:
-            for logger in self.loggers.values():
+
+        for logger in self.loggers.values():
+            if value:
                 file_handler = logging.FileHandler(log_file, mode="a")
                 file_handler.setFormatter(logging.root.handlers[0].formatter)
                 logger.addHandler(file_handler)
-        else:
-            for logger in self.loggers.values():
-                for handler in logger.handlers:
-                    if handler.__class__.__name__ == "FileHandler":
-                        logger.removeHandler(handler)
+            else:
+                self.remove_handler_type(logger, logging.FileHandler)
 
 
 bamt_logger = BamtLogger()
