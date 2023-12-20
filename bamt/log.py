@@ -19,8 +19,7 @@ class BamtLogger:
             logger_display=logging.getLogger("display"),
         )
 
-    @property
-    def has_handler(logger, handler_type):
+    def has_handler(self, logger, handler_type):
         """Check if a logger has a handler of a specific type."""
         return any(isinstance(handler, handler_type) for handler in logger.handlers)
 
