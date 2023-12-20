@@ -14,7 +14,7 @@ Used imports:
 
     from bamt.log import bamt_logger
 
-There are 2 method you can use: ``switch_console_out`` and ``switch_file_out`` of ``bamt_looger``.
+There are 2 methods to use: ``switch_console_out`` and ``switch_file_out`` of ``bamt_logger``.
 
 By default, bamt will print out messages in console and will not use any log files.
 
