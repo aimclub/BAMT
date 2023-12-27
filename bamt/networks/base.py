@@ -880,8 +880,7 @@ class BaseNetwork(object):
         in the parent directory in folder visualization_result.
         output: str name of output file
         """
-        plot_(output, self.nodes, self.edges)
-        return
+        return plot_(output, self.nodes, self.edges)
 
     def markov_blanket(self, node_name, plot_to: Optional[str] = None):
         """

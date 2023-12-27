@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 
 import bamt.preprocessors as preprocessors
-from bamt.networks.hybrid_bn import HybridBN
+from bamt.networks import HybridBN
 
 hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
     [
