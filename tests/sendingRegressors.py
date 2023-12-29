@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 
 import bamt.preprocessors as preprocessors
-from bamt.networks.hybrid_bn import HybridBN
+from bamt.networks import HybridBN
 
 hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
     [
@@ -23,7 +23,7 @@ hack_data = pd.read_csv("../data/real data/hack_processed_with_rf.csv")[
         "Permeability",
         "Depth",
     ]
-]
+].dropna()
 
 encoder = pp.LabelEncoder()
 discretizer = pp.KBinsDiscretizer(n_bins=5, encode="ordinal", strategy="quantile")
@@ -32,9 +32,9 @@ p = preprocessors.Preprocessor([("encoder", encoder), ("discretizer", discretize
 
 discretized_data, est = p.apply(hack_data)
 
-bn = HybridBN()
+bn = HybridBN(has_logit=True)
 info = p.info
-#
+
 # with open(r"C:\Users\Roman\Desktop\mymodels\mynet.json") as f:
 #     net_data = json.load(f)
 
@@ -56,7 +56,7 @@ bn.set_regressor(
 
 bn.fit_parameters(hack_data)
 
-# bn.save("mynet.json")
+# bn.save("mynet")
 
 print(bn.sample(100).shape)
 bn.get_info(as_df=False)

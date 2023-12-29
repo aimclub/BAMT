@@ -2,6 +2,7 @@ import json
 import os.path as path
 import random
 import re
+from copy import deepcopy
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
 
 import numpy as np
@@ -17,6 +18,7 @@ from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.builders.hc_builder import HCStructureBuilder
 from bamt.display import plot_, get_info_
 from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
+    entropy,
     information_mutual,
     information_mutual_conditional,
     entropy_conditional,
@@ -231,8 +233,8 @@ class BaseNetwork(object):
             if len(parents) == 1:
                 x = discretized_data[parents[0]].values
                 ls_true = information_mutual(X=y, Y=x)
-                entropy = entropy(X=y)
-                weight = ls_true / entropy
+                entropy_value = entropy(X=y)
+                weight = ls_true / entropy_value
                 weights[(parents[0], node.name)] = weight
             else:
                 for parent_node in parents:
@@ -246,13 +248,13 @@ class BaseNetwork(object):
                             x=y, y=x, z=z, cartesian_product=True
                         )
                     )
-                    entropy = (
+                    entropy_value = (
                         np.average(
                             entropy_conditional(X=y, Y=z, cartesian_product=True)
                         )
                         + 1e-8
                     )
-                    weight = ls_true / entropy
+                    weight = ls_true / entropy_value
                     weights[(parent_node, node.name)] = weight
         self.weights = weights
 
@@ -457,21 +459,25 @@ class BaseNetwork(object):
 
         :return: saving status.
         """
-        distributions = self.distributions.copy()
+        distributions = deepcopy(self.distributions)
         new_weights = {str(key): self.weights[key] for key in self.weights}
 
         to_serialize = {}
         # separate logit and gaussian nodes from distributions to serialize bn's models
-        for node_name in self.distributions.keys():
+        for node_name in distributions.keys():
+            if "Mixture" in self[node_name].type:
+                continue
+            if self[node_name].type.startswith("Gaussian"):
+                if not distributions[node_name]["regressor"]:
+                    continue
             if (
                 "Gaussian" in self[node_name].type
                 or "Logit" in self[node_name].type
                 or "ConditionalLogit" in self[node_name].type
-                or "ConditionalGaussian" in self[node_name].type
             ):
                 to_serialize[node_name] = [
                     self[node_name].type,
-                    self.distributions[node_name],
+                    distributions[node_name],
                 ]
 
         serializer = serialization_utils.ModelsSerializer(
@@ -488,18 +494,26 @@ class BaseNetwork(object):
             "parameters": distributions,
             "weights": new_weights,
         }
-        return self._save_to_file(bn_name, outdict)
+        return self._save_to_file(f"{bn_name}.json", outdict)
 
-    def load(self, input_dir: str, models_dir: str = "/"):
+    def load(self,
+             input_data: Union[str, Dict],
+             models_dir: str = "/"):
         """
         Function to load the whole BN from json file.
-        :param input_dir: input path to json file with bn.
+        :param input_data: input path to json file with bn.
         :param models_dir: directory with models.
 
         :return: loading status.
         """
-        with open(input_dir) as f:
-            input_dict = json.load(f)
+        if isinstance(input_data, str):
+            with open(input_data) as f:
+                input_dict = json.load(f)
+        elif isinstance(input_data, dict):
+            input_dict = deepcopy(input_data)
+        else:
+            logger_network.error(f"Unknown input type: {type(input_data)}")
+            return
 
         self.add_nodes(input_dict["info"])
         self.set_structure(edges=input_dict["edges"])
@@ -538,11 +552,16 @@ class BaseNetwork(object):
         to_deserialize = {}
         # separate logit and gaussian nodes from distributions to deserialize bn's models
         for node_name in input_dict["parameters"].keys():
+            if "Mixture" in self[node_name].type:
+                continue
+            if self[node_name].type.startswith("Gaussian"):
+                if not input_dict["parameters"][node_name]["regressor"]:
+                    continue
+
             if (
                 "Gaussian" in self[node_name].type
                 or "Logit" in self[node_name].type
                 or "ConditionalLogit" in self[node_name].type
-                or "ConditionalGaussian" in self[node_name].type
             ):
                 if input_dict["parameters"][node_name].get("serialization", False):
                     to_deserialize[node_name] = [
@@ -565,12 +584,13 @@ class BaseNetwork(object):
 
         self.set_parameters(parameters=distributions)
 
-        str_keys = list(input_dict["weights"].keys())
-        tuple_keys = [eval(key) for key in str_keys]
-        weights = {}
-        for tuple_key in tuple_keys:
-            weights[tuple_key] = input_dict["weights"][str(tuple_key)]
-        self.weights = weights
+        if input_dict.get("weights", False):
+            str_keys = list(input_dict["weights"].keys())
+            tuple_keys = [eval(key) for key in str_keys]
+            weights = {}
+            for tuple_key in tuple_keys:
+                weights[tuple_key] = input_dict["weights"][str(tuple_key)]
+            self.weights = weights
         return True
 
     def fit_parameters(self, data: pd.DataFrame, n_jobs: int = 1):
@@ -860,8 +880,7 @@ class BaseNetwork(object):
         in the parent directory in folder visualization_result.
         output: str name of output file
         """
-        plot_(output, self.nodes, self.edges)
-        return
+        return plot_(output, self.nodes, self.edges)
 
     def markov_blanket(self, node_name, plot_to: Optional[str] = None):
         """
