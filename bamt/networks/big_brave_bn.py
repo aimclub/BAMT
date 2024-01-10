@@ -16,14 +16,26 @@ class BigBraveBN:
         n_nearest: int = 5,
         threshold: float = 0.3,
         proximity_metric: str = "MI",
-    ) -> None:
-        """Sets possible edges for structure learning based on Brave coefficients."""
+    ) -> list:
+        """Returns list of possible edges for structure learning and sets it into attribute
+        
+        Args:
+            df (pd.DataFrame): Data.
+            n_nearest (int): Number of nearest neighbors to consider. Default is 5.
+            threshold (float): Threshold for selecting edges. Default is 0.3.
+            proximity_metric (str): Metric used to calculate proximity. Default is "MI".
+            
+        Returns:
+            None: Modifies the object's possible_edges attribute.
+        """
         proximity_matrix = self._get_proximity_matrix(df, proximity_metric)
         brave_matrix = self._get_brave_matrix(df.columns, proximity_matrix, n_nearest)
 
         threshold_value = brave_matrix.max(numeric_only=True).max() * threshold
         filtered_brave_matrix = brave_matrix[brave_matrix > threshold_value].stack()
         self.possible_edges = filtered_brave_matrix.index.tolist()
+        
+        return self.possible_edges
 
     @staticmethod
     def _get_n_nearest(
