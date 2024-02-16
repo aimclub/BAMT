@@ -16,35 +16,23 @@ optimizer = ['HC', 'Evo']
 use_mixture = [True, False]
 has_logit = [True, False]
 
-disc_network_params = []
-for opt in optimizer:
-    for score in scoring:
+# Generate parameter lists using list comprehension and itertools.product
+def generate_params(data_path, data_type, additional_params=None):
+    params = []
+    for opt, score in itertools.product(optimizer, scoring):
         if opt == 'HC':
-            disc_network_params.append(
-                (discrete_data_path, False, False, opt, score, "Discrete", 'Tectonic regime'))
-disc_network_params.append((discrete_data_path, False, False,
-                           'Evo', ("K2", K2Score), "Discrete", 'Tectonic regime'))
+            base_params = [data_path, False, False, opt, score, data_type]
+            if additional_params:
+                params.extend([base_params + list(param) for param in itertools.product(*additional_params)])
+            else:
+                params.append(base_params)
+    # Add the 'Evo' optimizer case
+    params.append([data_path] + [False, False, 'Evo', ("K2", K2Score), data_type] + (list(additional_params[0]) if additional_params else []))
+    return params
 
-cont_network_params = []
-for opt in optimizer:
-    for score in scoring:
-        for mix in use_mixture:
-            if opt == 'HC':
-                cont_network_params.append(
-                    (continuous_data_path, mix, False, opt, score, "Continuous", 'target'))
-cont_network_params.append(
-    (continuous_data_path, mix, False, 'Evo', ("K2", K2Score), "Continuous", 'target'))
-
-hybrid_network_params = []
-for opt in optimizer:
-    for score in scoring:
-        for mix in use_mixture:
-            for logit in has_logit:
-                if opt == 'HC':
-                    hybrid_network_params.append(
-                        (hybrid_data_path, mix, logit, opt, score, "Hybrid", 'target'))
-hybrid_network_params.append(
-    (hybrid_data_path, mix, logit, 'Evo', ("K2", K2Score), "Hybrid", 'target'))
+disc_network_params = generate_params(discrete_data_path, "Discrete", [('Tectonic regime',)])
+cont_network_params = generate_params(continuous_data_path, "Continuous", [(use_mixture, 'target')])
+hybrid_network_params = generate_params(hybrid_data_path, "Hybrid", [(use_mixture, has_logit, 'target')])
 
 composite_network_params = [
     (hybrid_data_path, False, False, 'Evo', ("K2", K2Score), "Composite", 'target')]
