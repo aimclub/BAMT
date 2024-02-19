@@ -1,3 +1,4 @@
+import itertools
 import pytest
 import bamt.networks as networks
 import bamt.preprocessors as pp
@@ -67,7 +68,7 @@ def prepare_data(directory):
 
 
 class TestNetwork:
-    # Проверка равенства предсказаний (обученной и загруженной сети) до и после сохранения
+    # Checking the equality of predictions (trained and loaded network) before and after saving
     @pytest.mark.parametrize("directory, use_mixture, has_logit, optimizer, scoring, bn_type, target", params)
     def test_1(self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target):
         test_id = 'test_1'
@@ -101,7 +102,7 @@ class TestNetwork:
                 f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}")
             raise
 
-    # Проверка равенсвта предсказаний (обученной сети) до и после сохренения
+    # Checking the prediction algorithm (trained network) before and after saving
     @pytest.mark.parametrize("directory, use_mixture, has_logit, optimizer, scoring, bn_type, target", params)
     def test_2(self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target):
         test_id = 'test_2'
@@ -132,7 +133,7 @@ class TestNetwork:
                 f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}")
             raise
 
-    # Проверка предсказаний сети без рёбер
+    # Checking network predictions without edges
     @pytest.mark.parametrize("directory, use_mixture, has_logit, optimizer, scoring, bn_type, target", params)
     def test_3(self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target):
         test_id = 'test_3'
@@ -170,7 +171,7 @@ class TestNetwork:
                 f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}")
             raise
 
-    # Проверка сети обученной на 1-ом сэмпле
+    # Checking the network trained on the 1 sample
     @pytest.mark.parametrize("directory, use_mixture, has_logit, optimizer, scoring, bn_type, target", params)
     def test_4(self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target):
         test_id = 'test_3'
