@@ -16,7 +16,6 @@ class MixtureGaussianNode(BaseNode):
 
     def __init__(self, name):
         super(MixtureGaussianNode, self).__init__(name)
-        self.type = "MixtureGaussian"
 
     def fit_parameters(self, data: DataFrame) -> MixtureGaussianParams:
         """

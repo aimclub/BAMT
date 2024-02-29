@@ -136,11 +136,11 @@ class CompositeStructureBuilder(CompositeDefiner):
                 node = DiscreteNode(name=node_instance.name)
             else:
                 continue
-            id_node = self.skeleton["V"].index(node_instance)
+            id_node = self.vertices.index(node_instance)
             node.disc_parents = node_instance.disc_parents
             node.cont_parents = node_instance.cont_parents
             node.children = node_instance.children
-            self.skeleton["V"][id_node] = node
+            self.vertices[id_node] = node
 
     def build(
         self,

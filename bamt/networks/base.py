@@ -26,6 +26,8 @@ from bamt.log import logger_network
 from bamt.nodes.base import BaseNode
 from bamt.utils import graph_utils, serialization_utils, check_utils
 
+from bamt.utils.check_utils import NetworkChecker
+
 
 class BaseNetwork(object):
     """
@@ -49,6 +51,8 @@ class BaseNetwork(object):
         self.has_logit = False
         self.use_mixture = False
         self.encoders = {}
+
+        self.checker = None  # will be initialized on add_nodes stage
 
     @property
     def nodes_names(self) -> List[str]:
@@ -98,18 +102,13 @@ class BaseNetwork(object):
         elif ["Abstract"] in self._allowed_dtypes:
             return None
         self.descriptor = descriptor
-        worker_1 = builders.builders_base.VerticesDefiner(descriptor, regressor=None)
+        self.checker = NetworkChecker(descriptor)
+        worker_1 = builders.builders_base.VerticesDefiner(
+            descriptor, checkers_rules=self.checker.get_checker_rules(), regressor=None
+        )
 
         # first stage
-        worker_1.skeleton["V"] = worker_1.vertices
-        # second stage
-        worker_1.overwrite_vertex(
-            has_logit=False,
-            use_mixture=self.use_mixture,
-            classifier=None,
-            regressor=None,
-        )
-        self.nodes = worker_1.vertices
+        self.nodes = worker_1.init_nodes()
 
     def add_edges(
         self,
@@ -169,7 +168,9 @@ class BaseNetwork(object):
         if optimizer == "HC":
             worker = HCStructureBuilder(
                 data=data,
+                vertices=self.nodes,
                 descriptor=self.descriptor,
+                checkers_rules=self.checker.get_checker_rules(),
                 scoring_function=scoring_function,
                 has_logit=self.has_logit,
                 use_mixture=self.use_mixture,
@@ -199,8 +200,11 @@ class BaseNetwork(object):
         )
 
         # update family
-        self.nodes = worker.skeleton["V"]
-        self.edges = worker.skeleton["E"]
+        self.nodes = worker.vertices
+        if self._structure_validation():
+            self.edges = worker.structure
+        else:
+            logger_network.critical("Type Error in Structure. Forbidden edge detected.")
 
     def calculate_weights(self, discretized_data: pd.DataFrame):
         """
@@ -295,8 +299,8 @@ class BaseNetwork(object):
                 if self[node1] and self[node2]:
                     if (
                         not self.has_logit
-                        and self.descriptor["types"][node1] == "cont"
-                        and self.descriptor["types"][node2] == "disc"
+                        and self.checker.checker_descriptor["types"][node1].is_cont
+                        and self.checker.checker_descriptor["types"][node2].is_disc
                     ):
                         logger_network.warning(
                             f"Restricted edge detected (has_logit=False) : [{node1}, {node2}]"
@@ -338,6 +342,7 @@ class BaseNetwork(object):
             ):
                 logger_network.error("Compatibility error: has logit.")
                 return
+
             self.set_nodes(nodes=nodes, info=info)
         if isinstance(edges, list):
             if not self.nodes:
@@ -347,11 +352,12 @@ class BaseNetwork(object):
             builder = builders.builders_base.VerticesDefiner(
                 descriptor=self.descriptor, regressor=None
             )  # init worker
-            builder.skeleton["V"] = builder.vertices  # 1 stage
+
+            self.nodes = builder.init_nodes() # 1 stage
             if len(edges) != 0:
                 # set edges and register members
                 self.set_edges(edges=edges)
-                builder.skeleton["E"] = self.edges
+                builder.structure = self.edges
                 builder.get_family()
 
             builder.overwrite_vertex(
@@ -361,7 +367,7 @@ class BaseNetwork(object):
                 regressor=None,
             )
 
-            self.set_nodes(nodes=builder.skeleton["V"])
+            self.set_nodes(nodes=builder.structure)
 
     def _param_validation(self, params: Dict[str, Any]) -> bool:
         if all(self[i] for i in params.keys()):
@@ -374,6 +380,15 @@ class BaseNetwork(object):
             return True
         else:
             logger_network.error("Param validation failed due to unknown nodes.")
+            return False
+
+    def _structure_validation(self):
+        if all(
+            node_checker.node_validation()
+            for node_checker in self.checker.checker_descriptor["types"].values()
+        ):
+            return True
+        else:
             return False
 
     def set_parameters(self, parameters: Dict):
@@ -876,7 +891,7 @@ class BaseNetwork(object):
 
         :return structure: json with {"nodes": [...], "edges": [...]}
         """
-        structure = GraphUtils.GraphAnalyzer(self).markov_blanket(node_name)
+        structure = graph_utils.GraphAnalyzer(self).markov_blanket(node_name)
         if plot_to:
             plot_(
                 plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
@@ -901,7 +916,7 @@ class BaseNetwork(object):
 
         :return structure: json with {"nodes": [...], "edges": [...]}
         """
-        structure = GraphUtils.GraphAnalyzer(self).find_family(
+        structure = graph_utils.GraphAnalyzer(self).find_family(
             node_name, height, depth, with_nodes
         )
 

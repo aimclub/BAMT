@@ -17,7 +17,6 @@ class ConditionalMixtureGaussianNode(BaseNode):
 
     def __init__(self, name):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
-        self.type = "ConditionalMixtureGaussian"
 
     def fit_parameters(
         self, data: DataFrame

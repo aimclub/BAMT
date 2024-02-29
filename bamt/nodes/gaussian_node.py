@@ -21,7 +21,6 @@ class GaussianNode(BaseNode):
         if regressor is None:
             regressor = linear_model.LinearRegression()
         self.regressor = regressor
-        self.type = "Gaussian" + f" ({type(self.regressor).__name__})"
 
     def fit_parameters(self, data: DataFrame, **kwargs) -> GaussianParams:
         parents = self.cont_parents

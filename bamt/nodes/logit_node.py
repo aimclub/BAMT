@@ -21,7 +21,6 @@ class LogitNode(BaseNode):
                 multi_class="multinomial", solver="newton-cg", max_iter=100
             )
         self.classifier = classifier
-        self.type = "Logit" + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame, **kwargs) -> LogitParams:
         parents = self.cont_parents + self.disc_parents
