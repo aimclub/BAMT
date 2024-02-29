@@ -1,13 +1,7 @@
-import os
 import pickle
 from typing import Union
 
-from bamt.config import config
 from bamt.utils.check_utils import NodeType
-
-STORAGE = config.get(
-    "NODES", "models_storage", fallback="models_storage is not defined"
-)
 
 
 class BaseNode(object):
@@ -62,31 +56,6 @@ class BaseNode(object):
             return "pickle"
         except Exception as ex:
             return ex
-
-    @staticmethod
-    def get_path_joblib(node_name: str, specific: str = "") -> str:
-        """
-        Args:
-            node_name: name of node
-            specific: more specific unique name for node.
-            For example, combination.
-
-        Return:
-            Path to save a joblib file.
-        """
-        if not isinstance(specific, str):
-            specific = str(specific)
-
-        index = str(int(os.listdir(STORAGE)[-1]))
-        path_to_check = os.path.join(STORAGE, index, f"{node_name.replace(' ', '_')}")
-
-        if not os.path.isdir(path_to_check):
-            os.makedirs(os.path.join(STORAGE, index, f"{node_name.replace(' ', '_')}"))
-
-        path = os.path.abspath(
-            os.path.join(path_to_check, f"{specific}.joblib.compressed")
-        )
-        return path
 
     @staticmethod
     def get_dist(node_info, pvals):
