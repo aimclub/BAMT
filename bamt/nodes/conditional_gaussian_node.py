@@ -12,6 +12,8 @@ from sklearn.metrics import mean_squared_error as mse
 from .base import BaseNode
 from .schema import CondGaussParams
 
+# from bamt.checkers.enums import NodeType
+
 
 class ConditionalGaussianNode(BaseNode):
     """
@@ -23,7 +25,6 @@ class ConditionalGaussianNode(BaseNode):
         if regressor is None:
             regressor = linear_model.LinearRegression()
         self.regressor = regressor
-        self.type = "ConditionalGaussian" + f" ({type(self.regressor).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, CondGaussParams]]:
         """

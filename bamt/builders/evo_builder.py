@@ -15,7 +15,7 @@ from golem.core.optimisers.optimizer import GraphGenerationParams
 from pandas import DataFrame
 
 from bamt.builders.builders_base import BaseDefiner
-from bamt.utils import EvoUtils as evo
+from bamt.utils import evo_utils as evo
 
 
 class EvoDefiner(BaseDefiner):

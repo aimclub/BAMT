@@ -9,7 +9,7 @@ from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.builders.hc_builder import HillClimbDefiner
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.gaussian_node import GaussianNode
-from bamt.utils.MathUtils import precision_recall
+from bamt.utils.math_utils import precision_recall
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)
 

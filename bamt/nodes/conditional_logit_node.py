@@ -23,7 +23,6 @@ class ConditionalLogitNode(BaseNode):
                 multi_class="multinomial", solver="newton-cg", max_iter=100
             )
         self.classifier = classifier
-        self.type = "ConditionalLogit" + f" ({type(self.classifier).__name__})"
 
     def fit_parameters(self, data: DataFrame) -> Dict[str, Dict[str, LogitParams]]:
         """

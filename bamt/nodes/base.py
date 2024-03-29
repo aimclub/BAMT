@@ -1,6 +1,8 @@
 import pickle
 from typing import Union
 
+from bamt.checkers.enums import NodeType
+
 
 class BaseNode(object):
     """
@@ -16,14 +18,15 @@ class BaseNode(object):
         children: node's children
         """
         self.name = name
-        self.type = "abstract"
+        self.type = NodeType(type(self).__name__)
 
         self.disc_parents = []
         self.cont_parents = []
         self.children = []
 
     def __repr__(self):
-        return f"{self.name}"
+        model = getattr(self, 'regressor', False) or getattr(self, 'classifier', False)
+        return f"{self.name} ({model if model else None})"
 
     def __eq__(self, other):
         if not isinstance(other, BaseNode):

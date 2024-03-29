@@ -167,8 +167,8 @@ class Display(object):
         else:
             for n in bn.nodes:
                 print(
-                    f"{n.name: <20} | "
-                    f"{n.type: <50} | "
+                    f"{str(n): <120} | "
+                    f"{n.type: <50}  | "
                     f"{bn.descriptor['types'][n.name]: <10} | "
                     f"{str([bn.descriptor['types'][name] for name in n.cont_parents + n.disc_parents]): <50} | "
                     f"{str([name for name in n.cont_parents + n.disc_parents])}"

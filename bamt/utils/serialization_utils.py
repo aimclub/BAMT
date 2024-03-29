@@ -6,6 +6,7 @@ import joblib
 
 import bamt.utils.check_utils as check_utils
 from bamt.log import logger_nodes
+from copy import deepcopy
 
 
 class ModelsSerializer:
@@ -59,7 +60,7 @@ class ModelsSerializer:
         model = instance[f"{model_type}_obj"]
         if not check_utils.is_model(model):
             return instance
-
+        new_instance = deepcopy(instance)
         serialization, status = self.choose_serialization(model)
         if status == -1:
             logger_nodes.warning(
@@ -81,16 +82,17 @@ class ModelsSerializer:
         else:
             logger_nodes.error("Serialization detection failed.")
             return
-        instance["serialization"] = serialization
-        instance[f"{model_type}_obj"] = model_ser or path
-        return instance
+        new_instance["serialization"] = serialization
+        new_instance[f"{model_type}_obj"] = model_ser or path
+        return new_instance
 
     def serialize(self, distributions):
         result = {}
-        for node_name, [node_type, dist] in distributions.items():
+        for node_name, [node_checker, dist] in distributions.items():
             result[node_name] = {}
-            model_type = "regressor" if "Gaussian" in node_type else "classifier"
-            if "Conditional" in node_type:
+            model_type = "regressor" if node_checker.does_require_regressor else "classifier"
+            # if "Conditional" in node_type:
+            if node_checker.has_combinations:
                 result[node_name]["hybcprob"] = {}
                 for combination, dist_nested in dist["hybcprob"].items():
                     instance_serialized = self.serialize_instance(

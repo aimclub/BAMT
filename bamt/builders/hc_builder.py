@@ -4,10 +4,11 @@ from pandas import DataFrame
 from pgmpy.base import DAG
 from pgmpy.estimators import HillClimbSearch
 
-from bamt.builders.builders_base import ParamDict, BaseDefiner
+from bamt.builders.builders_base import BaseDefiner
 from bamt.log import logger_builder
 from bamt.redef_HC import hc as hc_method
-from bamt.utils import GraphUtils as gru
+from bamt.utils import graph_utils as gru
+from bamt.builders.schema import ParamDict
 
 
 class HillClimbDefiner(BaseDefiner):
@@ -16,22 +17,23 @@ class HillClimbDefiner(BaseDefiner):
     """
 
     def __init__(
-        self,
-        data: DataFrame,
-        descriptor: Dict[str, Dict[str, str]],
-        scoring_function: Union[Tuple[str, Callable], Tuple[str]],
-        regressor: Optional[object] = None,
+            self,
+            data: DataFrame,
+            vertices: list,
+            descriptor: Dict[str, Dict[str, str]],
+            scoring_function: Union[Tuple[str, Callable], Tuple[str]],
+            checkers_rules: dict,
     ):
-        super().__init__(data, descriptor, scoring_function, regressor)
+        super().__init__(data, vertices, descriptor, scoring_function, checkers_rules)
         self.optimizer = HillClimbSearch(data)
 
     def apply_K2(
-        self,
-        data: DataFrame,
-        init_edges: Optional[List[Tuple[str, str]]],
-        progress_bar: bool,
-        remove_init_edges: bool,
-        white_list: Optional[List[Tuple[str, str]]],
+            self,
+            data: DataFrame,
+            init_edges: Optional[List[Tuple[str, str]]],
+            progress_bar: bool,
+            remove_init_edges: bool,
+            white_list: Optional[List[Tuple[str, str]]],
     ):
         """
         :param init_edges: list of tuples, a graph to start learning with
@@ -42,7 +44,8 @@ class HillClimbDefiner(BaseDefiner):
         """
         if not all([i in ["disc", "disc_num"] for i in gru.nodes_types(data).values()]):
             logger_builder.error(
-                f"K2 deals only with discrete data. Continuous data: {[col for col, type in gru.nodes_types(data).items() if type not in ['disc', 'disc_num']]}"
+                f"K2 deals only with discrete data. Continuous data: "
+                f"{[col for col, type in gru.nodes_types(data).items() if type not in ['disc', 'disc_num']]}"
             )
             return None
 
@@ -80,16 +83,15 @@ class HillClimbDefiner(BaseDefiner):
                     show_progress=False,
                 )
 
-        structure = [list(x) for x in list(best_model.edges())]
-        self.skeleton["E"] = structure
+        self.structure = [list(x) for x in list(best_model.edges())]
 
     def apply_group1(
-        self,
-        data: DataFrame,
-        progress_bar: bool,
-        init_edges: Optional[List[Tuple[str, str]]],
-        remove_init_edges: bool,
-        white_list: Optional[List[Tuple[str, str]]],
+            self,
+            data: DataFrame,
+            progress_bar: bool,
+            init_edges: Optional[List[Tuple[str, str]]],
+            remove_init_edges: bool,
+            white_list: Optional[List[Tuple[str, str]]],
     ):
         """
         This method implements the group of scoring functions.
@@ -141,7 +143,7 @@ class HillClimbDefiner(BaseDefiner):
                         ],
                     ]
                 )
-        self.skeleton["E"] = structure
+        self.structure = structure
 
 
 class HCStructureBuilder(HillClimbDefiner):
@@ -150,13 +152,15 @@ class HCStructureBuilder(HillClimbDefiner):
     """
 
     def __init__(
-        self,
-        data: DataFrame,
-        descriptor: Dict[str, Dict[str, str]],
-        scoring_function: Tuple[str, Callable],
-        regressor: Optional[object],
-        has_logit: bool,
-        use_mixture: bool,
+            self,
+            data: DataFrame,
+            descriptor: Dict[str, Dict[str, str]],
+            scoring_function: Tuple[str, Callable],
+            regressor: Optional[object],
+            has_logit: bool,
+            use_mixture: bool,
+            vertices: list,
+            checkers_rules: dict
     ):
         """
         :param data: train data
@@ -167,19 +171,20 @@ class HCStructureBuilder(HillClimbDefiner):
             descriptor=descriptor,
             data=data,
             scoring_function=scoring_function,
-            regressor=regressor,
+            vertices=vertices,
+            checkers_rules=checkers_rules
         )
         self.use_mixture = use_mixture
         self.has_logit = has_logit
 
     def build(
-        self,
-        data: DataFrame,
-        progress_bar: bool,
-        classifier: Optional[object],
-        regressor: Optional[object],
-        params: Optional[ParamDict] = None,
-        **kwargs,
+            self,
+            data: DataFrame,
+            progress_bar: bool,
+            classifier: Optional[object],
+            regressor: Optional[object],
+            params: Optional[ParamDict] = None,
+            **kwargs,
     ):
         if params:
             for param, value in params.items():
@@ -187,9 +192,6 @@ class HCStructureBuilder(HillClimbDefiner):
 
         init_nodes = self.params.pop("init_nodes")
         bl_add = self.params.pop("bl_add")
-
-        # Level 1
-        self.skeleton["V"] = self.vertices
 
         self.restrict(data, init_nodes, bl_add)
         if self.scoring_function[0] == "K2":

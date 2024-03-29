@@ -5,7 +5,7 @@ import numpy as np
 from gmr import GMM
 from pandas import DataFrame
 
-from bamt.utils.MathUtils import component
+from bamt.utils.math_utils import component
 from .base import BaseNode
 from .schema import CondMixtureGaussParams
 
@@ -17,7 +17,6 @@ class ConditionalMixtureGaussianNode(BaseNode):
 
     def __init__(self, name):
         super(ConditionalMixtureGaussianNode, self).__init__(name)
-        self.type = "ConditionalMixtureGaussian"
 
     def fit_parameters(
         self, data: DataFrame

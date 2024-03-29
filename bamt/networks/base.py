@@ -13,7 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
 import bamt.builders as builders
-from bamt.builders.builders_base import ParamDict
+from bamt.builders.schema import ParamDict
 from bamt.builders.evo_builder import EvoStructureBuilder
 from bamt.builders.hc_builder import HCStructureBuilder
 from bamt.display import plot_, get_info_
@@ -25,7 +25,10 @@ from bamt.external.pyitlib.DiscreteRandomVariableUtils import (
 )
 from bamt.log import logger_network
 from bamt.nodes.base import BaseNode
-from bamt.utils import GraphUtils, serialization_utils, check_utils
+from bamt.utils import graph_utils, serialization_utils, check_utils
+
+from bamt.checkers.network_checker import NetworkChecker
+from bamt.checkers.enums import nodes_with_regressors
 
 
 class BaseNetwork(object):
@@ -50,6 +53,8 @@ class BaseNetwork(object):
         self.has_logit = False
         self.use_mixture = False
         self.encoders = {}
+
+        self.checker = None  # will be initialized on add_nodes stage
 
     @property
     def nodes_names(self) -> List[str]:
@@ -99,18 +104,13 @@ class BaseNetwork(object):
         elif ["Abstract"] in self._allowed_dtypes:
             return None
         self.descriptor = descriptor
-        worker_1 = builders.builders_base.VerticesDefiner(descriptor, regressor=None)
+        self.checker = NetworkChecker(descriptor)
+        worker_1 = builders.builders_base.VerticesDefiner(
+            descriptor, checkers_rules=self.checker.get_checker_rules(), regressor=None
+        )
 
         # first stage
-        worker_1.skeleton["V"] = worker_1.vertices
-        # second stage
-        worker_1.overwrite_vertex(
-            has_logit=False,
-            use_mixture=self.use_mixture,
-            classifier=None,
-            regressor=None,
-        )
-        self.nodes = worker_1.vertices
+        self.nodes = worker_1.init_nodes()
 
     def add_edges(
         self,
@@ -170,7 +170,9 @@ class BaseNetwork(object):
         if optimizer == "HC":
             worker = HCStructureBuilder(
                 data=data,
+                vertices=self.nodes,
                 descriptor=self.descriptor,
+                checkers_rules=self.checker.get_checker_rules(),
                 scoring_function=scoring_function,
                 has_logit=self.has_logit,
                 use_mixture=self.use_mixture,
@@ -200,14 +202,17 @@ class BaseNetwork(object):
         )
 
         # update family
-        self.nodes = worker.skeleton["V"]
-        self.edges = worker.skeleton["E"]
+        self.nodes = worker.vertices
+        if self._structure_validation():
+            self.edges = worker.structure
+        else:
+            logger_network.critical("Type Error in Structure. Forbidden edge detected.")
 
     def calculate_weights(self, discretized_data: pd.DataFrame):
         """
         Provide calculation of link strength according mutual information between node and its parent(-s) values.
         """
-        import bamt.utils.GraphUtils as gru
+        import bamt.utils.graph_utils as gru
 
         data_descriptor = gru.nodes_types(discretized_data)
         if not all([i in ["disc", "disc_num"] for i in data_descriptor.values()]):
@@ -283,6 +288,8 @@ class BaseNetwork(object):
 
     def set_edges(self, edges: Optional[List[Sequence[str]]] = None):
         """
+        NB!: this method affects only on attributes and can't define structure (with 2 stage)
+
         additional function to set edges manually. User should be aware that
         nodes must be a subclass of BaseNode.
         param: edges dict with name and node (if a lot of nodes should be added)
@@ -296,8 +303,8 @@ class BaseNetwork(object):
                 if self[node1] and self[node2]:
                     if (
                         not self.has_logit
-                        and self.descriptor["types"][node1] == "cont"
-                        and self.descriptor["types"][node2] == "disc"
+                        and self.checker[node1]["node_checker"].is_cont
+                        and self.checker[node2]["node_checker"].is_disc
                     ):
                         logger_network.warning(
                             f"Restricted edge detected (has_logit=False) : [{node1}, {node2}]"
@@ -327,42 +334,56 @@ class BaseNetwork(object):
         nodes, edges:
         """
         if nodes and (info or (self.descriptor["types"] and self.descriptor["signs"])):
-            if (
-                any("mixture" in node.type.lower() for node in nodes)
-                and not self.use_mixture
-            ):
+            # if (
+            #     any("mixture" in node.type.lower() for node in nodes)
+            #     and not self.use_mixture
+            # ):
+            if self.checker.has_mixture_nodes() and not self.use_mixture:
                 logger_network.error("Compatibility error: use mixture.")
                 return
-            if (
-                any("logit" in node.type.lower() for node in nodes)
-                and not self.has_logit
-            ):
+            # if (
+            #     any("logit" in node.type.lower() for node in nodes)
+            #     and not self.has_logit
+            # ):
+            if self.checker.has_logit_nodes() and not self.has_logit:
                 logger_network.error("Compatibility error: has logit.")
                 return
+
             self.set_nodes(nodes=nodes, info=info)
         if isinstance(edges, list):
             if not self.nodes:
                 logger_network.error("Nodes/info detection failed.")
                 return
 
-            builder = builders.builders_base.VerticesDefiner(
-                descriptor=self.descriptor, regressor=None
+            vertices_builder = builders.builders_base.VerticesDefiner(
+                descriptor=self.descriptor,
+                checkers_rules=self.checker.get_checker_rules(),
+                regressor=None,
             )  # init worker
-            builder.skeleton["V"] = builder.vertices  # 1 stage
+
+            self.nodes = vertices_builder.init_nodes()  # 1 stage
             if len(edges) != 0:
                 # set edges and register members
                 self.set_edges(edges=edges)
-                builder.skeleton["E"] = self.edges
-                builder.get_family()
 
-            builder.overwrite_vertex(
+                vertices_builder.structure = self.edges
+                vertices_builder.vertices = self.nodes
+                vertices_builder.get_family()
+
+            edges_builder = builders.builders_base.EdgesDefiner(
+                vertices=self.nodes,
+                descriptor=self.descriptor,
+                checkers_rules=self.checker.get_checker_rules(),
+            )
+
+            edges_builder.overwrite_vertex(
                 has_logit=self.has_logit,
                 use_mixture=self.use_mixture,
                 classifier=None,
                 regressor=None,
             )
 
-            self.set_nodes(nodes=builder.skeleton["V"])
+            self.set_nodes(nodes=edges_builder.vertices)
 
     def _param_validation(self, params: Dict[str, Any]) -> bool:
         if all(self[i] for i in params.keys()):
@@ -375,6 +396,15 @@ class BaseNetwork(object):
             return True
         else:
             logger_network.error("Param validation failed due to unknown nodes.")
+            return False
+
+    def _structure_validation(self):
+        if all(
+            node_checker.node_validation()
+            for node_checker in self.checker.checker_descriptor["types"].values()
+        ):
+            return True
+        else:
             return False
 
     def set_parameters(self, parameters: Dict):
@@ -435,48 +465,32 @@ class BaseNetwork(object):
             json.dump(data, out)
         return True
 
-    def save_params(self, outdir: str):
-        """
-        Function to save BN params to json file
-        outdir: output directory
-        """
-        return self._save_to_file(outdir, self.distributions)
-
-    def save_structure(self, outdir: str):
-        """
-        Function to save BN edges to json file
-        outdir: output directory
-        """
-        return self._save_to_file(outdir, self.edges)
-
-    def save(self, bn_name, models_dir: str = "models_dir"):
-        """
-        Function to save the whole BN to json file.
-
-        :param bn_name: unique name of bn user want to save. It will be used as file name (e.g. bn_name.json).
-        :param models_dir: if picklization is broken, joblib will serialize models in compressed files
-        in models directory.
-
-        :return: saving status.
-        """
+    def _serialize_dist(self, bn_name, models_dir):
         distributions = deepcopy(self.distributions)
-        new_weights = {str(key): self.weights[key] for key in self.weights}
-
         to_serialize = {}
         # separate logit and gaussian nodes from distributions to serialize bn's models
         for node_name in distributions.keys():
-            if "Mixture" in self[node_name].type:
+            node_checker = self.checker[node_name]["node_checker"]
+            # if "Mixture" in self[node_name].type:
+            if node_checker.is_mixture:
                 continue
-            if self[node_name].type.startswith("Gaussian"):
-                if not distributions[node_name]["regressor"]:
-                    continue
+            # if self[node_name].type.startswith("Gaussian"):
+            # if node_checker.does_require_regressor and not node_checker.has_combinations: ???
+            #     if not distributions[node_name]["regressor"]:
+            #         continue
+            if node_checker.root:
+                continue
+            # if (
+            #     "Gaussian" in self[node_name].type
+            #     or "Logit" in self[node_name].type
+            #     or "ConditionalLogit" in self[node_name].type
+            # ):
             if (
-                "Gaussian" in self[node_name].type
-                or "Logit" in self[node_name].type
-                or "ConditionalLogit" in self[node_name].type
+                node_checker.does_require_classifier
+                or node_checker.does_require_regressor
             ):
                 to_serialize[node_name] = [
-                    self[node_name].type,
+                    node_checker,
                     distributions[node_name],
                 ]
 
@@ -487,6 +501,36 @@ class BaseNetwork(object):
 
         for serialized_node in serialized_dist.keys():
             distributions[serialized_node] = serialized_dist[serialized_node]
+        return distributions
+
+    def save_params(self, outdir: str, bn_name, models_dir: str = "models_dir"):
+        """
+        Function to save BN params to json file
+        outdir: output directory
+        """
+
+        return self._save_to_file(outdir, self._serialize_dist(bn_name, models_dir))
+
+    def save_structure(self, outdir: str):
+        """
+        Function to save BN edges to json file
+        outdir: output directory
+        """
+        return self._save_to_file(outdir, self.edges)
+
+    def save(self, outdir, bn_name, models_dir: str = "models_dir"):
+        """
+        Function to save the whole BN to json file.
+
+        :param bn_name: unique name of bn user want to save. It will be used as file name (e.g. bn_name.json).
+        :param models_dir: if picklization is broken, joblib will serialize models in compressed files
+        in models directory.
+
+        :return: saving status.
+        """
+
+        new_weights = {str(key): self.weights[key] for key in self.weights}
+        distributions = self._serialize_dist(bn_name, models_dir)
 
         outdict = {
             "info": self.descriptor,
@@ -494,11 +538,9 @@ class BaseNetwork(object):
             "parameters": distributions,
             "weights": new_weights,
         }
-        return self._save_to_file(f"{bn_name}.json", outdict)
+        return self._save_to_file(outdir, outdict)
 
-    def load(self,
-             input_data: Union[str, Dict],
-             models_dir: str = "/"):
+    def load(self, input_data: Union[str, Dict], models_dir: str = "/"):
         """
         Function to load the whole BN from json file.
         :param input_data: input path to json file with bn.
@@ -518,34 +560,39 @@ class BaseNetwork(object):
         self.add_nodes(input_dict["info"])
         self.set_structure(edges=input_dict["edges"])
 
-        # check compatibility with father network.
-        if not self.use_mixture:
-            for node_data in input_dict["parameters"].values():
-                if "hybcprob" not in node_data.keys():
-                    continue
-                else:
-                    # Since we don't have information about types of nodes, we
-                    # should derive it from parameters.
-                    if any(
-                        list(node_keys.keys()) == ["covars", "mean", "coef"]
-                        for node_keys in node_data["hybcprob"].values()
-                    ):
-                        logger_network.error(
-                            f"This crucial parameter is not the same as father's parameter: use_mixture."
-                        )
-                        return
+        validation_result = self.checker.validate_load(input_dict, self)
+        if isinstance(validation_result, str):
+            logger_network.error(f"This crucial parameter is not the same as father's parameter: {validation_result}.")
+            return
 
-        # check if edges before and after are the same.They can be different in
-        # the case when user sets forbidden edges.
-        if not self.has_logit:
-            if not all(
-                edges_before == [edges_after[0], edges_after[1]]
-                for edges_before, edges_after in zip(input_dict["edges"], self.edges)
-            ):
-                logger_network.error(
-                    f"This crucial parameter is not the same as father's parameter: has_logit."
-                )
-                return
+        # # check compatibility with father network.
+        # if not self.use_mixture:
+        #     for node_data in input_dict["parameters"].values():
+        #         if "hybcprob" not in node_data.keys():
+        #             continue
+        #         else:
+        #             # Since we don't have information about types of nodes, we
+        #             # should derive it from parameters.
+        #             if any(
+        #                 list(node_keys.keys()) == ["covars", "mean", "coef"]
+        #                 for node_keys in node_data["hybcprob"].values()
+        #             ):
+        #                 logger_network.error(
+        #                     f"This crucial parameter is not the same as father's parameter: use_mixture."
+        #                 )
+        #                 return
+        #
+        # # check if edges before and after are the same.They can be different in
+        # # the case when user sets forbidden edges.
+        # if not self.has_logit:
+        #     if not all(
+        #         edges_before == [edges_after[0], edges_after[1]]
+        #         for edges_before, edges_after in zip(input_dict["edges"], self.edges)
+        #     ):
+        #         logger_network.error(
+        #             f"This crucial parameter is not the same as father's parameter: has_logit."
+        #         )
+        #         return
 
         deserializer = serialization_utils.Deserializer(models_dir)
 
@@ -890,7 +937,7 @@ class BaseNetwork(object):
 
         :return structure: json with {"nodes": [...], "edges": [...]}
         """
-        structure = GraphUtils.GraphAnalyzer(self).markov_blanket(node_name)
+        structure = graph_utils.GraphAnalyzer(self).markov_blanket(node_name)
         if plot_to:
             plot_(
                 plot_to, [self[name] for name in structure["nodes"]], structure["edges"]
@@ -915,7 +962,7 @@ class BaseNetwork(object):
 
         :return structure: json with {"nodes": [...], "edges": [...]}
         """
-        structure = GraphUtils.GraphAnalyzer(self).find_family(
+        structure = graph_utils.GraphAnalyzer(self).find_family(
             node_name, height, depth, with_nodes
         )
 

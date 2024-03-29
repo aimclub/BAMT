@@ -16,7 +16,6 @@ class DiscreteNode(BaseNode):
 
     def __init__(self, name):
         super(DiscreteNode, self).__init__(name)
-        self.type = "Discrete"
 
     def fit_parameters(self, data: DataFrame, num_workers: int = 1):
         """

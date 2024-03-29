@@ -22,7 +22,7 @@ from bamt.nodes.composite_continuous_node import CompositeContinuousNode
 from bamt.nodes.composite_discrete_node import CompositeDiscreteNode
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.gaussian_node import GaussianNode
-from bamt.utils import EvoUtils as evo
+from bamt.utils import evo_utils as evo
 from bamt.utils.composite_utils import CompositeGeneticOperators
 from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
 
@@ -136,11 +136,11 @@ class CompositeStructureBuilder(CompositeDefiner):
                 node = DiscreteNode(name=node_instance.name)
             else:
                 continue
-            id_node = self.skeleton["V"].index(node_instance)
+            id_node = self.vertices.index(node_instance)
             node.disc_parents = node_instance.disc_parents
             node.cont_parents = node_instance.cont_parents
             node.children = node_instance.children
-            self.skeleton["V"][id_node] = node
+            self.vertices[id_node] = node
 
     def build(
         self,
