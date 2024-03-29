@@ -12,7 +12,7 @@ from sklearn.metrics import mean_squared_error as mse
 from .base import BaseNode
 from .schema import CondGaussParams
 
-from bamt.utils.check_utils import NodeType
+# from bamt.checkers.enums import NodeType
 
 
 class ConditionalGaussianNode(BaseNode):

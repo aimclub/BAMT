@@ -1,7 +1,7 @@
 import pickle
 from typing import Union
 
-from bamt.utils.check_utils import NodeType
+from bamt.checkers.enums import NodeType
 
 
 class BaseNode(object):

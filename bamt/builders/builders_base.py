@@ -12,7 +12,8 @@ from bamt.nodes.gaussian_node import GaussianNode
 from bamt.nodes.logit_node import LogitNode
 from bamt.nodes.mixture_gaussian_node import MixtureGaussianNode
 from bamt.utils import graph_utils as gru
-from bamt.utils import check_utils
+
+from bamt.checkers.enums import continuous_nodes
 
 
 class StructureBuilder(object):
@@ -51,7 +52,6 @@ class StructureBuilder(object):
         :param init_nodes: nodes to begin with (thus they have no parents)
         :param bl_add: additional vertices
         """
-        # node_type = self.descriptor["types"]
         blacklist = []
         datacol = data.columns.to_list()
 
@@ -172,7 +172,7 @@ class EdgesDefiner(StructureBuilder):
                             name=node_instance.name, classifier=classifier
                         )
 
-            if node_instance.type in check_utils.continuous_nodes:
+            if node_instance.type in continuous_nodes:
                 if use_mixture:
                     if not node_instance.disc_parents:
                         node = MixtureGaussianNode(name=node_instance.name)
