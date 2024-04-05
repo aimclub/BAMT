@@ -1,4 +1,4 @@
-from bamt.nodes.node import Node
+from bamt.core.nodes.node import Node
 
 
 class ChildNode(Node):

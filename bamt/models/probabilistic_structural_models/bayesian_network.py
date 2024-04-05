@@ -1,5 +1,6 @@
-from .probabilistic_structural_model import ProbabilisticStructuralModel
 from abc import abstractmethod
+
+from .probabilistic_structural_model import ProbabilisticStructuralModel
 
 
 class BayesianNetwork(ProbabilisticStructuralModel):
