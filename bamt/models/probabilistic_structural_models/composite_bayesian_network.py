@@ -1,7 +1,7 @@
 from .bayesian_network import BayesianNetwork
 
 
-class ContinuousBayesianNetwork(BayesianNetwork):
+class CompositeBayesianNetwork(BayesianNetwork):
     def __init__(self):
         super().__init__()
 
@@ -13,3 +13,6 @@ class ContinuousBayesianNetwork(BayesianNetwork):
 
     def sample(self):
         pass
+
+    def __str__(self):
+        return "Composite Bayesian Network"

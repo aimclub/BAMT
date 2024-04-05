@@ -13,3 +13,6 @@ class ContinuousBayesianNetwork(BayesianNetwork):
 
     def sample(self):
         pass
+
+    def __str__(self):
+        return "Continuous Bayesian Network"

@@ -13,3 +13,6 @@ class HybridBayesianNetwork(BayesianNetwork):
 
     def sample(self):
         pass
+
+    def __str__(self):
+        return "Hybrid Bayesian Network"
