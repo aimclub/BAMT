@@ -1,5 +1,5 @@
-import itertools
 import pytest
+import itertools
 import bamt.networks as networks
 import bamt.preprocessors as pp
 from pgmpy.estimators import K2Score
@@ -9,122 +9,71 @@ from pandas.testing import assert_frame_equal
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
-data_paths = {
-    "continuous": "data/benchmark/auto_price.csv",
-    "discrete": "tests/hack_discrete/hack_data.csv",
-    "hybrid": "data/benchmark/new_thyroid.csv",
-}
 
-scoring = [("K2", K2Score), "BIC", "MI"]
-optimizer = ["HC", "Evo"]
-use_mixture = [True, False]
-has_logit = [True, False]
+class Builder:
+    def __init__(self):
+        self.data_paths = {
+            "Continuous": "data/benchmark/auto_price.csv",
+            "Discrete": "tests/hack_discrete/hack_data.csv",
+            "Hybrid": "data/benchmark/new_thyroid.csv",
+        }
 
+        self.tail = {
+            "Continuous": ["Continuous", "target"],
+            "Discrete": ["Discrete", "Tectonic regime"],
+            "Hybrid": ["Hybrid", "target"],
+        }
 
-# Generate test parameters
-def generate_network_params():
-    params = []
-    # Discrete network parameters
-    for opt in optimizer:
-        for score in scoring:
-            if opt == "HC":
-                params.append(
-                    (
-                        data_paths["discrete"],
-                        False,
-                        False,
-                        opt,
-                        score,
-                        "Discrete",
-                        "Tectonic regime",
-                    )
-                )
-    params.append(
-        (
-            data_paths["discrete"],
-            False,
-            False,
-            "Evo",
-            ("K2", K2Score),
-            "Discrete",
-            "Tectonic regime",
+        self.scoring = [("K2", K2Score), "BIC", "MI"]
+        self.optimizer = ["HC"]
+        self.use_mixture = [False, True]
+        self.has_logit = [False, True]
+
+        self.static = {}
+
+        self.dynamic = {
+            "Continuous": [self.use_mixture, [False], self.optimizer, self.scoring],
+            "Discrete": [[False], [False], self.optimizer, self.scoring],
+            "Hybrid": [self.use_mixture, self.has_logit, self.optimizer, self.scoring],
+        }
+
+    def create_from_config(self):
+        """Method to collect data from config"""
+        self.static = dict(
+            Discrete=[self.data_paths["Discrete"], *self.tail["Discrete"]],
+            Continuous=[self.data_paths["Continuous"], *self.tail["Continuous"]],
+            Hybrid=[self.data_paths["Hybrid"], *self.tail["Hybrid"]],
+            evo=[False, False, "Evo", self.scoring[0]],
         )
-    )
 
-    # Continuous network parameters
-    for opt in optimizer:
-        for score in scoring:
-            for mix in use_mixture:
-                if opt == "HC":
-                    params.append(
-                        (
-                            data_paths["continuous"],
-                            mix,
-                            False,
-                            opt,
-                            score,
-                            "Continuous",
-                            "target",
-                        )
-                    )
-    params.append(
-        (
-            data_paths["continuous"],
-            use_mixture[-1],
-            False,
-            "Evo",
-            ("K2", K2Score),
-            "Continuous",
-            "target",
-        )
-    )
+    def create_evo_item(self, net_type):
+        evo_item = self.static["evo"][:]
+        evo_item.insert(0, self.data_paths[net_type])
+        evo_item.extend(self.tail[net_type])
+        return evo_item
 
-    # Hybrid network parameters
-    for opt in optimizer:
-        for score in scoring:
-            for mix in use_mixture:
-                for logit in has_logit:
-                    if opt == "HC":
-                        params.append(
-                            (
-                                data_paths["hybrid"],
-                                mix,
-                                logit,
-                                opt,
-                                score,
-                                "Hybrid",
-                                "target",
-                            )
-                        )
-    params.append(
-        (
-            data_paths["hybrid"],
-            use_mixture[-1],
-            has_logit[-1],
-            "Evo",
-            ("K2", K2Score),
-            "Hybrid",
-            "target",
-        )
-    )
+    @staticmethod
+    def insert_list(loc, what, to):
+        new = to[:]
+        new[loc:loc] = what
+        return new
 
-    # Composite network parameters
-    # params.append(
-    #     (
-    #         data_paths["hybrid"],
-    #         False,
-    #         False,
-    #         "Evo",
-    #         ("K2", K2Score),
-    #         "Composite",
-    #         "target",
-    #     )
-    # )
+    def create_net_items(self, net_type):
+        static = self.static[net_type][:]
+        dynamic_part = map(list, itertools.product(*self.dynamic[net_type]))
+        return list(map(lambda x: self.insert_list(1, x, static), dynamic_part))
 
-    return params
+    def get_params(self):
+        self.create_from_config()
+        params = []
+        for net_type in ["Discrete", "Continuous", "Hybrid"]:
+            params.extend(
+                self.create_net_items(net_type) + [self.create_evo_item(net_type)]
+            )
+        return params
 
 
-params = generate_network_params()
+params = Builder().get_params()
 
 
 def initialize_bn(bn_type, use_mixture, has_logit):
@@ -288,7 +237,7 @@ class TestNetwork:
     def test_4(
         self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target
     ):
-        test_id = "test_3"
+        test_id = "test_4"
 
         if use_mixture == False:
 
