@@ -638,6 +638,7 @@ class BaseNetwork(object):
         predict: bool = False,
         parall_count: int = 1,
         filter_neg: bool = True,
+        seed: Optional[int] = None,
     ) -> Union[None, pd.DataFrame, List[Dict[str, Union[str, int, float]]]]:
         """
         Sampling from Bayesian Network
@@ -645,10 +646,13 @@ class BaseNetwork(object):
         evidence: values for nodes from user
         parall_count: number of threads. Defaults to 1.
         filter_neg: either filter negative vals or not.
+        seed: seed value to use for random number generator
         """
         from joblib import Parallel, delayed
 
-        random.seed()
+        random.seed(seed)
+        np.random.seed(seed)
+
         if not self.distributions.items():
             logger_network.error(
                 "Parameter learning wasn't done. Call fit_parameters method"
