@@ -156,4 +156,5 @@ Our resources:
   number={2},
   pages={343},
   year={2023},
+}
 ```
