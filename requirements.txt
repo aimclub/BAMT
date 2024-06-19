@@ -1,4 +1,4 @@
-numpy>=2.0.0
+numpy>=1.26.4
 matplotlib==3.6.2
 pandas==2.0.3
 gmr==1.6.2
