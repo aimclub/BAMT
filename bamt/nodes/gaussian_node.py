@@ -5,7 +5,7 @@ from typing import Optional, List
 import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
-from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import root_mean_squared_error as rmse
 
 from .base import BaseNode
 from .schema import GaussianParams
@@ -30,7 +30,7 @@ class GaussianNode(BaseNode):
         if parents:
             self.regressor.fit(data[parents].values, data[self.name].values, **kwargs)
             predicted_value = self.regressor.predict(data[parents].values)
-            variance = mse(data[self.name].values, predicted_value, squared=False)
+            variance = rmse(data[self.name].values, predicted_value)
             return {
                 "mean": np.nan,
                 "regressor_obj": self.regressor,
