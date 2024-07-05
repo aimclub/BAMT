@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "BAMT"
-version = "2.0.0"
+version = "1.2.01"
 description = "data modeling and analysis tool based on Bayesian networks"
 authors = ["Roman Netrogolov <romius2001@gmail.com>",
     "Irina Deeva <iriny.deeva@gmail.com>",
@@ -22,19 +22,20 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-numpy = "^1.26.0"
-matplotlib = "^3.8.0"
-pandas = "^2.2.0"
+python = ">=3.9,<3.11"
+setuptools = "65.6.3"
+numpy = ">=1.24.2"
+matplotlib = "3.6.2"
+pandas = "2.0.3"
 gmr = "1.6.2"
-scikit-learn = "^1.4.2"
-scipy = "^1.13.0"
-pyvis = "^0.3.1"
+scikit-learn = "^1.2.0"
+scipy = "^1.8.0"
+pyvis = ">=0.2.1"
 missingno = "^0.5.1"
-pgmpy = "^0.1.20"
-thegolem = "^0.3.3"
+pgmpy = "0.1.20"
+thegolem = ">=0.3.3"
 xgboost = ">=1.7.6"
-catboost = ">=2.0.0"
+catboost = ">=1.0.6"
 lightgbm = {version = ">=3.3.5", optional = true }
 
 [tool.poetry.extras]
