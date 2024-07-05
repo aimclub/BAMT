@@ -83,7 +83,9 @@ class ContinuousDistribution:
         """
         if self._distribution_model is None:
             pool = self._select_pool(distributions_pool, custom_pool)
-            self._distribution_model, self._parameters = self._fit_best_distribution(X, pool)
+            self._distribution_model, self._parameters = self._fit_best_distribution(
+                X, pool
+            )
         else:
             self._parameters = self._distribution_model.fit(X)
 

@@ -31,7 +31,9 @@ class ContinuousNode(RootNode):
             distribution (Optional[ContinuousDistribution]): A ContinuousDistribution object.
         """
         super().__init__()
-        self._distribution = distribution if distribution is not None else ContinuousDistribution()
+        self._distribution = (
+            distribution if distribution is not None else ContinuousDistribution()
+        )
 
     def __str__(self) -> str:
         """
