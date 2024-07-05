@@ -61,7 +61,7 @@ class ContinuousDistribution:
             distribution_model (Optional[Type[stats.rv_continuous]]): A specific `scipy.stats` distribution.
             **parameters: Parameters for the specified distribution model.
         """
-        self._distribution = distribution_model
+        self._distribution_model = distribution_model
         self._parameters = parameters
 
     def fit(
@@ -81,11 +81,11 @@ class ContinuousDistribution:
         Raises:
             ValueError: If a custom pool is selected but not provided.
         """
-        if self._distribution is None:
+        if self._distribution_model is None:
             pool = self._select_pool(distributions_pool, custom_pool)
-            self._distribution, self._parameters = self._fit_best_distribution(X, pool)
+            self._distribution_model, self._parameters = self._fit_best_distribution(X, pool)
         else:
-            self._parameters = self._distribution.fit(X)
+            self._parameters = self._distribution_model.fit(X)
 
     @staticmethod
     def _select_pool(
@@ -119,14 +119,14 @@ class ContinuousDistribution:
 
     @staticmethod
     def _fit_best_distribution(
-        X: np.ndarray, distributions_pool: List[Type[stats.rv_continuous]]
+        X: np.ndarray, distribution_models_pool: List[Type[stats.rv_continuous]]
     ) -> Tuple[Type[rv_continuous], Dict[str, float]]:
         """
         Fit the data to the best distribution in the pool by minimizing the KL divergence.
 
         Args:
             X (np.ndarray): The data to fit.
-            distributions_pool (List[Type[stats.rv_continuous]]): The pool of distributions to consider.
+            distribution_models_pool (List[Type[stats.rv_continuous]]): The pool of distributions to consider.
 
         Returns:
             Tuple[Optional[Type[stats.rv_continuous]], dict]: The best fitting distribution and its parameters.
@@ -139,7 +139,7 @@ class ContinuousDistribution:
         hist, bin_edges = np.histogram(X, bins="auto", density=True)
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-        for distribution in distributions_pool:
+        for distribution in distribution_models_pool:
             try:
                 # Fit the distribution to the data
                 params = distribution.fit(X)
@@ -174,9 +174,9 @@ class ContinuousDistribution:
         Raises:
             ValueError: If no distribution is fitted yet.
         """
-        if self._distribution is None:
+        if self._distribution_model is None:
             raise ValueError("No distribution fitted yet.")
-        return self._distribution.rvs(*self._parameters, size=num_samples)
+        return self._distribution_model.rvs(*self._parameters, size=num_samples)
 
     def __getattr__(self, name: str):
         """
@@ -191,8 +191,8 @@ class ContinuousDistribution:
         Raises:
             AttributeError: If the attribute or method does not exist.
         """
-        if self._distribution:
-            return getattr(self._distribution, name)
+        if self._distribution_model:
+            return getattr(self._distribution_model, name)
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
@@ -204,6 +204,6 @@ class ContinuousDistribution:
         Returns:
             str: The name of the fitted distribution or a message indicating no distribution is fitted.
         """
-        if self._distribution:
-            return f"{self._distribution.name} continuous distribution"
+        if self._distribution_model:
+            return f"{self._distribution_model.name} continuous distribution"
         return "No distribution fitted yet"
