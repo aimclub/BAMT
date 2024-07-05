@@ -10,15 +10,14 @@ class EmpiricalDistribution(Distribution):
     This class fits an empirical distribution to the provided categorical or discrete data by calculating
     the probabilities of unique values and allows sampling from it.
     Usage example:
-    ```python
-    data = ['apple', 'banana', 'apple', 'orange', 'banana', 'banana', 'orange', 'apple']
-    emp_dist = EmpiricalDistribution()
-    emp_dist.fit(data)
-    print(emp_dist)
-    samples = emp_dist.sample(10)
-    print(samples)
-    print(emp_dist.pmf('banana'))
-    ```
+    >>> data = ['apple', 'banana', 'apple', 'orange', 'banana', 'banana', 'orange', 'apple']
+    >>> emp_dist = EmpiricalDistribution()
+    >>> emp_dist.fit(data)
+    >>> print(emp_dist)
+    >>> samples = emp_dist.sample(10)
+    >>> print(samples)
+    >>> print(emp_dist.pmf('banana'))
+
     """
 
     def __init__(self) -> None:

@@ -31,12 +31,10 @@ class ContinuousDistribution:
     however, any custom continuous distribution can be used, as long as it implements
     `scipy.stats` interface.
     Example Usage:
-    ```python
-    data = np.random.normal(0, 1, 1000)
-    dist = ContinuousDistribution()
-    dist.fit(data, distributions_pool=DistributionPool.SMALL)
-    samples = dist.sample(10)
-    ```
+    >>> data = np.random.normal(0, 1, 1000)
+    >>> dist = ContinuousDistribution()
+    >>> dist.fit(data, distributions_pool=DistributionPool.SMALL)
+    >>> samples = dist.sample(10)
     """
 
     SMALL_POOL: Tuple[Type[stats.rv_continuous], ...] = (

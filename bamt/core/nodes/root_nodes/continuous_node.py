@@ -11,16 +11,15 @@ class ContinuousNode(RootNode):
     These distributions are wrapped in the `ContinuousDistribution` class.
     Example Usage:
 
-    ```python
-        data = np.random.normal(0, 1, 1000)
-        dist = ContinuousDistribution()
-        node = ContinuousNode(distribution=dist)
-        node.fit(data)
-        print(node)
-        samples = node.sample(10)
-        print(samples)
-        print(node.get_parents())
-    ```
+
+    >>> data = np.random.normal(0, 1, 1000)
+    >>> dist = ContinuousDistribution()
+    >>> node = ContinuousNode(distribution=dist)
+    >>> node.fit(data)
+    >>> print(node)
+    >>> samples = node.sample(10)
+    >>> print(samples)
+    >>> print(node.get_parents())
     """
 
     def __init__(self, distribution: Optional[ContinuousDistribution] = None):
