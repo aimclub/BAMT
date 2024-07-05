@@ -7,7 +7,7 @@ import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
 from sklearn.base import clone
-from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import root_mean_squared_error as rmse
 
 from .base import BaseNode
 from .schema import CondGaussParams
@@ -51,8 +51,8 @@ class ConditionalGaussianNode(BaseNode):
                         new_data[self.cont_parents].values, new_data[self.name].values
                     )
                     predicted_value = model.predict(new_data[self.cont_parents].values)
-                    variance = mse(
-                        new_data[self.name].values, predicted_value, squared=False
+                    variance = rmse(
+                        new_data[self.name].values, predicted_value
                     )
                     hycprob[str(key_comb)] = {
                         "variance": variance,
