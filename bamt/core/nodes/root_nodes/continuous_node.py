@@ -42,13 +42,3 @@ class ContinuousNode(RootNode):
             str: The string representation of the node.
         """
         return "Continuous Node with " + str(self._distribution)
-
-    @property
-    def distribution(self) -> ContinuousDistribution:
-        """
-        Get the continuous distribution of this node.
-
-        Returns:
-            ContinuousDistribution: The continuous distribution.
-        """
-        return self._distribution
