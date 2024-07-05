@@ -47,11 +47,11 @@ The following algorithms for Bayesian Networks learning are implemented:
 - Non-parametric learning of distributions with various user-specified regression and classification models.
 - The algorithm for structural training of large Bayesian networks (> 10 nodes) is based on local training of small networks with their subsequent algorithmic connection.
 
-![bn example gif](img/BN_gif.gif)
+![bn example gif](docs/images/BN_gif.gif)
 
 For example, in terms of data analysis and modeling using Bayesian networks, a pipeline has been implemented to generate synthetic data by sampling from Bayesian networks.
 
-![synthetics generation](img/synth_gen.png)
+![synthetics generation](docs/images/synth_gen.png)
 
 ## How to use
 
