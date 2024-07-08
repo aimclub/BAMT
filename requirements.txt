@@ -14,7 +14,8 @@ xgboost>=2.1.0
 
 # visualization
 matplotlib>=3.9.0
-pyvis>=0.3.0
+pyvis>=0.2.0
+rich>=13.0.0
 
 # TODO: exclude these libraries
 gmr>=1.6.2
