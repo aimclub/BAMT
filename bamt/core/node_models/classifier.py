@@ -23,3 +23,10 @@ class Classifier(PredictionModel):
 
     def __str__(self):
         return str(self._classifier)
+
+    def __getattr__(self, name: str):
+        if self._classifier:
+            return getattr(self._classifier, name)
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
