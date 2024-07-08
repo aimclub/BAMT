@@ -1,21 +1,21 @@
 # Data Manipulation
-numpy>=1.26.0
-pandas>=2.2.0
+numpy>=2.0.0
+pandas>=2.2.2
 
 # Graph manipulation
 networkx>=3.3
 thegolem>=0.4.0
 
 # ML modeling frameworks
-scikit-learn>=1.4.2
-scipy>=1.13.0
-catboost>=1.2.1
-xgboost>=2.0.0
+scikit-learn>=1.5.0
+scipy>=1.14.0
+catboost>=1.2.0
+xgboost>=2.1.0
 
 # visualization
-matplotlib>=3.8.0
-pyvis>=0.3.1
+matplotlib>=3.9.0
+pyvis>=0.3.0
 
 # TODO: exclude these libraries
-gmr==1.6.2
-pgmpy==0.1.25
+gmr>=1.6.2
+pgmpy>=0.1.25
