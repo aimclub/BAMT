@@ -1,24 +1,21 @@
 from .graph import Graph
+from networkx import DiGraph
 
 
 class DirectedAcyclicGraph(Graph):
     def __init__(self):
         super().__init__()
+        self._networkx_graph = DiGraph()
 
-    def add_edge(self):
-        pass
+    def __getattr__(self, item):
+        return getattr(self._networkx_graph, item)
 
-    def remove_edge(self):
-        pass
+    def __setattr__(self, key, value):
+        setattr(self._networkx_graph, key, value)
 
-    def get_parents(self):
-        pass
+    def __delattr__(self, item):
+        delattr(self._networkx_graph, item)
 
-    def get_children(self):
-        pass
-
-    def get_edges(self):
-        pass
-
-    def get_nodes(self):
-        pass
+    @property
+    def networkx_graph(self):
+        return self._networkx_graph
