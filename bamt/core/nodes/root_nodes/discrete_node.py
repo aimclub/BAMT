@@ -1,7 +1,7 @@
 from typing import Optional
 
-from .root_node import RootNode
 from bamt.core.node_models import EmpiricalDistribution
+from .root_node import RootNode
 
 
 class DiscreteNode(RootNode):

@@ -1,5 +1,6 @@
-from .graph import Graph
 from networkx import DiGraph
+
+from .graph import Graph
 
 
 class DirectedAcyclicGraph(Graph):

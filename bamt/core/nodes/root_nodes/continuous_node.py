@@ -1,7 +1,9 @@
+from typing import Optional
+
 import numpy as np
-from .root_node import RootNode
+
 from bamt.core.node_models import ContinuousDistribution
-from typing import List, Optional
+from .root_node import RootNode
 
 
 class ContinuousNode(RootNode):

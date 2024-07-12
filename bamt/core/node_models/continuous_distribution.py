@@ -1,9 +1,12 @@
+from enum import Enum
+from typing import Tuple, Optional, List, Type, Dict
+
 import numpy as np
 from scipy import stats
-from scipy.stats import rv_continuous
 from scipy.special import kl_div
-from typing import Tuple, Optional, List, Type, Dict
-from enum import Enum
+from scipy.stats import rv_continuous
+
+from .distribution import Distribution
 
 # Get all continuous distributions from scipy.stats
 _CONTINUOUS_DISTRIBUTIONS = [
@@ -24,7 +27,7 @@ class DistributionPool(Enum):
 
 
 # noinspection PyPep8Naming
-class ContinuousDistribution:
+class ContinuousDistribution(Distribution):
     """
     Class for continuous distributions.
     This class is a wrapper for continuous distributions from `scipy.stats` module,

@@ -1,6 +1,6 @@
-from .prediction_model import PredictionModel
-
 import numpy as np
+
+from .prediction_model import PredictionModel
 
 
 class Regressor(PredictionModel):

@@ -1,5 +1,7 @@
-import numpy as np
 from typing import Optional, Union, List
+
+import numpy as np
+
 from distribution import Distribution
 
 
