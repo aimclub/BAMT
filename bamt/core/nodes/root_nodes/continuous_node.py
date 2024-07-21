@@ -2,8 +2,8 @@ from typing import Optional
 
 import numpy as np
 
-from bamt.core.node_models import ContinuousDistribution
-from .root_node import RootNode
+from bamt.core.node_models.continuous_distribution import ContinuousDistribution
+from bamt.core.nodes.root_nodes.root_node import RootNode
 
 
 class ContinuousNode(RootNode):

@@ -2,10 +2,9 @@ from typing import Optional, Union, List
 
 import numpy as np
 
-from distribution import Distribution
+from bamt.core.node_models.distribution import Distribution
 
 
-# noinspection PyPep8Naming
 class EmpiricalDistribution(Distribution):
     """
     Class for empirical distributions.
@@ -28,6 +27,15 @@ class EmpiricalDistribution(Distribution):
         """
         self._values: Optional[np.ndarray] = None
         self._probabilities: Optional[np.ndarray] = None
+
+    def __repr__(self) -> str:
+        """
+        Return the string representation of the empirical distribution.
+
+        Returns:
+            str: The name of the distribution.
+        """
+        return "Empirical Distribution"
 
     def fit(self, X: Union[np.ndarray, List[Union[str, int]]]) -> None:
         """
@@ -61,6 +69,9 @@ class EmpiricalDistribution(Distribution):
             self._values, size=num_samples, p=self._probabilities, replace=True
         )
 
+    def is_fitted(self):
+        pass
+
     def pmf(self, value: Union[str, int]) -> np.ndarray | float:
         """
         Return the probability mass function (PMF) for a given value.
@@ -81,11 +92,4 @@ class EmpiricalDistribution(Distribution):
             return 0.0
         return self._probabilities[idx][0]
 
-    def __str__(self) -> str:
-        """
-        Return the string representation of the empirical distribution.
 
-        Returns:
-            str: The name of the distribution.
-        """
-        return "Empirical Distribution"

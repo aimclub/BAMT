@@ -6,5 +6,5 @@ class DAGOptimizer(ABC):
         pass
 
     @abstractmethod
-    def optimize(self):
+    def optimize(self, data, scorer, formatter=None):
         pass

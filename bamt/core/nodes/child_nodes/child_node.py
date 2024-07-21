@@ -4,5 +4,5 @@ from bamt.core.nodes.node import Node
 
 
 class ChildNode(Node, ABC):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name):
+        super().__init__(name)

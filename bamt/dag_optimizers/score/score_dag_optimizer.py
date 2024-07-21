@@ -5,5 +5,5 @@ class ScoreDAGOptimizer(DAGOptimizer):
     def __init__(self):
         super().__init__()
 
-    def optimize(self):
+    def optimize(self, data, scorer, formatter=None):
         pass

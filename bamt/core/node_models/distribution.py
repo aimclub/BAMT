@@ -10,5 +10,9 @@ class Distribution(ABC):
         pass
 
     @abstractmethod
+    def __repr__(self) -> str:
+        pass
+
+    @abstractmethod
     def sample(self, num_samples: int) -> np.ndarray:
         pass
