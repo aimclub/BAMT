@@ -597,6 +597,7 @@ class BaseNetwork(object):
         """
         Base function for parameter learning
         """
+        data = data.copy()
         if data.isnull().values.any():
             logger_network.error("Dataframe contains NaNs.")
             return
