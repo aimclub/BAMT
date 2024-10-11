@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "BAMT"
-version = "1.2.01"
+version = "1.2.72"
 description = "data modeling and analysis tool based on Bayesian networks"
 authors = ["Roman Netrogolov <romius2001@gmail.com>",
     "Irina Deeva <iriny.deeva@gmail.com>",
@@ -10,7 +10,7 @@ authors = ["Roman Netrogolov <romius2001@gmail.com>",
     "Yury Kaminsky <jkaminski@niuitmo.ru>"]
 
 license = "BSD-3-Clause"
-readme = "readme.rst"
+readme = "README.md"
 repository = "https://github.com/ITMO-NSS-team/BAMT"
 
 classifiers = ["Programming Language :: Python :: 3",
@@ -22,9 +22,8 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-setuptools = "65.6.3"
-numpy = ">=1.24.2"
+python = ">=3.9"
+numpy = ">=1.26.4"
 matplotlib = "3.6.2"
 pandas = ">=2.0.3"
 gmr = "1.6.2"
