@@ -13,7 +13,7 @@ Used imports:
     import matplotlib.pyplot as plt
 
     from sklearn import preprocessing
-    from sklearn.metrics import accuracy_score, mean_squared_error
+    from sklearn.metrics import accuracy_score
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.tree import DecisionTreeClassifier

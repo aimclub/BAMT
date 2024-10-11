@@ -5,7 +5,7 @@ import pandas as pd
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from numpy import std, mean, log
 from scipy.stats import norm
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import train_test_split
 import numpy as np
 from .CompositeModel import CompositeModel
@@ -168,8 +168,9 @@ def composite_metric(graph: CompositeModel, data: pd.DataFrame):
             
             if node_type == "cont":
                 predictions = fitted_model.predict(features_test)
-                mse = mean_squared_error(target_test, predictions, squared=False) + 1e-7
-                score += norm.logpdf(target_test, loc=predictions, scale=mse).sum()
+                rmse = root_mean_squared_error(target_test, predictions, squared=False) + 1e-7
+                score += norm.logpdf(target_test, loc=predictions, scale=rmse).sum()
+
             else:
                 predict_proba = fitted_model.predict_proba(features_test)
                 probas = np.maximum(predict_proba[range(len(target_test)), [index_test_dict[x] for x in target_test]], 1e-7)
