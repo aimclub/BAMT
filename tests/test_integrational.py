@@ -93,11 +93,6 @@ class Builder:
 
 params = Builder().get_params()
 
-# data/benchmark/new_thyroid.csv-False-True-HC-scoring16-Hybrid-target
-params = [["data/benchmark/new_thyroid.csv", False, True, "HC", ("K2",), "Hybrid", "target"],
-          ["data/benchmark/new_thyroid.csv", False, True, "HC", ("MI",), "Hybrid", "target"],
-          ["data/benchmark/new_thyroid.csv", False, True, "HC", ("BIC",), "Hybrid", "target"]]
-
 def initialize_bn(bn_type, use_mixture, has_logit):
     if bn_type == "Discrete":
         bn = networks.DiscreteBN()
