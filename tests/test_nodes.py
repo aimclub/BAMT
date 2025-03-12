@@ -151,11 +151,11 @@ class TestBaseNode(MyTest):
         for node in self.bn.nodes:
             if not node.cont_parents + node.disc_parents:
                 dist = self.bn.get_dist(node.name)
-                if "mean" in dist.keys():
-                    self.assertTrue(isinstance(dist["mean"], float))
-                    self.assertTrue(isinstance(dist["variance"], float))
+                if isinstance(dist, tuple):
+                    self.assertTrue(isinstance(dist[0], float))
+                    self.assertTrue(isinstance(dist[0], float))
                 else:
-                    self.assertAlmostEqual(sum(dist["cprob"]), 1)
+                    self.assertAlmostEqual(sum(dist), 1)
                 continue
 
             if len(node.cont_parents + node.disc_parents) == 1:

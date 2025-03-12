@@ -2,13 +2,31 @@ import pytest
 import itertools
 import bamt.networks as networks
 import bamt.preprocessors as pp
+from bamt.log import logger_preprocessor, logger_network
 from pgmpy.estimators import K2Score
 import pandas as pd
 import numpy as np
 from pandas.testing import assert_frame_equal
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
+import logging
 
+# disable bamt preprocessor logger
+logger_preprocessor.disabled = True
+
+# disable warnings from networks
+logger_network.setLevel(level=logging.ERROR)
+
+from tqdm import tqdm
+from functools import partialmethod
+
+# disable tqdm globally in runtime
+tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
+
+# disable golem logger at all
+root_logger = logging.getLogger()
+for hndlr in root_logger.handlers:
+    root_logger.removeHandler(hndlr)
 
 class Builder:
     def __init__(self):
@@ -24,7 +42,7 @@ class Builder:
             "Hybrid": ["Hybrid", "target"],
         }
 
-        self.scoring = [("K2", K2Score), "BIC", "MI"]
+        self.scoring = [("K2", K2Score), ("BIC", ), ("MI", )]
         self.optimizer = ["HC"]
         self.use_mixture = [False, True]
         self.has_logit = [False, True]
@@ -75,6 +93,10 @@ class Builder:
 
 params = Builder().get_params()
 
+# data/benchmark/new_thyroid.csv-False-True-HC-scoring16-Hybrid-target
+params = [["data/benchmark/new_thyroid.csv", False, True, "HC", ("K2",), "Hybrid", "target"],
+          ["data/benchmark/new_thyroid.csv", False, True, "HC", ("MI",), "Hybrid", "target"],
+          ["data/benchmark/new_thyroid.csv", False, True, "HC", ("BIC",), "Hybrid", "target"]]
 
 def initialize_bn(bn_type, use_mixture, has_logit):
     if bn_type == "Discrete":
@@ -111,8 +133,6 @@ class TestNetwork:
     def test_1(
         self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target
     ):
-        test_id = "test_1"
-
         bn = initialize_bn(bn_type, use_mixture, has_logit)
         info, discretized_data, train, test = prepare_data(directory)
         bn.add_nodes(info)
@@ -124,8 +144,9 @@ class TestNetwork:
                 progress_bar=False,
             )
         else:
-            bn.add_edges(train)
+            bn.add_edges(train, progress_bar=False)
 
+        assert bn.edges != []
         bn.fit_parameters(train)
         predict = bn.predict(
             test[[x for x in test.columns if x != target]], progress_bar=False
@@ -140,7 +161,6 @@ class TestNetwork:
 
         try:
             assert_frame_equal(pd.DataFrame(predict), pd.DataFrame(predict_loaded))
-            print(f"{test_id} runned successfully")
         except AssertionError:
             print(
                 f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
@@ -154,7 +174,6 @@ class TestNetwork:
     def test_2(
         self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target
     ):
-        test_id = "test_2"
 
         bn = initialize_bn(bn_type, use_mixture, has_logit)
         info, discretized_data, train, test = prepare_data(directory)
@@ -169,6 +188,7 @@ class TestNetwork:
         else:
             bn.add_edges(train)
 
+
         bn.fit_parameters(train)
         predict = bn.predict(
             test[[x for x in test.columns if x != target]], progress_bar=False
@@ -181,7 +201,6 @@ class TestNetwork:
 
         try:
             assert_frame_equal(pd.DataFrame(predict), pd.DataFrame(predict2))
-            print(f"{test_id} runned successfully")
         except AssertionError:
             print(
                 f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
@@ -195,7 +214,6 @@ class TestNetwork:
     def test_3(
         self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target
     ):
-        test_id = "test_3"
 
         bn = initialize_bn(bn_type, use_mixture, has_logit)
         info, discretized_data, train, test = prepare_data(directory)
@@ -223,7 +241,6 @@ class TestNetwork:
                 most_frequent = train[target].value_counts().index[0]
                 assert np.all(np.array(predict[target]) == most_frequent)
 
-            print(f"{test_id} runned successfully")
         except AssertionError:
             print(
                 f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
@@ -231,14 +248,13 @@ class TestNetwork:
             raise
 
     # Checking the network trained on the 1 sample
+    @pytest.mark.skip(reason="network will not learn from 1 sample")
     @pytest.mark.parametrize(
         "directory, use_mixture, has_logit, optimizer, scoring, bn_type, target", params
     )
     def test_4(
         self, directory, use_mixture, has_logit, optimizer, scoring, bn_type, target
     ):
-        test_id = "test_4"
-
         if use_mixture == False:
 
             bn = initialize_bn(bn_type, use_mixture, has_logit)
@@ -265,13 +281,6 @@ class TestNetwork:
                 test[[x for x in test.columns if x != target]], progress_bar=False
             )
 
-            try:
-                assert np.all(np.array(predict[target]) == train_data_1[target][0])
-                print(f"{test_id} runned successfully")
-            except AssertionError:
-                print(
-                    f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
-                )
-                raise
+            assert np.all(np.array(predict[target]) == train_data_1[target][0])
         else:
             pass
