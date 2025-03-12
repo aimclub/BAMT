@@ -3,7 +3,7 @@ import os.path as path
 import random
 import re
 from copy import deepcopy
-from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence
+from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence, Literal
 
 import numpy as np
 import pandas as pd
@@ -133,6 +133,10 @@ class BaseNetwork(object):
         """
         if not self.has_logit and check_utils.is_model(classifier):
             logger_network.error("Classifiers dict with use_logit=False is forbidden.")
+            return None
+
+        if not isinstance(scoring_function, (list, tuple)):
+            logger_network.error("Scoring function should be a tuple or a list")
             return None
 
         # params validation
@@ -709,21 +713,22 @@ class BaseNetwork(object):
                         output[node.name] = node.choose(node_data, pvals=pvals)
             return output
 
+        if progress_bar:
+            iter = tqdm(range(n), position=0, leave=True)
+        else:
+            iter = range(n)
+
         if predict:
             seq = []
-            for _ in tqdm(range(n), position=0, leave=True):
+            for _ in iter:
                 result = wrapper()
                 seq.append(result)
-        elif progress_bar:
-            seq = Parallel(n_jobs=parall_count)(
-                delayed(wrapper)() for _ in tqdm(range(n), position=0, leave=True)
-            )
         else:
-            seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in range(n))
+            seq = Parallel(n_jobs=parall_count)(delayed(wrapper)() for _ in iter)
 
         # code for debugging, don't remove
         # seq = []
-        # for _ in tqdm(range(n), position=0, leave=True):
+        # for _ in iter:
         #     result = wrapper()
         #     seq.append(result)
 
@@ -763,6 +768,7 @@ class BaseNetwork(object):
         parall_count: int = 1,
         progress_bar: bool = True,
         models_dir: Optional[str] = None,
+        on_cast_error: Literal["raise", "ignore"] = "raise",
     ) -> Dict[str, Union[List[str], List[int], List[float]]]:
         """
         Function to predict columns from given data.
@@ -842,7 +848,32 @@ class BaseNetwork(object):
             for n, key in enumerate(columns):
                 preds[key].append(curr_pred[key][0])
 
-        return preds
+        disc_cols = [k for k, v in self.descriptor["types"].items() if v == "disc_num"]
+        cont_cols = [k for k, v in self.descriptor["types"].items() if v == "cont"]
+
+        for node, values in preds.items():
+            if node in disc_cols:
+                preds[node] = [int(value) for value in preds[node]]
+            elif node in cont_cols:
+                preds[node] = [float(value) for value in preds[node]]
+
+        try:
+            for node, values in preds.items():
+                if node in disc_cols:
+                    preds[node] = [int(value) for value in preds[node]]
+                elif node in cont_cols:
+                    preds[node] = [float(value) for value in preds[node]]
+        except TypeError as ex:
+            match on_cast_error:
+                case "raise":
+                    logger_network.error("Error occurred during casting values to int/float.")
+                    raise TypeError(
+                        f"Error occurred during casting values to int/float. {node} | {ex.args[0]}"
+                    )
+                case "ignore":
+                    ...
+        finally:
+            return preds
 
     def set_classifiers(self, classifiers: Dict[str, object]):
         """
@@ -980,8 +1011,8 @@ class BaseNetwork(object):
         node = self[node_name]
 
         parents = node.cont_parents + node.disc_parents
-        if not parents:
-            return self.distributions[node_name]
+        # if not parents:
+        #     return self.distributions[node_name]
 
         pvals = [pvals[parent] for parent in parents]
 
