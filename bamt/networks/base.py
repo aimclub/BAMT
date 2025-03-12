@@ -851,12 +851,6 @@ class BaseNetwork(object):
         disc_cols = [k for k, v in self.descriptor["types"].items() if v == "disc_num"]
         cont_cols = [k for k, v in self.descriptor["types"].items() if v == "cont"]
 
-        for node, values in preds.items():
-            if node in disc_cols:
-                preds[node] = [int(value) for value in preds[node]]
-            elif node in cont_cols:
-                preds[node] = [float(value) for value in preds[node]]
-
         try:
             for node, values in preds.items():
                 if node in disc_cols:
