@@ -6,9 +6,9 @@ class ProbabilisticStructuralModel(ABC):
         pass
 
     @abstractmethod
-    def fit(self):
+    def fit(self, data, parameters_estimator):
         pass
 
     @abstractmethod
-    def predict(self):
+    def predict(self, data):
         pass

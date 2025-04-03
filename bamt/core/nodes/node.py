@@ -2,12 +2,11 @@ from abc import ABC, abstractmethod
 
 
 class Node(ABC):
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def __str__(self):
-        pass
+    def __init__(self, name):
+        self.name = name
+        self.disc_parents = []
+        self.cont_parents = []
+        self.children = []
 
     @abstractmethod
     def get_children(self):

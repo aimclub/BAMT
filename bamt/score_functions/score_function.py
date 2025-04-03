@@ -6,5 +6,9 @@ class ScoreFunction(ABC):
         pass
 
     @abstractmethod
-    def estimate(self):
+    def score(self, data):
+        pass
+
+    @abstractmethod
+    def local_score(self, variable, parents):
         pass
