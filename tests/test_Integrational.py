@@ -140,11 +140,8 @@ class TestNetwork:
 
         try:
             assert_frame_equal(pd.DataFrame(predict), pd.DataFrame(predict_loaded))
-            print(f"{test_id} runned successfully")
-        except AssertionError:
-            print(
-                f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
-            )
+        except AssertionError as e:
+            print(f"{e}")
             raise
 
     # Checking the prediction algorithm (trained network) before and after saving
@@ -181,11 +178,8 @@ class TestNetwork:
 
         try:
             assert_frame_equal(pd.DataFrame(predict), pd.DataFrame(predict2))
-            print(f"{test_id} runned successfully")
-        except AssertionError:
-            print(
-                f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
-            )
+        except AssertionError as e:
+            print(f"{e}")
             raise
 
     # Checking network predictions without edges
@@ -223,11 +217,8 @@ class TestNetwork:
                 most_frequent = train[target].value_counts().index[0]
                 assert np.all(np.array(predict[target]) == most_frequent)
 
-            print(f"{test_id} runned successfully")
-        except AssertionError:
-            print(
-                f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
-            )
+        except AssertionError as e:
+            print(f"{e}")
             raise
 
     # Checking the network trained on the 1 sample
@@ -267,11 +258,8 @@ class TestNetwork:
 
             try:
                 assert np.all(np.array(predict[target]) == train_data_1[target][0])
-                print(f"{test_id} runned successfully")
-            except AssertionError:
-                print(
-                    f"params: {dict(zip(['use_mixture', 'has_logit', 'optimizer', 'scoring', 'bn_type'], use_mixture, has_logit, optimizer, scoring, bn_type))}"
-                )
+            except AssertionError as e:
+                print(f"{e}")
                 raise
         else:
             pass
