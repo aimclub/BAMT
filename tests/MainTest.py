@@ -1,5 +1,5 @@
 import pandas as pd
-from pgmpy.estimators import K2Score
+from pgmpy.estimators import K2
 from sklearn import preprocessing as pp
 
 import bamt.networks as Networks
@@ -45,7 +45,7 @@ discretized_data, _ = p.apply(disc_data)
 disc_bn = Networks.DiscreteBN()
 info = p.info
 disc_bn.add_nodes(info)
-disc_bn.add_edges(data=discretized_data, scoring_function=("K2", K2Score))
+disc_bn.add_edges(data=discretized_data, scoring_function=("K2", K2))
 disc_bn.fit_parameters(data=disc_data)
 disc_bn.calculate_weights(discretized_data)
 disc_predicted_values = disc_bn.predict(test=disc_test_data)
@@ -68,7 +68,7 @@ discretized_data, _ = p.apply(cont_data)
 cont_bn = Networks.ContinuousBN(use_mixture=True)
 info = p.info
 cont_bn.add_nodes(info)
-cont_bn.add_edges(data=discretized_data, scoring_function=("K2", K2Score))
+cont_bn.add_edges(data=discretized_data, scoring_function=("K2", K2))
 cont_bn.fit_parameters(data=cont_data)
 cont_bn.calculate_weights(discretized_data)
 cont_predicted_values = cont_bn.predict(test=cont_test_data)
@@ -95,8 +95,8 @@ hybrid_bn2 = Networks.HybridBN(use_mixture=True, has_logit=True)
 info = p.info
 hybrid_bn.add_nodes(info)
 hybrid_bn2.add_nodes(info)
-hybrid_bn.add_edges(data=discretized_data, scoring_function=("K2", K2Score))
-hybrid_bn2.add_edges(data=discretized_data, scoring_function=("K2", K2Score))
+hybrid_bn.add_edges(data=discretized_data, scoring_function=("K2", K2))
+hybrid_bn2.add_edges(data=discretized_data, scoring_function=("K2", K2))
 hybrid_bn.fit_parameters(data=hybrid_data)
 hybrid_bn2.fit_parameters(data=hybrid_data)
 hybrid_bn.calculate_weights(discretized_data)
@@ -129,7 +129,7 @@ discretized_data, _ = p.apply(hybrid_data)
 hybrid_bn = Networks.HybridBN(use_mixture=True)
 info = p.info
 hybrid_bn.add_nodes(info)
-hybrid_bn.add_edges(data=discretized_data, scoring_function=("K2", K2Score))
+hybrid_bn.add_edges(data=discretized_data, scoring_function=("K2", K2))
 hybrid_bn.fit_parameters(data=hybrid_data)
 hybrid_bn.save("./hybrid_bn_without_weights.json")
 hybrid_bn2 = Networks.HybridBN(use_mixture=True)

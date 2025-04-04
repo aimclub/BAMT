@@ -8,7 +8,7 @@ from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequ
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from pgmpy.estimators import K2Score
+from pgmpy.estimators import K2
 from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
@@ -115,7 +115,7 @@ class BaseNetwork(object):
     def add_edges(
         self,
         data: pd.DataFrame,
-        scoring_function: Union[Tuple[str, Callable], Tuple[str]] = ("K2", K2Score),
+        scoring_function: Union[Tuple[str, Callable], Tuple[str]] = ("K2", K2),
         progress_bar: bool = True,
         classifier: Optional[object] = None,
         regressor: Optional[object] = None,

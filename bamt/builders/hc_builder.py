@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Tuple, Callable, Union
 
 from pandas import DataFrame
 from pgmpy.base import DAG
-from pgmpy.estimators import HillClimbSearch
+from pgmpy.estimators import HillClimbSearch, ExpertKnowledge
 
 from bamt.builders.builders_base import ParamDict, BaseDefiner
 from bamt.log import logger_builder
@@ -47,17 +47,18 @@ class HillClimbDefiner(BaseDefiner):
             return None
 
         if len(self.scoring_function) != 2:
-            from pgmpy.estimators import K2Score
+            from pgmpy.estimators import K2
 
-            scoring_function = K2Score
+            scoring_function = K2
         else:
             scoring_function = self.scoring_function[1]
+
+        expert_knowledge = ExpertKnowledge(forbidden_edges=self.black_list, required_edges=white_list)
 
         if not init_edges:
             best_model = self.optimizer.estimate(
                 scoring_method=scoring_function(data),
-                black_list=self.black_list,
-                white_list=white_list,
+                expert_knowledge=expert_knowledge,
                 show_progress=progress_bar,
             )
         else:
@@ -67,16 +68,13 @@ class HillClimbDefiner(BaseDefiner):
                 startdag.add_nodes_from(nodes=nodes)
                 startdag.add_edges_from(ebunch=init_edges)
                 best_model = self.optimizer.estimate(
-                    black_list=self.black_list,
-                    white_list=white_list,
+                    expert_knowledge=expert_knowledge,
                     start_dag=startdag,
                     show_progress=False,
                 )
             else:
                 best_model = self.optimizer.estimate(
-                    black_list=self.black_list,
-                    white_list=white_list,
-                    fixed_edges=init_edges,
+                    expert_knowledge=expert_knowledge,
                     show_progress=False,
                 )
 
