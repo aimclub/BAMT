@@ -5,7 +5,7 @@ gmr==1.6.2
 scikit-learn>=1.2.0
 scipy>=1.9.3
 pyvis>=0.2.1
-pgmpy==0.1.25
+pgmpy>=1.0.0
 catboost>=1.0.6
 joblib>=1.1.1
 networkx>=3.1
