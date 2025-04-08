@@ -53,7 +53,10 @@ class HillClimbDefiner(BaseDefiner):
         else:
             scoring_function = self.scoring_function[1]
 
-        expert_knowledge = ExpertKnowledge(forbidden_edges=self.black_list, required_edges=white_list)
+        expert_knowledge = ExpertKnowledge(
+            forbidden_edges=self.black_list,
+            required_edges=white_list
+        )
 
         if not init_edges:
             best_model = self.optimizer.estimate(
