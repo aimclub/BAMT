@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 import bamt.builders as builders
 from bamt.builders.builders_base import ParamDict
-from bamt.builders.evo_builder import EvoStructureBuilder
+from bamt.builders.evo_builders import EvoStructureBuilder
 from bamt.builders.hc_builder import HCStructureBuilder
 from bamt.display import plot_, get_info_
 from bamt.external.pyitlib.DiscreteRandomVariableUtils import (

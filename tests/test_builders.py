@@ -5,7 +5,7 @@ import unittest
 import pandas as pd
 
 from bamt.builders.builders_base import StructureBuilder, VerticesDefiner
-from bamt.builders.evo_builder import EvoStructureBuilder
+from bamt.builders.evo_builders import EvoStructureBuilder
 from bamt.builders.hc_builder import HillClimbDefiner
 from bamt.nodes.discrete_node import DiscreteNode
 from bamt.nodes.gaussian_node import GaussianNode

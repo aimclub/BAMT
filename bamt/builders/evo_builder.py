@@ -1,21 +1,29 @@
 from datetime import timedelta
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple, Callable
 
-from golem.core.adapter import DirectAdapter
-from golem.core.dag.verification_rules import has_no_cycle, has_no_self_cycled_nodes
-from golem.core.log import Log
-from golem.core.optimisers.genetic.gp_optimizer import EvoGraphOptimizer
-from golem.core.optimisers.genetic.gp_params import GPAlgorithmParameters
-from golem.core.optimisers.genetic.operators.crossover import CrossoverTypesEnum
-from golem.core.optimisers.genetic.operators.inheritance import GeneticSchemeTypesEnum
-from golem.core.optimisers.genetic.operators.selection import SelectionTypesEnum
-from golem.core.optimisers.objective import Objective, ObjectiveEvaluate
-from golem.core.optimisers.optimization_parameters import GraphRequirements
-from golem.core.optimisers.optimizer import GraphGenerationParams
-from pandas import DataFrame
+import pandas as pd
+from sklearn import preprocessing
 
+import bamt.preprocessors as pp
 from bamt.builders.builders_base import BaseDefiner
-from bamt.utils import EvoUtils as evo
+from bamt.nodes.composite_continuous_node import CompositeContinuousNode
+from bamt.nodes.composite_discrete_node import CompositeDiscreteNode
+from bamt.nodes.discrete_node import DiscreteNode
+from bamt.nodes.gaussian_node import GaussianNode
+from bamt.builders.evo_builders.learning_operators import (
+    k2_metric,
+    has_no_duplicates,
+    has_no_blacklist_edges,
+    has_only_whitelist_edges,
+    custom_mutation_add,
+    custom_mutation_delete,
+    custom_mutation_reverse,
+    CompositeNode as DeapCompositeNode,
+    CompositeGraph,
+)
+from bamt.builders.evo_builders.deap_optimizer import GraphEvolutionOptimizer
+from bamt.builders.evo_builders.deap_ml_models import MLModels
+from bamt.log import logger_builder
 
 
 class EvoDefiner(BaseDefiner):
@@ -25,7 +33,7 @@ class EvoDefiner(BaseDefiner):
 
     def __init__(
         self,
-        data: DataFrame,
+        data: pd.DataFrame,
         descriptor: Dict[str, Dict[str, str]],
         regressor: Optional[object] = None,
     ):
@@ -34,8 +42,8 @@ class EvoDefiner(BaseDefiner):
 
 class EvoStructureBuilder(EvoDefiner):
     """
-    This class uses an evolutionary algorithm based on GOLEM to generate a Directed Acyclic Graph (DAG) that represents
-    the structure of a Bayesian Network.
+    This class uses an evolutionary algorithm based on DEAP to generate a Directed Acyclic Graph (DAG)
+    that represents the structure of a Bayesian Network.
 
     Attributes:
         data (DataFrame): Input data used to build the structure.
@@ -47,7 +55,7 @@ class EvoStructureBuilder(EvoDefiner):
 
     def __init__(
         self,
-        data: DataFrame,
+        data: pd.DataFrame,
         descriptor: Dict[str, Dict[str, str]],
         regressor: Optional[object],
         has_logit: bool,
@@ -78,28 +86,12 @@ class EvoStructureBuilder(EvoDefiner):
         self.default_num_of_generations = 50
         self.default_early_stopping_iterations = 50
         self.logging_level = 50
-        self.objective_metric = evo.K2_metric
-        self.default_crossovers = [
-            CrossoverTypesEnum.exchange_edges,
-            CrossoverTypesEnum.exchange_parents_one,
-            CrossoverTypesEnum.exchange_parents_both,
-        ]
-        self.default_mutations = [
-            evo.custom_mutation_add,
-            evo.custom_mutation_delete,
-            evo.custom_mutation_reverse,
-        ]
-        self.default_selection = [SelectionTypesEnum.tournament]
-        self.default_constraints = [
-            has_no_self_cycled_nodes,
-            has_no_cycle,
-            evo.has_no_duplicates,
-        ]
+        self.objective_metric = k2_metric
         self.verbose = True
 
     def build(
         self,
-        data: DataFrame,
+        data: pd.DataFrame,
         classifier: Optional[object],
         regressor: Optional[object],
         **kwargs
@@ -126,7 +118,7 @@ class EvoStructureBuilder(EvoDefiner):
             regressor=regressor,
         )
 
-    def search(self, data: DataFrame, **kwargs) -> List[Tuple[str, str]]:
+    def search(self, data: pd.DataFrame, **kwargs) -> List[Tuple[str, str]]:
         """
         Executes all the evolutionary computations and returns the best graph's edge list.
 
@@ -139,90 +131,58 @@ class EvoStructureBuilder(EvoDefiner):
         # Get the list of node names
         nodes_types = data.columns.to_list()
 
-        # Create the initial population
-        initial = [
-            evo.CustomGraphModel(
-                nodes=kwargs.get(
-                    "init_nodes",
-                    [evo.CustomGraphNode(node_type) for node_type in nodes_types],
-                )
+        # Create the initial graph model
+        initial_graph = CompositeGraph()
+        for node_name in nodes_types:
+            node = DeapCompositeNode(
+                name=node_name,
+                node_type=self.descriptor["types"].get(node_name, "cont"),
             )
-        ]
+            initial_graph.add_node(node)
 
-        # Define the requirements for the evolutionary algorithm
-        requirements = GraphRequirements(
-            max_arity=kwargs.get("max_arity", self.default_max_arity),
-            max_depth=kwargs.get("max_depth", self.default_max_depth),
-            num_of_generations=kwargs.get(
+        # Define constraints for the evolutionary algorithm
+        constraints = [has_no_duplicates]
+
+        # Add blacklist/whitelist constraints if provided
+        blacklist = kwargs.get("blacklist", None)
+        whitelist = kwargs.get("whitelist", None)
+
+        if blacklist:
+            constraints.append(lambda g: has_no_blacklist_edges(g, blacklist))
+        if whitelist:
+            constraints.append(lambda g: has_only_whitelist_edges(g, whitelist))
+
+        # Set up the optimizer
+        optimizer = GraphEvolutionOptimizer(
+            objective_function=self.objective_metric,
+            constraints=constraints,
+            data=data,
+            population_size=kwargs.get("pop_size", self.default_pop_size),
+            generations=kwargs.get(
                 "num_of_generations", self.default_num_of_generations
             ),
-            timeout=timedelta(minutes=kwargs.get("timeout", self.default_timeout)),
-            early_stopping_iterations=kwargs.get(
-                "early_stopping_iterations", self.default_early_stopping_iterations
+            tournament_size=3,  # Default tournament size
+            crossover_probability=kwargs.get(
+                "crossover_prob", self.default_crossover_prob
+            ),
+            mutation_probability=kwargs.get(
+                "mutation_prob", self.default_mutation_prob
             ),
             n_jobs=kwargs.get("n_jobs", self.default_n_jobs),
+            early_stopping_rounds=kwargs.get(
+                "early_stopping_iterations", self.default_early_stopping_iterations
+            ),
+            timeout_minutes=kwargs.get("timeout", self.default_timeout),
+            maximize=False,  # We want to minimize the objective (negative K2 score)
+            verbose=kwargs.get("verbose", self.verbose),
         )
-
-        # Set the parameters for the evolutionary algorithm
-        optimizer_parameters = GPAlgorithmParameters(
-            pop_size=kwargs.get("pop_size", self.default_pop_size),
-            crossover_prob=kwargs.get("crossover_prob", self.default_crossover_prob),
-            mutation_prob=kwargs.get("mutation_prob", self.default_mutation_prob),
-            genetic_scheme_type=GeneticSchemeTypesEnum.steady_state,
-            mutation_types=kwargs.get("custom_mutations", self.default_mutations),
-            crossover_types=kwargs.get("custom_crossovers", self.default_crossovers),
-            selection_types=kwargs.get("selection_type", self.default_selection),
-        )
-
-        # Set the adapter for the conversion between the graph and the data
-        # structures used by the optimizer
-        adapter = DirectAdapter(
-            base_graph_class=evo.CustomGraphModel, base_node_class=evo.CustomGraphNode
-        )
-
-        # Set the constraints for the graph
-
-        constraints = kwargs.get("custom_constraints", [])
-
-        constraints.extend(self.default_constraints)
-
-        if kwargs.get("blacklist", None) is not None:
-            constraints.append(evo.has_no_blacklist_edges)
-        if kwargs.get("whitelist", None) is not None:
-            constraints.append(evo.has_only_whitelist_edges)
-
-        graph_generation_params = GraphGenerationParams(
-            adapter=adapter,
-            rules_for_constraint=constraints,
-            available_node_types=nodes_types,
-        )
-
-        # Define the objective function to optimize
-        objective = Objective(
-            {"custom": kwargs.get("custom_metric", self.objective_metric)}
-        )
-
-        # Initialize the optimizer
-        optimizer = EvoGraphOptimizer(
-            objective=objective,
-            initial_graphs=initial,
-            requirements=requirements,
-            graph_generation_params=graph_generation_params,
-            graph_optimizer_params=optimizer_parameters,
-        )
-
-        # Define the function to evaluate the objective function
-        objective_eval = ObjectiveEvaluate(objective, data=data)
-
-        if not kwargs.get("verbose", self.verbose):
-            Log().reset_logging_level(logging_level=50)
 
         # Run the optimization
-        optimized_graph = optimizer.optimise(objective_eval)[0]
+        results = optimizer.optimize([initial_graph])
+        best_graph, best_score = results[0]  # Get the best result
 
-        # Get the best graph
-        best_graph_edge_list = optimized_graph.operator.get_edges()
-        best_graph_edge_list = self._convert_to_strings(best_graph_edge_list)
+        # Get the best graph's edge list
+        best_graph_edge_list = best_graph.get_edges()
 
         return best_graph_edge_list
 
