@@ -13,14 +13,18 @@ logging.getLogger("nodes").setLevel(logging.CRITICAL)
 class MyTest(unittest.TestCase):
     unittest.skip("This is an assertion.")
 
-    def assertDist(self, dist, node_type):
-        if node_type in ("disc", "disc_num"):
-            return self.assertAlmostEqual(sum(dist), 1)
+    def assertDist(self, dist):
+        has_probs = ["discrete", "logit", "conditional_logit"]
+        probs_or_params = dist.get()
+
+        if dist.node_type in has_probs:
+            return self.assertAlmostEqual(sum(probs_or_params[0]), 1)
         else:
-            return self.assertEqual(len(dist), 2, msg=f"Error on {dist}")
+            return self.assertEqual(len(probs_or_params), 2, msg=f"Error on {probs_or_params}") and \
+                    self.assertTrue(probs_or_params[0].size)
 
     def assertDistMixture(self, dist):
-        return self.assertEqual(len(dist), 3, msg=f"Error on {dist}")
+        return self.assertEqual(len(dist.get()), 3, msg=f"Error on {dist}")
 
 
 class TestBaseNode(MyTest):
@@ -151,11 +155,7 @@ class TestBaseNode(MyTest):
         for node in self.bn.nodes:
             if not node.cont_parents + node.disc_parents:
                 dist = self.bn.get_dist(node.name)
-                if isinstance(dist, tuple):
-                    self.assertTrue(isinstance(dist[0], float))
-                    self.assertTrue(isinstance(dist[0], float))
-                else:
-                    self.assertAlmostEqual(sum(dist), 1)
+                self.assertDist(dist)
                 continue
 
             if len(node.cont_parents + node.disc_parents) == 1:
@@ -168,7 +168,7 @@ class TestBaseNode(MyTest):
 
                 for pval in pvals:
                     dist = self.bn.get_dist(node.name, {parent: pval})
-                    self.assertDist(dist, self.info["types"][node.name])
+                    self.assertDist(dist)
             else:
                 for i in self.data[node.disc_parents[0]].unique().tolist():
                     for j in range(-5, 5, 1):
@@ -176,7 +176,7 @@ class TestBaseNode(MyTest):
                             node.name,
                             {node.cont_parents[0]: float(j), node.disc_parents[0]: i},
                         )
-                        self.assertDist(dist, self.info["types"][node.name])
+                        self.assertDist(dist)
 
     # ???
     def test_choose_serialization(self):
@@ -253,11 +253,11 @@ class TestGaussianNode(unittest.TestCase):
 
         self.assertIsNotNone(params_parents["regressor_obj"])
         self.assertTrue(pd.isna(params_parents["mean"]))
-        self.assertIsNotNone(params_parents["variance"])
+        self.assertIsNotNone(params_parents["std"])
 
         self.assertIsNone(params_foster["regressor_obj"])
         self.assertFalse(pd.isna(params_foster["mean"]))
-        self.assertIsNotNone(params_foster["variance"])
+        self.assertIsNotNone(params_foster["std"])
 
     def test_choose(self):
         pvals = [1.05, 1.95]
@@ -323,7 +323,7 @@ class TestConditionalGaussianNode(unittest.TestCase):
 
             if pd.isna(data["mean"]):
                 self.assertIsNotNone(data["regressor_obj"])
-                self.assertIsNotNone(data["variance"])
+                self.assertIsNotNone(data["std"])
             else:
                 self.assertIsNone(data["regressor_obj"])
                 self.assertIsNotNone(data["mean"])

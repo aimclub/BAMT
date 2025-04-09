@@ -21,7 +21,8 @@ from bamt.utils.composite_utils.CompositeGeneticOperators import (
 )
 from bamt.log import logger_network, logger_preprocessor
 from bamt.utils.composite_utils.CompositeModel import CompositeModel, CompositeNode
-
+from tqdm import tqdm
+from functools import partialmethod
 logger_network.setLevel(logging.CRITICAL)
 
 # disable bamt preprocessor logger
@@ -31,6 +32,9 @@ logger_preprocessor.disabled = True
 root_logger = logging.getLogger()
 for hndlr in root_logger.handlers:
     root_logger.removeHandler(hndlr)
+
+# disable tqdm globally in runtime
+tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
 class TestCaseBase(unittest.TestCase):
     def assertIsFile(self, path):

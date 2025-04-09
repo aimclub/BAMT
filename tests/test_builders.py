@@ -12,7 +12,11 @@ from bamt.nodes.gaussian_node import GaussianNode
 from bamt.utils.MathUtils import precision_recall
 
 logging.getLogger("builder").setLevel(logging.CRITICAL)
+from functools import partialmethod
+from tqdm import tqdm
 
+# disable tqdm globally in runtime
+tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
 class TestStructureBuilder(unittest.TestCase):
     def setUp(self):
