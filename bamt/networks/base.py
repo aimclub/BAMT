@@ -61,7 +61,10 @@ class BaseNetwork(object):
             return self.nodes[index]
 
     def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
-        types = descriptor["types"]
+        types = descriptor.get("types", False)
+        if not types:
+            logger_network.warning("Empty types in descriptor provided. Do you really have empty network?")
+
         return (
             True if all([a in self._allowed_dtypes for a in types.values()]) else False
         )
@@ -1002,13 +1005,27 @@ class BaseNetwork(object):
         if not self.distributions:
             logger_network.error("Empty parameters. Call fit_params first.")
             return
+
+        if pvals:
+            if not isinstance(pvals, dict):
+                logger_network.error("Pvals must be a dict")
+                return
+
         node = self[node_name]
 
         parents = node.cont_parents + node.disc_parents
-        # if not parents:
-        #     return self.distributions[node_name]
+        if parents and not pvals:
+            logger_network.error(f"No parents provided for node with {len(parents)} parents.")
+            return
 
-        pvals = [pvals[parent] for parent in parents]
+        if pvals:
+            # Convert disc_num cats into strs
+            disc_num_pvals = {k: str(v) for k, v in pvals.items()
+                              if k in self.descriptor["types"] and
+                              self.descriptor["types"][k] == "disc_num"}
+
+            pvals |= disc_num_pvals
+            pvals = [pvals[parent] for parent in parents]
 
         return node.get_dist(node_info=self.distributions[node_name], pvals=pvals)
 

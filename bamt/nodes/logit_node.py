@@ -1,6 +1,6 @@
 import random
 from typing import Optional, List, Union
-
+from bamt.result_models.node_result import LogitNodeResult
 import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
@@ -18,7 +18,7 @@ class LogitNode(BaseNode):
         super(LogitNode, self).__init__(name)
         if classifier is None:
             classifier = linear_model.LogisticRegression(
-                multi_class="multinomial", solver="newton-cg", max_iter=100
+                solver="newton-cg", max_iter=100
             )
         self.classifier = classifier
         self.type = "Logit" + f" ({type(self.classifier).__name__})"
@@ -40,9 +40,11 @@ class LogitNode(BaseNode):
             if type(self).__name__ == "CompositeDiscreteNode":
                 pvals = [int(item) if isinstance(item, str) else item for item in pvals]
 
-            return model.predict_proba(np.array(pvals).reshape(1, -1))[0]
+            probs = model.predict_proba(np.array(pvals).reshape(1, -1))[0]
         else:
-            return np.array([1.0])
+            probs = np.array([1.0])
+
+        return LogitNodeResult(probs=probs, values=node_info["classes"])
 
     def choose(self, node_info: LogitParams, pvals: List[Union[float]]) -> str:
         """
@@ -54,7 +56,7 @@ class LogitNode(BaseNode):
 
         rindex = 0
 
-        distribution = self.get_dist(node_info, pvals)
+        distribution, _ = self.get_dist(node_info, pvals).get()
 
         if len(node_info["classes"]) > 1:
             rand = random.random()

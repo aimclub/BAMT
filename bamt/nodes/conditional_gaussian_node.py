@@ -2,7 +2,7 @@ import itertools
 import math
 import random
 from typing import Dict, Optional, List, Union
-
+from bamt.result_models.node_result import ConditionalGaussianNodeResult
 import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
@@ -51,11 +51,11 @@ class ConditionalGaussianNode(BaseNode):
                         new_data[self.cont_parents].values, new_data[self.name].values
                     )
                     predicted_value = model.predict(new_data[self.cont_parents].values)
-                    variance = rmse(
+                    std = rmse(
                         new_data[self.name].values, predicted_value
                     )
                     hycprob[str(key_comb)] = {
-                        "variance": variance,
+                        "std": std,
                         "mean": np.nan,
                         "regressor_obj": model,
                         "regressor": type(self.regressor).__name__,
@@ -63,9 +63,9 @@ class ConditionalGaussianNode(BaseNode):
                     }
                 else:
                     mean_base = np.mean(new_data[self.name].values)
-                    variance = np.var(new_data[self.name].values)
+                    std = np.std(new_data[self.name].values)
                     hycprob[str(key_comb)] = {
-                        "variance": variance,
+                        "std": std,
                         "mean": mean_base,
                         "regressor_obj": None,
                         "regressor": None,
@@ -73,7 +73,7 @@ class ConditionalGaussianNode(BaseNode):
                     }
             else:
                 hycprob[str(key_comb)] = {
-                    "variance": np.nan,
+                    "std": np.nan,
                     "regressor": None,
                     "regressor_obj": None,
                     "serialization": None,
@@ -101,19 +101,20 @@ class ConditionalGaussianNode(BaseNode):
                     flag = True
                     break
             if flag:
-                return np.nan, np.nan
+                cond_mean, std = np.nan, np.nan
             else:
                 if lgdistribution["regressor"]:
                     model = lgdistribution["regressor_obj"]
 
                     cond_mean = model.predict(np.array(lgpvals).reshape(1, -1))[0]
-                    variance = lgdistribution["variance"]
-                    return cond_mean, variance
+                    std = lgdistribution["std"]
+                    cond_mean, std = cond_mean, std
                 else:
-                    return np.nan, np.nan
-
+                    cond_mean, std = np.nan, np.nan
         else:
-            return lgdistribution["mean"], math.sqrt(lgdistribution["variance"])
+            cond_mean, std = lgdistribution["mean"], math.sqrt(lgdistribution["std"])
+
+        return ConditionalGaussianNodeResult(distribution=(cond_mean, std))
 
     def choose(
         self,
@@ -127,11 +128,11 @@ class ConditionalGaussianNode(BaseNode):
         pvals: parent values
         """
 
-        cond_mean, variance = self.get_dist(node_info, pvals)
-        if np.isnan(cond_mean) or np.isnan(variance):
+        cond_mean, std = self.get_dist(node_info, pvals).get()
+        if np.isnan(cond_mean) or np.isnan(std):
             return np.nan
 
-        return random.gauss(cond_mean, variance)
+        return random.gauss(cond_mean, std)
 
     def predict(
         self,
