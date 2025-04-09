@@ -4,7 +4,6 @@ from pandas import DataFrame
 import inspect
 from bamt.log import logger_preprocessor
 from bamt.utils import GraphUtils as gru
-from pprint import pprint
 
 class BasePreprocessor(object):
     """
@@ -19,8 +18,16 @@ class BasePreprocessor(object):
     def get_nodes_types(data):
         return gru.nodes_types(data=data)
 
-    def get_nodes_signs(self, data):
-        return gru.nodes_signs(nodes_types=self.nodes_types, data=data)
+    @staticmethod
+    def get_nodes_signs(data, nodes_types):
+        return gru.nodes_signs(nodes_types=nodes_types, data=data)
+
+    def generate_info(self, data):
+        nodes_types = self.get_nodes_types(data)
+        if list(nodes_types.keys()) != data.columns.to_list():
+            logger_preprocessor.error("Nodes_types dictionary are not full.")
+            return None, None
+        return {"types": nodes_types, "signs": self.get_nodes_signs(nodes_types=nodes_types, data=data)}
 
     @property
     def info(self):
@@ -148,11 +155,8 @@ class Preprocessor(BasePreprocessor):
         data: data to apply on
         """
         df = data.copy()
-        self.nodes_types = self.get_nodes_types(data)
-        if list(self.nodes_types.keys()) != data.columns.to_list():
-            logger_preprocessor.error("Nodes_types dictionary are not full.")
-            return None, None
-        self.nodes_signs = self.get_nodes_signs(data)
+        info = self.generate_info(data)
+        self.nodes_types, self.nodes_signs = info["types"], info["signs"]
         self.scan(df)
         for name, instrument in self.pipeline:
             if name == "encoder":
