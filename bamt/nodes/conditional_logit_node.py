@@ -20,7 +20,7 @@ class ConditionalLogitNode(BaseNode):
         super(ConditionalLogitNode, self).__init__(name)
         if classifier is None:
             classifier = linear_model.LogisticRegression(
-                multi_class="multinomial", solver="newton-cg", max_iter=100
+                solver="newton-cg", max_iter=100
             )
         self.classifier = classifier
         self.type = "ConditionalLogit" + f" ({type(self.classifier).__name__})"

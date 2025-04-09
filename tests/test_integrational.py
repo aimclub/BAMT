@@ -6,6 +6,7 @@ from functools import partialmethod
 import numpy as np
 import pandas as pd
 import pytest
+import os
 from pandas.testing import assert_frame_equal
 from pgmpy.estimators import K2Score
 from sklearn import preprocessing
@@ -196,10 +197,8 @@ class TestNetwork:
         # this block is supposed to test either error on wrong data type occurs
         if not use_preprocessor and scoring[0] == "K2":
             # Evo can deal with any numeric data
-            # new-thyroid contains only numeric data
             if optimizer != "Evo":
                 with bamt_raises(logger_builder, level=logging.ERROR, message="K2 deals only with discrete data"):
-                    logger_builder.error("test messsate")
                     bn.add_edges(
                         discretized_data,
                         optimizer=optimizer,
@@ -231,7 +230,7 @@ class TestNetwork:
         predict_loaded = bn.predict(
             test[[x for x in test.columns if x != target]], progress_bar=False
         )
-
+        os.remove("bn.json")
         assert_frame_equal(pd.DataFrame(predict), pd.DataFrame(predict_loaded))
 
 
@@ -242,13 +241,15 @@ class TestNetwork:
     def test_2(
         self, directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target
     ):
+        # this block is supposed to test either error on wrong data type occurs
+        if not use_preprocessor and scoring[0] == "K2":
+            # Evo can deal with any numeric data
+            if optimizer != "Evo":
+                return
+
         bn = initialize_bn(bn_type, use_mixture, has_logit)
         info, discretized_data, train, test = prepare_data(directory, use_preprocessor)
         bn.add_nodes(info)
-
-        if not use_preprocessor and optimizer != "Evo" and not directory.endswith("new_thyroid.csv"):
-            # we just skipped these options, as they were tested in test_1
-            return True
 
         if bn_type != "Composite":
             bn.add_edges(
