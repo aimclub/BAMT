@@ -1,13 +1,12 @@
 import random
 from itertools import product
 from typing import Type, Dict, Union, List
-
+from bamt.result_models.node_result import DiscreteNodeResult
 import numpy as np
 from pandas import DataFrame, crosstab
 
 from .base import BaseNode
 from .schema import DiscreteParams
-
 
 class DiscreteNode(BaseNode):
     """
@@ -61,11 +60,12 @@ class DiscreteNode(BaseNode):
 
     @staticmethod
     def get_dist(node_info, pvals):
-        if not pvals:
-            return node_info["cprob"]
+        if pvals:
+            probs = node_info["cprob"][str(pvals)]
         else:
-            # noinspection PyTypeChecker
-            return node_info["cprob"][str(pvals)]
+            probs = node_info["cprob"]
+
+        return DiscreteNodeResult(probs=probs, values=node_info["vals"])
 
     def choose(self, node_info: Dict[str, Union[float, str]], pvals: List[str]) -> str:
         """
@@ -75,9 +75,9 @@ class DiscreteNode(BaseNode):
         pvals: parent values
         """
         vals = node_info["vals"]
-        dist = np.array(self.get_dist(node_info, pvals))
+        probs = self.get_dist(node_info, pvals).get()[0]
 
-        cumulative_dist = np.cumsum(dist)
+        cumulative_dist = np.cumsum(probs)
 
         rand = np.random.random()
         rindex = np.searchsorted(cumulative_dist, rand)

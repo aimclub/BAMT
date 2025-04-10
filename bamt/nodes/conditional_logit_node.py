@@ -1,7 +1,7 @@
 import itertools
 import random
 from typing import Optional, List, Union, Dict
-
+from bamt.result_models.node_result import ConditionalLogitNodeResult
 import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
@@ -20,7 +20,7 @@ class ConditionalLogitNode(BaseNode):
         super(ConditionalLogitNode, self).__init__(name)
         if classifier is None:
             classifier = linear_model.LogisticRegression(
-                multi_class="multinomial", solver="newton-cg", max_iter=100
+                solver="newton-cg", max_iter=100
             )
         self.classifier = classifier
         self.type = "ConditionalLogit" + f" ({type(self.classifier).__name__})"
@@ -89,10 +89,11 @@ class ConditionalLogitNode(BaseNode):
             else:
                 lgpvals.append(pval)
 
-        if any(parent_value == "nan" for parent_value in dispvals):
-            return np.nan
-
         lgdistribution = node_info["hybcprob"][str(dispvals)]
+
+        if any(parent_value == "nan" for parent_value in dispvals):
+            return ConditionalLogitNodeResult(probs=(np.nan, np.nan),
+                                              values=lgdistribution["classes"])
 
         # JOBLIB
         if len(lgdistribution["classes"]) > 1:
@@ -100,12 +101,15 @@ class ConditionalLogitNode(BaseNode):
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
             if not kwargs.get("inner", False):
-                return distribution
+                return ConditionalLogitNodeResult(probs=distribution,
+                                                  values=lgdistribution["classes"])
             else:
                 return distribution, lgdistribution
+
         else:
             if not kwargs.get("inner", False):
-                return np.array([1.0])
+                return ConditionalLogitNodeResult(probs=np.array([1.0]),
+                                                  values=lgdistribution["classes"])
             else:
                 return np.array([1.0]), lgdistribution
 

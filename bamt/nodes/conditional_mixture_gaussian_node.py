@@ -8,6 +8,7 @@ from pandas import DataFrame
 from bamt.utils.MathUtils import component
 from .base import BaseNode
 from .schema import CondMixtureGaussParams
+from ..result_models.node_result import ConditionalMixtureGaussianNodeResult
 
 
 class ConditionalMixtureGaussianNode(BaseNode):
@@ -139,17 +140,20 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         covariances=covariance,
                     )
                     cond_gmm = gmm.condition(indexes, [lgpvals])
-                    return cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
+                    means, covars, priors =  cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
                 else:
-                    return np.nan, np.nan, np.nan
+                    means, covars, priors =  np.nan, np.nan, np.nan
             else:
                 n_comp = len(w)
                 gmm = GMM(
                     n_components=n_comp, priors=w, means=mean, covariances=covariance
                 )
-                return gmm.means, gmm.covariances, gmm.priors
+                means, covars, priors =  gmm.means, gmm.covariances, gmm.priors
         else:
-            return np.nan, np.nan, np.nan
+            means, covars, priors =  np.nan, np.nan, np.nan
+
+        return ConditionalMixtureGaussianNodeResult(distribution=(means, covars, priors),
+                                                    n_components=n_comp)
 
     def choose(
         self,
@@ -162,7 +166,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
         node_info: nodes info from distributions
         pvals: parent values
         """
-        mean, covariance, w = self.get_dist(node_info, pvals)
+        mean, covariance, w = self.get_dist(node_info, pvals).get()
 
         # check if w is nan or list of weights
         if not isinstance(w,  np.ndarray):
