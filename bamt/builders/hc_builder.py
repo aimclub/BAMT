@@ -49,7 +49,11 @@ class HillClimbDefiner(BaseDefiner):
         scoring_function = K2
 
         # Combine white_list to forbidden_edges if white_list exists
-        forbidden_edges = self.black_list.copy()
+        if self.black_list:
+            forbidden_edges = self.black_list.copy()
+        else:
+            forbidden_edges = set()
+
         if white_list:
             all_possible_edges = [
                 (i, j)
