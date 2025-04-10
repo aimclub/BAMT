@@ -3,6 +3,7 @@ from typing import Union, List, Optional
 import numpy as np
 from gmr import GMM
 from pandas import DataFrame
+from bamt.result_models.node_result import MixtureGaussianNodeResult
 
 from bamt.utils.MathUtils import component
 from .base import BaseNode
@@ -85,16 +86,18 @@ class MixtureGaussianNode(BaseNode):
                         covariances=covariance,
                     )
                     cond_gmm = gmm.condition(indexes, [pvals])
-                    return cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
+                    means, covars, priors = cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
                 else:
-                    return np.nan, np.nan, np.nan
+                    means, covars, priors =  np.nan, np.nan, np.nan
             else:
                 gmm = GMM(
                     n_components=n_comp, priors=w, means=mean, covariances=covariance
                 )
-                return gmm.means, gmm.covariances, gmm.priors
+                means, covars, priors =  gmm.means, gmm.covariances, gmm.priors
         else:
-            return np.nan, np.nan, np.nan
+            means, covars, priors =  np.nan, np.nan, np.nan
+
+        return MixtureGaussianNodeResult((means, covars, priors), n_components=n_comp)
 
     def choose(
         self, node_info: MixtureGaussianParams, pvals: List[Union[str, float]]
@@ -105,7 +108,7 @@ class MixtureGaussianNode(BaseNode):
         pvals: parent values
         Return value from MixtureGaussian node
         """
-        mean, covariance, w = self.get_dist(node_info, pvals)
+        mean, covariance, w = self.get_dist(node_info, pvals).get()
 
         n_comp = len(w)
 

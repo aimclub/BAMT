@@ -17,7 +17,7 @@ class MixtureGaussianParams(TypedDict):
 class GaussianParams(TypedDict):
     regressor: str
     regressor_obj: Optional[object]
-    variance: Union[ndarray, float]
+    std: Union[ndarray, float]
     mean: Union[ndarray, float]
     serialization: Optional[str]
 
@@ -25,7 +25,7 @@ class GaussianParams(TypedDict):
 class CondGaussParams(TypedDict):
     regressor: str
     regressor_obj: Optional[object]
-    variance: Union[ndarray, float]
+    std: Union[ndarray, float]
     mean: Union[ndarray, float]
     serialization: Optional[str]
 

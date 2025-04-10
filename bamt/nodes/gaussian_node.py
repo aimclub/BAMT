@@ -1,7 +1,6 @@
-import math
 import random
 from typing import Optional, List
-
+from bamt.result_models.node_result import GaussianNodeResult
 import numpy as np
 from pandas import DataFrame
 from sklearn import linear_model
@@ -30,27 +29,26 @@ class GaussianNode(BaseNode):
         if parents:
             self.regressor.fit(data[parents].values, data[self.name].values, **kwargs)
             predicted_value = self.regressor.predict(data[parents].values)
-            variance = rmse(data[self.name].values, predicted_value)
+            std = rmse(data[self.name].values, predicted_value)
             return {
                 "mean": np.nan,
                 "regressor_obj": self.regressor,
                 "regressor": type(self.regressor).__name__,
-                "variance": variance,
+                "std": std,
                 "serialization": None,
             }
         else:
             mean_base = np.mean(data[self.name].values)
-            variance = np.var(data[self.name].values)
+            std = np.std(data[self.name].values)
             return {
                 "mean": mean_base,
                 "regressor_obj": None,
                 "regressor": None,
-                "variance": variance,
+                "std": std,
                 "serialization": None,
             }
 
     def get_dist(self, node_info, pvals):
-        var = node_info["variance"]
         if pvals:
             for el in pvals:
                 if str(el) == "nan":
@@ -61,9 +59,10 @@ class GaussianNode(BaseNode):
                 pvals = [int(item) if isinstance(item, str) else item for item in pvals]
 
             cond_mean = model.predict(np.array(pvals).reshape(1, -1))[0]
-            return cond_mean, var
         else:
-            return node_info["mean"], math.sqrt(var)
+            cond_mean = node_info["mean"]
+
+        return GaussianNodeResult(distribution=(cond_mean, node_info["std"]))
 
     def choose(self, node_info: GaussianParams, pvals: List[float]) -> float:
         """
@@ -73,8 +72,8 @@ class GaussianNode(BaseNode):
         pvals: parent values
         """
 
-        cond_mean, var = self.get_dist(node_info, pvals)
-        return random.gauss(cond_mean, var)
+        cond_mean, std = self.get_dist(node_info, pvals).get()
+        return random.gauss(cond_mean, std)
 
     @staticmethod
     def predict(node_info: GaussianParams, pvals: List[float]) -> float:
