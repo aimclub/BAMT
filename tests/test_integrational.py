@@ -8,7 +8,9 @@ import pandas as pd
 import pytest
 import os
 from pandas.testing import assert_frame_equal
+
 from pgmpy.estimators import K2
+
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -91,6 +93,7 @@ class Builder:
         }
 
         self.scoring = [("K2", K2), ("BIC", ), ("MI", )]
+
         self.optimizer = ["HC"]
         self.use_mixture = [False, True]
         self.has_logit = [False, True]
