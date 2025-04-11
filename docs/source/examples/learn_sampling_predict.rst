@@ -19,7 +19,7 @@ Used imports:
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.model_selection import train_test_split
 
-    from pgmpy.estimators import K2Score
+    from pgmpy.estimators import K2
 
 Importing example data:
 
@@ -56,7 +56,7 @@ Learning BN structure with HillClimbing algorithm:
 .. code-block:: python 
 
 
-    bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
+    bn.add_edges(discretized_data,  scoring_function=('K2',K2))
 
 Learning distribution parameters and sampling data:
 

@@ -17,7 +17,7 @@ Used imports:
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.tree import DecisionTreeClassifier
 
-    from pgmpy.estimators import K2Score
+    from pgmpy.estimators import K2
 
 Importing example data:
 
@@ -54,7 +54,7 @@ Learning BN structure and parameters with HillClimbing algorithm:
 .. code-block:: python 
 
 
-    bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
+    bn.add_edges(discretized_data,  scoring_function=('K2',K2))
     bn.set_classifiers(classifiers={'age': DecisionTreeClassifier(),
                                  'relation': RandomForestClassifier(),
                                  'is_driver': KNeighborsClassifier(n_neighbors=2)})

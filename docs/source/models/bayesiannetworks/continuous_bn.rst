@@ -53,7 +53,7 @@ For structure learning of continuous BNs, ``bn.add_nodes()`` and ``bn.add_edges(
 
 .. code-block:: python
 
-    from pgmpy.estimators import K2Score
+    from pgmpy.estimators import K2
 
     bn.add_nodes(info) # add nodes from info obtained from preprocessing
 
@@ -73,7 +73,7 @@ For structure learning of continuous BNs, ``bn.add_nodes()`` and ``bn.add_edges(
               }
 
     # Structure learning using K2Score and parameters defined above
-    bn.add_edges(discretized_data, scoring_function=('K2', K2Score), params=params) 
+    bn.add_edges(discretized_data, scoring_function=('K2', K2), params=params)
 
     bn.plot('foo.html') # add nodes from info obtained from preprocessing
 

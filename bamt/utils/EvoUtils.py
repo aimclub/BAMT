@@ -4,8 +4,8 @@ import pandas as pd
 from golem.core.dag.convert import graph_structure_as_nx_graph
 from golem.core.dag.graph_utils import ordered_subnodes_hierarchy
 from golem.core.optimisers.graph import OptGraph, OptNode
-from pgmpy.estimators import K2Score
-from pgmpy.models import BayesianNetwork
+from pgmpy.estimators import K2
+from pgmpy.models import DiscreteBayesianNetwork
 
 
 class CustomGraphModel(OptGraph):
@@ -28,10 +28,10 @@ def K2_metric(graph: CustomGraphModel, data: pd.DataFrame):
         l2 = str(labels[meta_edge[1]])
         struct.append([l1, l2])
 
-    bn_model = BayesianNetwork(struct)
+    bn_model = DiscreteBayesianNetwork(struct)
     bn_model.add_nodes_from(data.columns)
 
-    score = K2Score(data).score(bn_model)
+    score = K2(data).score(bn_model)
     return -score
 
 

@@ -21,7 +21,7 @@ First, lets import BAMT modules and required machine learning modules.
     from sklearn.ensemble.RandomForestRegressor import RandomForestRegressor
     from sklearn.linear_model.LinearRegression import LinearRegression
 
-    from pgmpy.estimators import K2Score
+    from pgmpy.estimators import K2
 
 Let's start with data importing and preprocessing.
 
@@ -73,7 +73,7 @@ After adding nodes we can perform structure learning.
 
 .. code-block:: python
 
-    bn.add_edges(discretized_data,  scoring_function=('K2',K2Score))
+    bn.add_edges(discretized_data,  scoring_function=('K2',K2))
 
 Finally, before parameters learning, we can add machine learning models to nodes.
 Let's add classifier models to discrete nodes and regressor models to continuous nodes and perform parameters learning.

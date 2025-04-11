@@ -1,8 +1,9 @@
 from typing import Dict, List, Optional, Tuple, Callable, Union
+from itertools import permutations
 
 from pandas import DataFrame
 from pgmpy.base import DAG
-from pgmpy.estimators import HillClimbSearch
+from pgmpy.estimators import HillClimbSearch, ExpertKnowledge, K2
 
 from bamt.builders.builders_base import ParamDict, BaseDefiner
 from bamt.log import logger_builder
@@ -46,39 +47,43 @@ class HillClimbDefiner(BaseDefiner):
             )
             return None
 
-        if len(self.scoring_function) != 2:
-            from pgmpy.estimators import K2Score
+        scoring_function = K2
 
-            scoring_function = K2Score
+        # Combine white_list to forbidden_edges if white_list exists
+        if self.black_list:
+            forbidden_edges = self.black_list.copy()
         else:
-            scoring_function = self.scoring_function[1]
+            forbidden_edges = set()
+
+        if white_list:
+            all_possible_edges = list(permutations(self.vertices, 2))
+            forbidden_edges |= set(all_possible_edges) - set(white_list)
 
         if not init_edges:
+            expert_knowledge = ExpertKnowledge(forbidden_edges=forbidden_edges)
             best_model = self.optimizer.estimate(
                 scoring_method=scoring_function(data),
-                black_list=self.black_list,
-                white_list=white_list,
+                expert_knowledge=expert_knowledge,
                 show_progress=progress_bar,
             )
         else:
+            expert_knowledge = ExpertKnowledge(
+                forbidden_edges=forbidden_edges,
+                required_edges=init_edges if not remove_init_edges else None,
+            )
+            startdag = None
             if remove_init_edges:
                 startdag = DAG()
                 nodes = [str(v) for v in self.vertices]
                 startdag.add_nodes_from(nodes=nodes)
                 startdag.add_edges_from(ebunch=init_edges)
-                best_model = self.optimizer.estimate(
-                    black_list=self.black_list,
-                    white_list=white_list,
-                    start_dag=startdag,
-                    show_progress=False,
-                )
-            else:
-                best_model = self.optimizer.estimate(
-                    black_list=self.black_list,
-                    white_list=white_list,
-                    fixed_edges=init_edges,
-                    show_progress=False,
-                )
+
+            best_model = self.optimizer.estimate(
+                scoring_method=scoring_function(data),
+                expert_knowledge=expert_knowledge,
+                start_dag=startdag,
+                show_progress=False,
+            )
 
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton["E"] = structure

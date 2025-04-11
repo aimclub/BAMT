@@ -1,5 +1,5 @@
 import pandas as pd
-from pgmpy.estimators import K2Score
+from pgmpy.estimators import K2
 from sklearn import preprocessing
 
 import bamt.preprocessors as pp
@@ -31,7 +31,7 @@ bn_discrete = DiscreteBN()
 bn_discrete.add_nodes(descriptor=info)
 
 params = {"white_list": ps}
-bn_discrete.add_edges(discretized_data, scoring_function=("K2", K2Score), params=params)
+bn_discrete.add_edges(discretized_data, scoring_function=("K2", K2), params=params)
 
 encoder = preprocessing.LabelEncoder()
 discretizer = preprocessing.KBinsDiscretizer(
@@ -55,5 +55,5 @@ bn_continuous.add_nodes(descriptor=info)
 
 params = {"white_list": ps}
 bn_continuous.add_edges(
-    discretized_data, scoring_function=("K2", K2Score), params=params
+    discretized_data, scoring_function=("K2", K2), params=params
 )
