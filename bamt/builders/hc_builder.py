@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Tuple, Callable, Union
+from itertools import permutations
 
 from pandas import DataFrame
 from pgmpy.base import DAG
@@ -55,13 +56,8 @@ class HillClimbDefiner(BaseDefiner):
             forbidden_edges = set()
 
         if white_list:
-            all_possible_edges = [
-                (i, j)
-                for i in self.vertices
-                for j in self.vertices
-                if i != j
-            ]
-            forbidden_edges.update(set(all_possible_edges) - set(white_list))
+            all_possible_edges = list(permutations(self.vertices, 2))
+            forbidden_edges |= set(all_possible_edges) - set(white_list)
 
         if not init_edges:
             expert_knowledge = ExpertKnowledge(forbidden_edges=forbidden_edges)
