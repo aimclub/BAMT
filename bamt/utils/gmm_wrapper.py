@@ -69,6 +69,29 @@ class GMM:
 
         if self._gmm is None:
             raise RuntimeError("GMM is not initialized. Call from_samples(...) or use manual init first.")
-
+        if n_samples == 0:
+            n_features = self._gmm.means_.shape[1]
+            return np.empty((0, n_features))
         samples, _ = self._gmm.sample(n_samples)
         return samples
+
+    def predict(self, X):
+
+        if self._gmm is None:
+            raise RuntimeError("GMM is not initialized. Call from_samples(...) or use manual init first.")
+
+        X = np.array(X)
+        if X.shape[0] == 0:
+            return np.empty((0,), dtype=int)
+
+        return self._gmm.predict(X)
+
+    def to_responsibilities(self, X):
+        if self._gmm is None:
+            raise RuntimeError("GMM is not initialized.")
+
+        X = np.array(X)
+        if X.shape[0] == 0:
+            return np.empty((0, self.n_components))
+
+        return self._gmm.predict_proba(X)
