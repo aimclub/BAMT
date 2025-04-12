@@ -27,10 +27,20 @@ class GMM:
         self._gmm.weights_ = priors
         self._gmm.means_ = means
         self._gmm.covariances_ = covariances
-        self.priors = priors
-        self.means = means
-        self.covariances = covariances
         # Восстановим precision_cholesky вручную (обязательная часть в sklearn)
         self._gmm.precisions_cholesky_ = _compute_precision_cholesky(
             covariances, 'full'
         )
+
+
+    @property
+    def means(self):
+        return self._gmm.means_
+
+    @property
+    def priors(self):
+        return self._gmm.weights_
+
+    @property
+    def covariances(self):
+        return self._gmm.covariances_
