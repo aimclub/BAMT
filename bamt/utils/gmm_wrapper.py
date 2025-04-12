@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.mixture import GaussianMixture
+from sklearn.mixture._gaussian_mixture import _compute_precision_cholesky
 
 class GMM:
     def __init__(self, n_components = 1, priors = None, means = None, covariances = None, random_state = None):
@@ -28,7 +29,6 @@ class GMM:
         self._gmm.covariances_ = covariances
 
         # Восстановим precision_cholesky вручную (обязательная часть в sklearn)
-        self._gmm.precisions_cholesky_ = GaussianMixture(
-            n_components=self.n_components,
-            covariance_type='full'
-        )._compute_precision_cholesky(covariances, 'full')
+        self._gmm.precisions_cholesky_ = _compute_precision_cholesky(
+            covariances, 'full'
+        )
