@@ -10,3 +10,25 @@ class GMM:
         if means is not None and covariances is not None and priors is not None:
             self._manual_init(means, covariances, priors)
 
+    def _manual_init(self, means, covariances, priors):
+        # Преобразуем всё в numpy-массивы
+        means = np.array(means)
+        covariances = np.array(covariances)
+        priors = np.array(priors)
+
+        # Инициализируем пустую GMM и вручную проставим параметры
+        self._gmm = GaussianMixture(
+            n_components=self.n_components,
+            covariance_type='full',
+            random_state=self.random_state
+        )
+
+        self._gmm.weights_ = priors
+        self._gmm.means_ = means
+        self._gmm.covariances_ = covariances
+
+        # Восстановим precision_cholesky вручную (обязательная часть в sklearn)
+        self._gmm.precisions_cholesky_ = GaussianMixture(
+            n_components=self.n_components,
+            covariance_type='full'
+        )._compute_precision_cholesky(covariances, 'full')
