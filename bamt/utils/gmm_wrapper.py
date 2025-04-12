@@ -66,18 +66,7 @@ class GMM:
         return self
 
     def sample(self, n_samples):
-        """
-        Сэмплирование точек из смеси гауссиан.
 
-        Parameters:
-        -----------
-        n_samples : int
-            Количество точек для генерации.
-
-        Returns:
-        --------
-        array of shape (n_samples, n_features)
-        """
         if self._gmm is None:
             raise RuntimeError("GMM is not initialized. Call from_samples(...) or use manual init first.")
 
