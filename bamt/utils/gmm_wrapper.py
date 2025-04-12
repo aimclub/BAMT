@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from sklearn.mixture._gaussian_mixture import _compute_precision_cholesky
+import warnings
 
 class GMM:
     def __init__(self, n_components = 1, priors = None, means = None, covariances = None, random_state = None):
@@ -44,3 +45,23 @@ class GMM:
     @property
     def covariances(self):
         return self._gmm.covariances_
+
+    def from_samples(self, X, n_iter=100, init_params="kmeans", sample_weight=None):
+
+        if sample_weight is not None:
+            warnings.warn(
+                "sample_weight is not supported in the current sklearn build and will be ignored.",
+                RuntimeWarning
+            )
+
+        self._gmm = GaussianMixture(
+            n_components=self.n_components,
+            covariance_type='full',
+            max_iter=n_iter,
+            init_params=init_params,
+            random_state=self.random_state
+        )
+
+        self._gmm.fit(X)
+        return self
+
