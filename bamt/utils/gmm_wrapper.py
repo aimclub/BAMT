@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.mixture import GaussianMixture
 from sklearn.mixture._gaussian_mixture import _compute_precision_cholesky
 import warnings
+from scipy.stats import multivariate_normal
 
 class GMM:
     def __init__(self, n_components = 1, priors = None, means = None, covariances = None, random_state = None):
@@ -95,3 +96,59 @@ class GMM:
             return np.empty((0, self.n_components))
 
         return self._gmm.predict_proba(X)
+
+    def condition(self, given_indices, given_values) -> 'GMM':
+
+        if self._gmm is None:
+            raise RuntimeError("GMM is not initialized.")
+
+        given_values = np.array(given_values)[0]
+        total_dim = self._gmm.means_.shape[1]
+
+        # Индексы переменных, которые НЕ заданы
+        free_indices = [i for i in range(total_dim) if i not in given_indices]
+
+        # Новые списки параметров
+        new_means = []
+        new_covariances = []
+        new_priors = []
+
+        for k in range(self.n_components):
+            mean = self._gmm.means_[k]
+            cov = self._gmm.covariances_[k]
+
+            # Блоки матрицы
+            mu_given = mean[given_indices]
+            mu_free = mean[free_indices]
+
+            cov_gg = cov[np.ix_(given_indices, given_indices)]
+            cov_gf = cov[np.ix_(given_indices, free_indices)]
+            cov_fg = cov[np.ix_(free_indices, given_indices)]
+            cov_ff = cov[np.ix_(free_indices, free_indices)]
+
+            # Условное среднее
+            delta = given_values - mu_given
+            cond_mean = mu_free + cov_fg @ np.linalg.solve(cov_gg, delta)
+
+            # Условная ковариация
+            cond_cov = cov_ff - cov_fg @ np.linalg.solve(cov_gg, cov_gf)
+
+            new_means.append(cond_mean)
+            new_covariances.append(cond_cov)
+
+            # Обновим вес компоненты
+            prior = self._gmm.weights_[k]
+            pdf_val = multivariate_normal.pdf(given_values, mean=mu_given, cov=cov_gg)
+            new_priors.append(prior * pdf_val)
+
+        # Нормализация весов
+        new_priors = np.array(new_priors)
+        new_priors /= new_priors.sum()
+
+        # Вернуть новый GMM
+        return GMM(
+            n_components=self.n_components,
+            priors=new_priors.tolist(),
+            means=[m.tolist() for m in new_means],
+            covariances=[c.tolist() for c in new_covariances]
+        )
