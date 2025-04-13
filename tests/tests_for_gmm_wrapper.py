@@ -130,11 +130,10 @@ def generate_random_positive_def_matrix(dim):
     return A @ A.T + dim * np.eye(dim)  # симметричная и положительно определённая
 
 
-def test_condition_manual_gmm_equivalence():
-    np.random.seed(123)
-    n_components = 3
-    n_features = 4
-
+@pytest.mark.parametrize("n_components", [1, 2, 3, 5, 8])
+@pytest.mark.parametrize("n_features", [2, 4, 6, 8])
+def test_condition_manual_gmm_equivalence(n_components, n_features):
+    np.random.seed(n_components * 100 + n_features)  # стабильный сид
     # Случайные параметры
     means = [np.random.randn(n_features).tolist() for _ in range(n_components)]
     covariances = [generate_random_positive_def_matrix(n_features).tolist() for _ in range(n_components)]
@@ -143,7 +142,9 @@ def test_condition_manual_gmm_equivalence():
     priors = (raw_priors / raw_priors.sum()).tolist()
 
     # Случайный фиксированный вектор
-    given_indices = sorted(np.random.choice(n_features, size=2, replace=False).tolist())
+    n_given = min(2, n_features - 1)
+    given_indices = sorted(np.random.choice(n_features, size=n_given, replace=False).tolist())
+
     given_values = np.random.randn(1, len(given_indices)).tolist()
 
     # Создаем модели
