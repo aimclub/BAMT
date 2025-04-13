@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from bamt.utils.gmm_wrapper import GMM
+from gmr import GMM as GMR_GMM
 
 
 def test_sample_returns_correct_shape():
@@ -97,3 +98,67 @@ def test_predict_proba_before_init_raises():
     gmm = GMM(n_components=2)
     with pytest.raises(RuntimeError):
         _ = gmm.to_responsibilities(np.random.randn(10, 2))
+
+
+def sort_components_by_means(means, covs, priors):
+    norms = [np.linalg.norm(m) for m in means]
+    indices = np.argsort(norms)
+    means_sorted = [means[i] for i in indices]
+    covs_sorted = [covs[i] for i in indices]
+    priors_sorted = [priors[i] for i in indices]
+    return means_sorted, covs_sorted, priors_sorted
+
+def arrays_equal_up_to_sign(a, b, tol=1e-5):
+    return np.allclose(a, b, atol=tol) or np.allclose(a, -b, atol=tol)
+
+def gmm_means_close_unordered(m1, m2, tol=1e-5):
+    matched = [False] * len(m2)
+    for v1 in m1:
+        found = False
+        for i, v2 in enumerate(m2):
+            if not matched[i] and arrays_equal_up_to_sign(v1, v2, tol):
+                matched[i] = True
+                found = True
+                break
+        if not found:
+            return False
+    return all(matched)
+
+
+def generate_random_positive_def_matrix(dim):
+    A = np.random.randn(dim, dim)
+    return A @ A.T + dim * np.eye(dim)  # симметричная и положительно определённая
+
+
+def test_condition_manual_gmm_equivalence():
+    np.random.seed(123)
+    n_components = 3
+    n_features = 4
+
+    # Случайные параметры
+    means = [np.random.randn(n_features).tolist() for _ in range(n_components)]
+    covariances = [generate_random_positive_def_matrix(n_features).tolist() for _ in range(n_components)]
+
+    raw_priors = np.random.rand(n_components)
+    priors = (raw_priors / raw_priors.sum()).tolist()
+
+    # Случайный фиксированный вектор
+    given_indices = sorted(np.random.choice(n_features, size=2, replace=False).tolist())
+    given_values = np.random.randn(1, len(given_indices)).tolist()
+
+    # Создаем модели
+    gmr_gmm = GMR_GMM(n_components=n_components, means=means, covariances=covariances, priors=priors)
+    our_gmm = GMM(n_components=n_components, means=means, covariances=covariances, priors=priors)
+
+    # Условные модели
+    gmr_cond = gmr_gmm.condition(given_indices, given_values)
+    our_cond = our_gmm.condition(given_indices, given_values)
+
+    # Сравнение
+    for m1, m2 in zip(gmr_cond.means, our_cond.means):
+        np.testing.assert_allclose(m1, m2, atol=1e-5)
+
+    for c1, c2 in zip(gmr_cond.covariances, our_cond.covariances):
+        np.testing.assert_allclose(c1, c2, atol=1e-5)
+
+    np.testing.assert_allclose(gmr_cond.priors, our_cond.priors, atol=1e-5)
