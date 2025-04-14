@@ -77,6 +77,16 @@ class GMM:
             init_params=translated_init_param,
             random_state=self.random_state
         )
+        if X.shape[0] < 2:
+            # ручная инициализация модели
+            mean = X[0]
+            cov = np.eye(X.shape[1]) * 1e-3  # маленькая ковариация
+            self._gmm = GaussianMixture(n_components=1)
+            self._gmm.weights_ = np.array([1.0])
+            self._gmm.means_ = np.array([mean])
+            self._gmm.covariances_ = np.array([cov])
+            self._gmm.precisions_cholesky_ = _compute_precision_cholesky(self._gmm.covariances_, 'full')
+            return self
 
         self._gmm.fit(X)
         return self
@@ -101,6 +111,10 @@ class GMM:
             return np.empty((0,), dtype=int)
 
         return self._gmm.predict(X)
+    def predict_conditioned(self, given_indices, given_values):
+        cond_gmm = self.condition(given_indices, given_values)
+        dummy_input = np.zeros((len(given_values), len(cond_gmm.means[0])))
+        return cond_gmm.predict(dummy_input)
 
     def to_responsibilities(self, X):
         if self._gmm is None:
