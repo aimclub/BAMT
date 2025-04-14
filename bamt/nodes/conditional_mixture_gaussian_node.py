@@ -2,7 +2,7 @@ import itertools
 from typing import Union, List, Optional, Dict
 
 import numpy as np
-from gmr import GMM
+from bamt.utils.gmm_wrapper import GMM
 from pandas import DataFrame
 
 from bamt.utils.MathUtils import component
@@ -217,7 +217,7 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         means=mean,
                         covariances=covariance,
                     )
-                    sample = gmm.predict(indexes, [lgpvals])[0][0]
+                    sample = gmm.predict_conditioned(indexes, [lgpvals])[0][0]
                 else:
                     sample = np.nan
             else:
