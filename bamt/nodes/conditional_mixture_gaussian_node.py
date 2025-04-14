@@ -180,7 +180,8 @@ class ConditionalMixtureGaussianNode(BaseNode):
             means=mean,
             covariances=covariance,
         )
-        sample = gmm.sample(1)[0][0]
+        s = gmm.sample(1)
+        sample = float(s[0][0]) if s.ndim == 2 else float(s[0])
         return sample
 
     @staticmethod

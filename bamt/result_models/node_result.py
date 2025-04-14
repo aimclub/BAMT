@@ -1,7 +1,9 @@
 from bamt.result_models.results import Results
 from scipy.stats import norm
 import numpy as np
-from gmr import GMM
+#from gmr import GMM
+from bamt.utils.gmm_wrapper import GMM #updated version on sklearn
+
 
 class NodeDistribution(Results):
     def __init__(self):

@@ -73,6 +73,7 @@ def test_predict_before_init_raises():
     gmm = GMM(n_components=2)
     with pytest.raises(RuntimeError):
         _ = gmm.predict(np.random.randn(5, 2))
+
 def test_predict_proba_shape_and_sum():
     X = np.random.randn(100, 2)
     gmm = GMM(n_components=3).from_samples(X)
