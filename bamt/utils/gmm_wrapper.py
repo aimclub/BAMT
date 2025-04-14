@@ -95,10 +95,25 @@ class GMM:
 
         if self._gmm is None:
             raise RuntimeError("GMM is not initialized. Call from_samples(...) or use manual init first.")
+        w = self._gmm.weights_
+
+        if np.any(np.isnan(w)) or np.any(w < 0) or not np.isclose(w.sum(), 1.0):
+            warnings.warn(
+                f"Sampling skipped: invalid GMM weights detected (w = {w}). Returning NaNs.",
+                RuntimeWarning
+            )
+            return np.full((n_samples, self._gmm.means_.shape[1]), np.nan)
+
+        if not np.isclose(w.sum(), 1.0):
+            w = w / w.sum()
+            self._gmm.weights_ = w
+
+
         if n_samples == 0:
             n_features = self._gmm.means_.shape[1]
             return np.empty((0, n_features))
         samples, _ = self._gmm.sample(n_samples)
+
         return samples
 
     def predict(self, X):
