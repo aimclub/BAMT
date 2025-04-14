@@ -2,7 +2,7 @@ import itertools
 from typing import Union, List, Optional, Dict
 
 import numpy as np
-from gmr import GMM
+from bamt.utils.gmm_wrapper import GMM
 from pandas import DataFrame
 
 from bamt.utils.MathUtils import component
@@ -140,20 +140,25 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         covariances=covariance,
                     )
                     cond_gmm = gmm.condition(indexes, [lgpvals])
-                    means, covars, priors =  cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
+                    means, covars, priors = (
+                        cond_gmm.means,
+                        cond_gmm.covariances,
+                        cond_gmm.priors,
+                    )
                 else:
-                    means, covars, priors =  np.nan, np.nan, np.nan
+                    means, covars, priors = np.nan, np.nan, np.nan
             else:
                 n_comp = len(w)
                 gmm = GMM(
                     n_components=n_comp, priors=w, means=mean, covariances=covariance
                 )
-                means, covars, priors =  gmm.means, gmm.covariances, gmm.priors
+                means, covars, priors = gmm.means, gmm.covariances, gmm.priors
         else:
-            means, covars, priors =  np.nan, np.nan, np.nan
+            means, covars, priors = np.nan, np.nan, np.nan
 
-        return ConditionalMixtureGaussianNodeResult(distribution=(means, covars, priors),
-                                                    n_components=n_comp)
+        return ConditionalMixtureGaussianNodeResult(
+            distribution=(means, covars, priors), n_components=n_comp
+        )
 
     def choose(
         self,
@@ -169,18 +174,19 @@ class ConditionalMixtureGaussianNode(BaseNode):
         mean, covariance, w = self.get_dist(node_info, pvals).get()
 
         # check if w is nan or list of weights
-        if not isinstance(w,  np.ndarray):
+        if not isinstance(w, np.ndarray):
             return np.nan
-            
+
         n_comp = len(w)
-        
+
         gmm = GMM(
             n_components=n_comp,
             priors=w,
             means=mean,
             covariances=covariance,
         )
-        sample = gmm.sample(1)[0][0]
+        s = gmm.sample(1)
+        sample = float(s[0][0]) if s.ndim == 2 else float(s[0])
         return sample
 
     @staticmethod
@@ -217,7 +223,13 @@ class ConditionalMixtureGaussianNode(BaseNode):
                         means=mean,
                         covariances=covariance,
                     )
-                    sample = gmm.predict(indexes, [lgpvals])[0][0]
+                    pred = gmm.predict_conditioned(indexes, [lgpvals])
+                    sample = (
+                        float(pred[0])
+                        if isinstance(pred, (np.ndarray, list))
+                        else float(pred)
+                    )
+
                 else:
                     sample = np.nan
             else:

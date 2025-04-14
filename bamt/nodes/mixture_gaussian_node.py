@@ -1,7 +1,10 @@
 from typing import Union, List, Optional
 
 import numpy as np
-from gmr import GMM
+
+# from gmr import GMM
+from bamt.utils.gmm_wrapper import GMM
+
 from pandas import DataFrame
 from bamt.result_models.node_result import MixtureGaussianNodeResult
 
@@ -86,16 +89,20 @@ class MixtureGaussianNode(BaseNode):
                         covariances=covariance,
                     )
                     cond_gmm = gmm.condition(indexes, [pvals])
-                    means, covars, priors = cond_gmm.means, cond_gmm.covariances, cond_gmm.priors
+                    means, covars, priors = (
+                        cond_gmm.means,
+                        cond_gmm.covariances,
+                        cond_gmm.priors,
+                    )
                 else:
-                    means, covars, priors =  np.nan, np.nan, np.nan
+                    means, covars, priors = np.nan, np.nan, np.nan
             else:
                 gmm = GMM(
                     n_components=n_comp, priors=w, means=mean, covariances=covariance
                 )
-                means, covars, priors =  gmm.means, gmm.covariances, gmm.priors
+                means, covars, priors = gmm.means, gmm.covariances, gmm.priors
         else:
-            means, covars, priors =  np.nan, np.nan, np.nan
+            means, covars, priors = np.nan, np.nan, np.nan
 
         return MixtureGaussianNodeResult((means, covars, priors), n_components=n_comp)
 
@@ -144,7 +151,13 @@ class MixtureGaussianNode(BaseNode):
                         means=mean,
                         covariances=covariance,
                     )
-                    sample = gmm.predict(indexes, [pvals])[0][0]
+                    pred = gmm.predict_conditioned(indexes, [pvals])
+                    sample = (
+                        float(pred[0])
+                        if isinstance(pred, (np.ndarray, list))
+                        else float(pred)
+                    )
+
                 else:
                     sample = np.nan
             else:

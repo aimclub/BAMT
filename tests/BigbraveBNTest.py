@@ -54,6 +54,4 @@ bn_continuous = ContinuousBN()
 bn_continuous.add_nodes(descriptor=info)
 
 params = {"white_list": ps}
-bn_continuous.add_edges(
-    discretized_data, scoring_function=("K2", K2), params=params
-)
+bn_continuous.add_edges(discretized_data, scoring_function=("K2", K2), params=params)
