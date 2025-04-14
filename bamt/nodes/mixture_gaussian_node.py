@@ -146,7 +146,9 @@ class MixtureGaussianNode(BaseNode):
                         means=mean,
                         covariances=covariance,
                     )
-                    sample = gmm.predict_conditioned(indexes, [pvals])[0][0]
+                    pred = gmm.predict_conditioned(indexes, [pvals])
+                    sample = float(pred[0]) if isinstance(pred, (np.ndarray, list)) else float(pred)
+
                 else:
                     sample = np.nan
             else:
