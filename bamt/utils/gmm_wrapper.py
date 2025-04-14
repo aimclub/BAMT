@@ -54,12 +54,27 @@ class GMM:
                 "sample_weight is not supported in the current sklearn build and will be ignored.",
                 RuntimeWarning
             )
+        _init_param_aliases = {
+            "kmeans++": "k-means++",  # gmr-style → sklearn
+            "k-means++": "k-means++",
+            "kmeans": "kmeans",
+            "random": "random",
+            "random_from_data": "random_from_data"
+        }
+        if init_params not in _init_param_aliases:
+            raise ValueError(
+                f"Unsupported init_params '{init_params}'. "
+                f"Allowed values: {list(_init_param_aliases.keys())}"
+            )
+        translated_init_param = _init_param_aliases[init_params]
+
+
 
         self._gmm = GaussianMixture(
             n_components=self.n_components,
             covariance_type='full',
             max_iter=n_iter,
-            init_params=init_params,
+            init_params=translated_init_param,
             random_state=self.random_state
         )
 
