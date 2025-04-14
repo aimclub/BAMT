@@ -30,7 +30,9 @@ class BigBraveBN:
         """
         df_copy = df.copy(deep=True)
         proximity_matrix = self._get_proximity_matrix(df_copy, proximity_metric)
-        brave_matrix = self._get_brave_matrix(df_copy.columns, proximity_matrix, n_nearest)
+        brave_matrix = self._get_brave_matrix(
+            df_copy.columns, proximity_matrix, n_nearest
+        )
 
         threshold_value = brave_matrix.max(numeric_only=True).max() * threshold
         filtered_brave_matrix = brave_matrix[brave_matrix > threshold_value].stack()

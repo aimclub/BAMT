@@ -8,6 +8,7 @@ from pandas import DataFrame, crosstab
 from .base import BaseNode
 from .schema import DiscreteParams
 
+
 class DiscreteNode(BaseNode):
     """
     Main class of Discrete Node

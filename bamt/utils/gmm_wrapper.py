@@ -4,8 +4,16 @@ from sklearn.mixture._gaussian_mixture import _compute_precision_cholesky
 import warnings
 from scipy.stats import multivariate_normal
 
+
 class GMM:
-    def __init__(self, n_components = 1, priors = None, means = None, covariances = None, random_state = None):
+    def __init__(
+        self,
+        n_components=1,
+        priors=None,
+        means=None,
+        covariances=None,
+        random_state=None,
+    ):
         self.n_components = n_components
         self.random_state = random_state
         self._gmm = None  # объект GaussianMixture или ручная сборка
@@ -22,8 +30,8 @@ class GMM:
         # Инициализируем пустую GMM и вручную проставим параметры
         self._gmm = GaussianMixture(
             n_components=self.n_components,
-            covariance_type='full',
-            random_state=self.random_state
+            covariance_type="full",
+            random_state=self.random_state,
         )
 
         self._gmm.weights_ = priors
@@ -31,9 +39,8 @@ class GMM:
         self._gmm.covariances_ = covariances
         # Восстановим precision_cholesky вручную (обязательная часть в sklearn)
         self._gmm.precisions_cholesky_ = _compute_precision_cholesky(
-            covariances, 'full'
+            covariances, "full"
         )
-
 
     @property
     def means(self):
@@ -52,14 +59,14 @@ class GMM:
         if sample_weight is not None:
             warnings.warn(
                 "sample_weight is not supported in the current sklearn build and will be ignored.",
-                RuntimeWarning
+                RuntimeWarning,
             )
         _init_param_aliases = {
             "kmeans++": "k-means++",  # gmr-style → sklearn
             "k-means++": "k-means++",
             "kmeans": "kmeans",
             "random": "random",
-            "random_from_data": "random_from_data"
+            "random_from_data": "random_from_data",
         }
         if init_params not in _init_param_aliases:
             raise ValueError(
@@ -68,14 +75,12 @@ class GMM:
             )
         translated_init_param = _init_param_aliases[init_params]
 
-
-
         self._gmm = GaussianMixture(
             n_components=self.n_components,
-            covariance_type='full',
+            covariance_type="full",
             max_iter=n_iter,
             init_params=translated_init_param,
-            random_state=self.random_state
+            random_state=self.random_state,
         )
         if X.shape[0] < 2:
             # ручная инициализация модели
@@ -85,7 +90,9 @@ class GMM:
             self._gmm.weights_ = np.array([1.0])
             self._gmm.means_ = np.array([mean])
             self._gmm.covariances_ = np.array([cov])
-            self._gmm.precisions_cholesky_ = _compute_precision_cholesky(self._gmm.covariances_, 'full')
+            self._gmm.precisions_cholesky_ = _compute_precision_cholesky(
+                self._gmm.covariances_, "full"
+            )
             return self
 
         self._gmm.fit(X)
@@ -94,20 +101,21 @@ class GMM:
     def sample(self, n_samples):
 
         if self._gmm is None:
-            raise RuntimeError("GMM is not initialized. Call from_samples(...) or use manual init first.")
+            raise RuntimeError(
+                "GMM is not initialized. Call from_samples(...) or use manual init first."
+            )
         w = self._gmm.weights_
 
         if np.any(np.isnan(w)) or np.any(w < 0) or not np.isclose(w.sum(), 1.0):
             warnings.warn(
                 f"Sampling skipped: invalid GMM weights detected (w = {w}). Returning NaNs.",
-                RuntimeWarning
+                RuntimeWarning,
             )
             return np.full((n_samples, self._gmm.means_.shape[1]), np.nan)
 
         if not np.isclose(w.sum(), 1.0):
             w = w / w.sum()
             self._gmm.weights_ = w
-
 
         if n_samples == 0:
             n_features = self._gmm.means_.shape[1]
@@ -119,13 +127,16 @@ class GMM:
     def predict(self, X):
 
         if self._gmm is None:
-            raise RuntimeError("GMM is not initialized. Call from_samples(...) or use manual init first.")
+            raise RuntimeError(
+                "GMM is not initialized. Call from_samples(...) or use manual init first."
+            )
 
         X = np.array(X)
         if X.shape[0] == 0:
             return np.empty((0,), dtype=int)
 
         return self._gmm.predict(X)
+
     def predict_conditioned(self, given_indices, given_values):
         cond_gmm = self.condition(given_indices, given_values)
         dummy_input = np.zeros((len(given_values), len(cond_gmm.means[0])))
@@ -141,7 +152,7 @@ class GMM:
 
         return self._gmm.predict_proba(X)
 
-    def condition(self, given_indices, given_values) -> 'GMM':
+    def condition(self, given_indices, given_values) -> "GMM":
 
         if self._gmm is None:
             raise RuntimeError("GMM is not initialized.")
@@ -194,5 +205,5 @@ class GMM:
             n_components=self.n_components,
             priors=new_priors.tolist(),
             means=[m.tolist() for m in new_means],
-            covariances=[c.tolist() for c in new_covariances]
+            covariances=[c.tolist() for c in new_covariances],
         )

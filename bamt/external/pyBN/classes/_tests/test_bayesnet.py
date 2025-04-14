@@ -31,6 +31,7 @@ assertSetEqual(a, b)	sets or frozensets
 assertDictEqual(a, b)	dicts
 
 """
+
 __author__ = """Nicholas Cullen <ncullen.th@dartmouth.edu>"""
 
 import os

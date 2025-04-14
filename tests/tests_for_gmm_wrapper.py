@@ -45,6 +45,8 @@ def test_sample_single_component():
 
     samples = gmm.sample(10)
     assert samples.shape == (10, 1)
+
+
 def test_predict_returns_labels():
     X = np.random.randn(100, 2)
     gmm = GMM(n_components=2).from_samples(X)
@@ -73,6 +75,7 @@ def test_predict_before_init_raises():
     gmm = GMM(n_components=2)
     with pytest.raises(RuntimeError):
         _ = gmm.predict(np.random.randn(5, 2))
+
 
 def test_predict_proba_shape_and_sum():
     X = np.random.randn(100, 2)
@@ -109,8 +112,10 @@ def sort_components_by_means(means, covs, priors):
     priors_sorted = [priors[i] for i in indices]
     return means_sorted, covs_sorted, priors_sorted
 
+
 def arrays_equal_up_to_sign(a, b, tol=1e-5):
     return np.allclose(a, b, atol=tol) or np.allclose(a, -b, atol=tol)
+
 
 def gmm_means_close_unordered(m1, m2, tol=1e-5):
     matched = [False] * len(m2)
@@ -137,20 +142,29 @@ def test_condition_manual_gmm_equivalence(n_components, n_features):
     np.random.seed(n_components * 100 + n_features)  # стабильный сид
     # Случайные параметры
     means = [np.random.randn(n_features).tolist() for _ in range(n_components)]
-    covariances = [generate_random_positive_def_matrix(n_features).tolist() for _ in range(n_components)]
+    covariances = [
+        generate_random_positive_def_matrix(n_features).tolist()
+        for _ in range(n_components)
+    ]
 
     raw_priors = np.random.rand(n_components)
     priors = (raw_priors / raw_priors.sum()).tolist()
 
     # Случайный фиксированный вектор
     n_given = min(2, n_features - 1)
-    given_indices = sorted(np.random.choice(n_features, size=n_given, replace=False).tolist())
+    given_indices = sorted(
+        np.random.choice(n_features, size=n_given, replace=False).tolist()
+    )
 
     given_values = np.random.randn(1, len(given_indices)).tolist()
 
     # Создаем модели
-    gmr_gmm = GMR_GMM(n_components=n_components, means=means, covariances=covariances, priors=priors)
-    our_gmm = GMM(n_components=n_components, means=means, covariances=covariances, priors=priors)
+    gmr_gmm = GMR_GMM(
+        n_components=n_components, means=means, covariances=covariances, priors=priors
+    )
+    our_gmm = GMM(
+        n_components=n_components, means=means, covariances=covariances, priors=priors
+    )
 
     # Условные модели
     gmr_cond = gmr_gmm.condition(given_indices, given_values)

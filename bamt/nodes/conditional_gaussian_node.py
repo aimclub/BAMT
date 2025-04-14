@@ -51,9 +51,7 @@ class ConditionalGaussianNode(BaseNode):
                         new_data[self.cont_parents].values, new_data[self.name].values
                     )
                     predicted_value = model.predict(new_data[self.cont_parents].values)
-                    std = rmse(
-                        new_data[self.name].values, predicted_value
-                    )
+                    std = rmse(new_data[self.name].values, predicted_value)
                     hycprob[str(key_comb)] = {
                         "std": std,
                         "mean": np.nan,

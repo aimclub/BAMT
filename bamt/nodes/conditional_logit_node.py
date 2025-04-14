@@ -92,8 +92,9 @@ class ConditionalLogitNode(BaseNode):
         lgdistribution = node_info["hybcprob"][str(dispvals)]
 
         if any(parent_value == "nan" for parent_value in dispvals):
-            return ConditionalLogitNodeResult(probs=(np.nan, np.nan),
-                                              values=lgdistribution["classes"])
+            return ConditionalLogitNodeResult(
+                probs=(np.nan, np.nan), values=lgdistribution["classes"]
+            )
 
         # JOBLIB
         if len(lgdistribution["classes"]) > 1:
@@ -101,15 +102,17 @@ class ConditionalLogitNode(BaseNode):
             distribution = model.predict_proba(np.array(lgpvals).reshape(1, -1))[0]
 
             if not kwargs.get("inner", False):
-                return ConditionalLogitNodeResult(probs=distribution,
-                                                  values=lgdistribution["classes"])
+                return ConditionalLogitNodeResult(
+                    probs=distribution, values=lgdistribution["classes"]
+                )
             else:
                 return distribution, lgdistribution
 
         else:
             if not kwargs.get("inner", False):
-                return ConditionalLogitNodeResult(probs=np.array([1.0]),
-                                                  values=lgdistribution["classes"])
+                return ConditionalLogitNodeResult(
+                    probs=np.array([1.0]), values=lgdistribution["classes"]
+                )
             else:
                 return np.array([1.0]), lgdistribution
 
