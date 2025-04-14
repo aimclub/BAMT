@@ -1,7 +1,9 @@
 from typing import Union, List, Optional
 
 import numpy as np
-from gmr import GMM
+#from gmr import GMM
+from bamt.utils.gmm_wrapper import GMM
+
 from pandas import DataFrame
 from bamt.result_models.node_result import MixtureGaussianNodeResult
 
@@ -144,7 +146,7 @@ class MixtureGaussianNode(BaseNode):
                         means=mean,
                         covariances=covariance,
                     )
-                    sample = gmm.predict(indexes, [pvals])[0][0]
+                    sample = gmm.predict_conditioned(indexes, [pvals])[0][0]
                 else:
                     sample = np.nan
             else:
