@@ -9,6 +9,7 @@ There is, of course, the issue of how to get those
 string values back into the underlying representation
 after the learning occurs..
 """
+
 import numpy as np
 
 

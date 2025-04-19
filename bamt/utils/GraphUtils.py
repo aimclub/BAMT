@@ -22,20 +22,39 @@ def nodes_types(data: DataFrame) -> Dict[str, str]:
     column_type = dict()
     for c in data.columns.to_list():
         disc = [
-            "str", "O", "b", "categorical", "object", "bool", "category",
-            "string", "U"  # Added string types
+            "str",
+            "O",
+            "b",
+            "categorical",
+            "object",
+            "bool",
+            "category",
+            "string",
+            "U",  # Added string types
         ]
 
         disc_numerical = [
-            "int8", "int16", "int32", "int64",  # Standard integer types
-            "uint8", "uint16", "uint32", "uint64",  # Unsigned integers
-            "Int8", "Int16", "Int32", "Int64"  # Pandas nullable integers
+            "int8",
+            "int16",
+            "int32",
+            "int64",  # Standard integer types
+            "uint8",
+            "uint16",
+            "uint32",
+            "uint64",  # Unsigned integers
+            "Int8",
+            "Int16",
+            "Int32",
+            "Int64",  # Pandas nullable integers
         ]
 
         cont = [
-            "float16", "float32", "float64",  # Floating point types
+            "float16",
+            "float32",
+            "float64",  # Floating point types
             "decimal",  # High-precision decimal
-            "complex64", "complex128"  # Complex numbers
+            "complex64",
+            "complex128",  # Complex numbers
         ]
 
         if data[c].dtype.name in disc:

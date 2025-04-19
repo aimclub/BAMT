@@ -3,7 +3,18 @@ import os.path as path
 import random
 import re
 from copy import deepcopy
-from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence, Literal
+from typing import (
+    Dict,
+    Tuple,
+    List,
+    Callable,
+    Optional,
+    Type,
+    Union,
+    Any,
+    Sequence,
+    Literal,
+)
 
 import numpy as np
 import pandas as pd
@@ -63,7 +74,9 @@ class BaseNetwork(object):
     def validate(self, descriptor: Dict[str, Dict[str, str]]) -> bool:
         types = descriptor.get("types", False)
         if not types:
-            logger_network.warning("Empty types in descriptor provided. Do you really have empty network?")
+            logger_network.warning(
+                "Empty types in descriptor provided. Do you really have empty network?"
+            )
 
         return (
             True if all([a in self._allowed_dtypes for a in types.values()]) else False
@@ -503,9 +516,7 @@ class BaseNetwork(object):
         }
         return self._save_to_file(f"{bn_name}.json", outdict)
 
-    def load(self,
-             input_data: Union[str, Dict],
-             models_dir: str = "/"):
+    def load(self, input_data: Union[str, Dict], models_dir: str = "/"):
         """
         Function to load the whole BN from json file.
         :param input_data: input path to json file with bn.
@@ -863,7 +874,9 @@ class BaseNetwork(object):
         except TypeError as ex:
             match on_cast_error:
                 case "raise":
-                    logger_network.error("Error occurred during casting values to int/float.")
+                    logger_network.error(
+                        "Error occurred during casting values to int/float."
+                    )
                     raise TypeError(
                         f"Error occurred during casting values to int/float. {node} | {ex.args[0]}"
                     )
@@ -1015,14 +1028,19 @@ class BaseNetwork(object):
 
         parents = node.cont_parents + node.disc_parents
         if parents and not pvals:
-            logger_network.error(f"No parents provided for node with {len(parents)} parents.")
+            logger_network.error(
+                f"No parents provided for node with {len(parents)} parents."
+            )
             return
 
         if pvals:
             # Convert disc_num cats into strs
-            disc_num_pvals = {k: str(v) for k, v in pvals.items()
-                              if k in self.descriptor["types"] and
-                              self.descriptor["types"][k] == "disc_num"}
+            disc_num_pvals = {
+                k: str(v)
+                for k, v in pvals.items()
+                if k in self.descriptor["types"]
+                and self.descriptor["types"][k] == "disc_num"
+            }
 
             pvals |= disc_num_pvals
             pvals = [pvals[parent] for parent in parents]

@@ -5,6 +5,7 @@ import inspect
 from bamt.log import logger_preprocessor
 from bamt.utils import GraphUtils as gru
 
+
 class BasePreprocessor(object):
     """
     Base for Preprocessor
@@ -27,7 +28,10 @@ class BasePreprocessor(object):
         if list(nodes_types.keys()) != data.columns.to_list():
             logger_preprocessor.error("Nodes_types dictionary are not full.")
             return None, None
-        return {"types": nodes_types, "signs": self.get_nodes_signs(nodes_types=nodes_types, data=data)}
+        return {
+            "types": nodes_types,
+            "signs": self.get_nodes_signs(nodes_types=nodes_types, data=data),
+        }
 
     @property
     def info(self):
@@ -78,7 +82,6 @@ class BasePreprocessor(object):
                 column_names.append(f"{feature}_bin{i}")
         return column_names
 
-
     def expand_info(self, old, new):
         info = self.info.copy()
 
@@ -119,7 +122,7 @@ class BasePreprocessor(object):
 
     def decode(self, data):
         for col, mapping in self.coder.items():
-            reverse_mapping = {k:v for v, k in mapping.items()}
+            reverse_mapping = {k: v for v, k in mapping.items()}
             data[col] = data[col].replace(reverse_mapping)
         return data
 
@@ -165,8 +168,10 @@ class Preprocessor(BasePreprocessor):
                 # check if encode serves as argument
                 if "encode" in inspect.getfullargspec(instrument.__init__).kwonlyargs:
                     if instrument.encode == "onehot":
-                        logger_preprocessor.info("Onehot encoding with sparse matrix is not supported. "
-                                                 "Replacing with output-dense...")
+                        logger_preprocessor.info(
+                            "Onehot encoding with sparse matrix is not supported. "
+                            "Replacing with output-dense..."
+                        )
                         instrument.encode = "onehot-dense"
                 df, est = self.discretize(data=df, discretizer=instrument)
 

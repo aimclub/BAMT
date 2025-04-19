@@ -20,8 +20,9 @@ class MyTest(unittest.TestCase):
         if dist.node_type in has_probs:
             return self.assertAlmostEqual(sum(probs_or_params[0]), 1)
         else:
-            return self.assertEqual(len(probs_or_params), 2, msg=f"Error on {probs_or_params}") and \
-                    self.assertTrue(probs_or_params[0].size)
+            return self.assertEqual(
+                len(probs_or_params), 2, msg=f"Error on {probs_or_params}"
+            ) and self.assertTrue(probs_or_params[0].size)
 
     def assertDistMixture(self, dist):
         return self.assertEqual(len(dist.get()), 3, msg=f"Error on {dist}")

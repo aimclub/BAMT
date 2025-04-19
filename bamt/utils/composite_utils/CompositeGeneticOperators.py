@@ -54,9 +54,9 @@ def custom_mutation_add_structure(graph: CompositeModel, **kwargs):
             if nodes_not_cycling:
                 other_random_node.nodes_from.append(random_node)
                 ml_models = MlModels()
-                other_random_node.content[
-                    "parent_model"
-                ] = ml_models.get_model_by_children_type(other_random_node)
+                other_random_node.content["parent_model"] = (
+                    ml_models.get_model_by_children_type(other_random_node)
+                )
                 break
 
     except Exception as ex:
@@ -100,9 +100,9 @@ def custom_mutation_reverse_structure(graph: CompositeModel, **kwargs):
                     random_node.content["parent_model"] = None
                 other_random_node.nodes_from.append(random_node)
                 ml_models = MlModels()
-                other_random_node.content[
-                    "parent_model"
-                ] = ml_models.get_model_by_children_type(other_random_node)
+                other_random_node.content["parent_model"] = (
+                    ml_models.get_model_by_children_type(other_random_node)
+                )
                 break
     except Exception as ex:
         print(ex)
@@ -127,20 +127,21 @@ def custom_mutation_add_model(graph: CompositeModel, **kwargs):
     return graph
 
 
-
 def composite_metric(graph: CompositeModel, data: pd.DataFrame):
     data_train, data_test = train_test_split(data, train_size=0.8, random_state=42)
     score = 0
     len_data = len(data_train)
-    
+
     for node in graph.nodes:
         node_name = node.content["name"]
         node_type = node.content["type"]
-        
+
         data_of_node_train = data_train[node_name]
         data_of_node_test = data_test[node_name]
-        index_test_dict = {k:value for value, k in enumerate(sorted(data_train[node_name].unique()))}
-        
+        index_test_dict = {
+            k: value for value, k in enumerate(sorted(data_train[node_name].unique()))
+        }
+
         if not node.nodes_from:
             if node_type == "cont":
                 mu, sigma = data_of_node_train.mean(), data_of_node_train.std()
@@ -153,30 +154,40 @@ def composite_metric(graph: CompositeModel, data: pd.DataFrame):
             parent_model = MlModels().dict_models[node.content["parent_model"]]
             model = parent_model()
             model.max_iter = 100000
-            
+
             columns = [n.content["name"] for n in node.nodes_from]
             features_train = data_train[columns].to_numpy()
             target_train = data_of_node_train.to_numpy()
-            
+
             if len(set(target_train)) == 1:
                 continue
-            
+
             fitted_model = model.fit(features_train, target_train)
-            
+
             features_test = data_test[columns].to_numpy()
             target_test = data_of_node_test.to_numpy()
-            
+
             if node_type == "cont":
                 predictions = fitted_model.predict(features_test)
-                rmse = root_mean_squared_error(target_test, predictions, squared=False) + 1e-7
+                rmse = (
+                    root_mean_squared_error(target_test, predictions, squared=False)
+                    + 1e-7
+                )
                 score += norm.logpdf(target_test, loc=predictions, scale=rmse).sum()
 
             else:
                 predict_proba = fitted_model.predict_proba(features_test)
-                probas = np.maximum(predict_proba[range(len(target_test)), [index_test_dict[x] for x in target_test]], 1e-7)
+                probas = np.maximum(
+                    predict_proba[
+                        range(len(target_test)),
+                        [index_test_dict[x] for x in target_test],
+                    ],
+                    1e-7,
+                )
                 score += np.log(probas).sum()
-                
+
     return -score
+
 
 # def composite_metric(graph: CompositeModel, data: pd.DataFrame, percent=0.02):
 #     data_all = data
