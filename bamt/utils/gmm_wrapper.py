@@ -109,18 +109,6 @@ class GMM:
             random_state=self.random_state,
         )
 
-        if X.shape[0] < 2:
-            mean = X[0]
-            cov = np.eye(X.shape[1]) * 1e-3
-            self._gmm = GaussianMixture(n_components=1)
-            self._gmm.weights_ = np.array([1.0])
-            self._gmm.means_ = np.array([mean])
-            self._gmm.covariances_ = np.array([cov])
-            self._gmm.precisions_cholesky_ = _compute_precision_cholesky(
-                self._gmm.covariances_, "full"
-            )
-            return self
-
         self._gmm.fit(X)
         return self
 

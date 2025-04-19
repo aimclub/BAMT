@@ -2,7 +2,7 @@ from typing import Union, List, Optional
 
 import numpy as np
 
-# from gmr import GMM
+
 from bamt.utils.gmm_wrapper import GMM
 
 from pandas import DataFrame
@@ -34,8 +34,8 @@ class MixtureGaussianNode(BaseNode):
                     + component(data, [self.name], "bic")
                 )
                 / 2
-            )  # component(data, [node], 'LRTS')#
-            # n_comp = 3
+            )
+
             gmm = GMM(n_components=n_comp).from_samples(
                 np.transpose([data[self.name].values]),
                 n_iter=500,
@@ -43,10 +43,8 @@ class MixtureGaussianNode(BaseNode):
             )
             means = gmm.means.tolist()
             cov = gmm.covariances.tolist()
-            # weigts = np.transpose(gmm.to_responsibilities(np.transpose([data[node].values])))
             w = gmm.priors.tolist()  # []
-            # for row in weigts:
-            #     w.append(np.mean(row))
+
             return {"mean": means, "coef": w, "covars": cov}
         if parents:
             if not self.disc_parents and self.cont_parents:
@@ -59,17 +57,15 @@ class MixtureGaussianNode(BaseNode):
                         + component(new_data, nodes, "bic")
                     )
                     / 2
-                )  # component(new_data, nodes, 'LRTS')#
-                # n_comp = 3
+                )
+
                 gmm = GMM(n_components=n_comp).from_samples(
                     new_data[nodes].values, n_iter=500, init_params="kmeans++"
                 )
                 means = gmm.means.tolist()
                 cov = gmm.covariances.tolist()
-                # weigts = np.transpose(gmm.to_responsibilities(new_data[nodes].values))
                 w = gmm.priors.tolist()  # []
-                # for row in weigts:
-                #     w.append(np.mean(row))
+
                 return {"mean": means, "coef": w, "covars": cov}
 
     @staticmethod
@@ -161,7 +157,6 @@ class MixtureGaussianNode(BaseNode):
                 else:
                     sample = np.nan
             else:
-                # gmm = GMM(n_components=n_comp, priors=w, means=mean, covariances=covariance)
                 sample = 0
                 for ind, wi in enumerate(w):
                     sample += wi * mean[ind][0]
