@@ -127,9 +127,11 @@ A web interface for BAMT is currently under development. The repository is avail
 
 ## Contacts
 
-If you have questions or suggestions, you can contact us at the following address: ideeva@itmo.ru (Irina Deeva)
+If you have questions or suggestions, you can contact us at the following resources:
+* [Telegram chat helpdesk](https://t.me/+4FOcyF0Rri00ZGEy)
+* ideeva@itmo.ru (Irina Deeva) 
 
-Our resources:
+Our newsletter:
 
 - [Natural Systems Simulation Team](https://itmo-nss-team.github.io/)
 - [NSS team Telegram channel](https://t.me/NSS_group)
