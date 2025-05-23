@@ -33,6 +33,7 @@ root_logger = logging.getLogger()
 for hndlr in root_logger.handlers:
     root_logger.removeHandler(hndlr)
 
+
 @contextmanager
 def bamt_raises(logger, level=logging.ERROR, message=None):
     """
@@ -46,8 +47,10 @@ def bamt_raises(logger, level=logging.ERROR, message=None):
     Raises:
         AssertionError: If the expected message is not found in the captured logs.
     """
+
     class LogCaptureHandler(logging.Handler):
         """Custom logging handler to capture log records."""
+
         def __init__(self):
             super().__init__()
             self.records = []
@@ -59,7 +62,9 @@ def bamt_raises(logger, level=logging.ERROR, message=None):
     logger.setLevel(level)
 
     # remove printing in context
-    console_handlers = [h for h in logger.handlers if isinstance(h, logging.StreamHandler)]
+    console_handlers = [
+        h for h in logger.handlers if isinstance(h, logging.StreamHandler)
+    ]
 
     for h in console_handlers:
         logger.removeHandler(h)
@@ -69,8 +74,10 @@ def bamt_raises(logger, level=logging.ERROR, message=None):
     try:
         yield handler
         if message is not None:
-            assert any(message in record.getMessage() and record.levelno >= level for record in handler.records), \
-                f"Expected log message not found: {message}"
+            assert any(
+                message in record.getMessage() and record.levelno >= level
+                for record in handler.records
+            ), f"Expected log message not found: {message}"
     finally:
         logger.removeHandler(handler)
 
@@ -92,7 +99,7 @@ class Builder:
             "Hybrid": ["Hybrid", "target"],
         }
 
-        self.scoring = [("K2", K2), ("BIC", ), ("MI", )]
+        self.scoring = [("K2", K2), ("BIC",), ("MI",)]
 
         self.optimizer = ["HC"]
         self.use_mixture = [False, True]
@@ -103,10 +110,22 @@ class Builder:
         self.static = {}
 
         self.dynamic = {
-            "Continuous": [self.use_mixture, [False], [True], self.optimizer, self.scoring],
+            "Continuous": [
+                self.use_mixture,
+                [False],
+                [True],
+                self.optimizer,
+                self.scoring,
+            ],
             "Discrete": [[False], [False], [True], self.optimizer, self.scoring],
-            "Hybrid": [self.use_mixture, self.has_logit, self.use_preprocesing, self.optimizer, self.scoring],
-            "Evo": [self.use_preprocesing]
+            "Hybrid": [
+                self.use_mixture,
+                self.has_logit,
+                self.use_preprocesing,
+                self.optimizer,
+                self.scoring,
+            ],
+            "Evo": [self.use_preprocesing],
         }
 
     def create_from_config(self):
@@ -149,6 +168,7 @@ class Builder:
 
 params = Builder().get_params()
 
+
 def initialize_bn(bn_type, use_mixture, has_logit):
     if bn_type == "Discrete":
         bn = networks.DiscreteBN()
@@ -188,10 +208,19 @@ def prepare_data(directory, preprocess=True):
 class TestNetwork:
     # Checking the equality of predictions (trained and loaded network) before and after saving
     @pytest.mark.parametrize(
-        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target", params
+        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target",
+        params,
     )
     def test_1(
-        self, directory, use_mixture, has_logit, optimizer, scoring, use_preprocessor, bn_type, target
+        self,
+        directory,
+        use_mixture,
+        has_logit,
+        optimizer,
+        scoring,
+        use_preprocessor,
+        bn_type,
+        target,
     ):
         bn = initialize_bn(bn_type, use_mixture, has_logit)
         info, discretized_data, train, test = prepare_data(directory, use_preprocessor)
@@ -201,14 +230,20 @@ class TestNetwork:
         if not use_preprocessor and scoring[0] == "K2":
             # Evo can deal with any numeric data
             if optimizer != "Evo":
-                with bamt_raises(logger_builder, level=logging.ERROR, message="K2 deals only with discrete data"):
+                with bamt_raises(
+                    logger_builder,
+                    level=logging.ERROR,
+                    message="K2 deals only with discrete data",
+                ):
                     bn.add_edges(
                         discretized_data,
                         optimizer=optimizer,
                         scoring_function=scoring,
                         progress_bar=False,
                     )
-                    assert bn.edges == [], "BN edges should be empty because of error raised an add_edges above"
+                    assert (
+                        bn.edges == []
+                    ), "BN edges should be empty because of error raised an add_edges above"
                     return
 
         if bn_type != "Composite":
@@ -236,13 +271,21 @@ class TestNetwork:
         os.remove("bn.json")
         assert_frame_equal(pd.DataFrame(predict), pd.DataFrame(predict_loaded))
 
-
     # Checking the prediction algorithm (trained network) before and after saving
     @pytest.mark.parametrize(
-        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target", params
+        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target",
+        params,
     )
     def test_2(
-        self, directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target
+        self,
+        directory,
+        use_mixture,
+        has_logit,
+        use_preprocessor,
+        optimizer,
+        scoring,
+        bn_type,
+        target,
     ):
         # this block is supposed to test either error on wrong data type occurs
         if not use_preprocessor and scoring[0] == "K2":
@@ -264,7 +307,6 @@ class TestNetwork:
         else:
             bn.add_edges(train)
 
-
         bn.fit_parameters(train)
         predict = bn.predict(
             test[[x for x in test.columns if x != target]], progress_bar=False
@@ -277,13 +319,21 @@ class TestNetwork:
 
         assert_frame_equal(pd.DataFrame(predict), pd.DataFrame(predict2))
 
-
     # Checking network predictions without edges
     @pytest.mark.parametrize(
-        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target", params
+        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target",
+        params,
     )
     def test_3(
-        self, directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target
+        self,
+        directory,
+        use_mixture,
+        has_logit,
+        use_preprocessor,
+        optimizer,
+        scoring,
+        bn_type,
+        target,
     ):
 
         bn = initialize_bn(bn_type, use_mixture, has_logit)
@@ -314,15 +364,26 @@ class TestNetwork:
     # Checking the network trained on the 1 sample
     @pytest.mark.skip(reason="network will not learn from 1 sample")
     @pytest.mark.parametrize(
-        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target", params
+        "directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target",
+        params,
     )
     def test_4(
-        self, directory, use_mixture, has_logit, use_preprocessor, optimizer, scoring, bn_type, target
+        self,
+        directory,
+        use_mixture,
+        has_logit,
+        use_preprocessor,
+        optimizer,
+        scoring,
+        bn_type,
+        target,
     ):
         if use_mixture == False:
 
             bn = initialize_bn(bn_type, use_mixture, has_logit)
-            info, discretized_data, train, test = prepare_data(directory, use_preprocessor)
+            info, discretized_data, train, test = prepare_data(
+                directory, use_preprocessor
+            )
 
             bn.add_nodes(info)
 

@@ -18,6 +18,7 @@ from tqdm import tqdm
 # disable tqdm globally in runtime
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
+
 class TestStructureBuilder(unittest.TestCase):
     def setUp(self):
         self.data = pd.DataFrame(columns=["Node0", "Node1", "Node2"])
@@ -617,42 +618,44 @@ class TestHillClimbDefiner(unittest.TestCase):
             white_list=None,
         )
 
-        right_edges = [['Tectonic regime', 'Structural setting'],
-                       ['Tectonic regime', 'Gross'],
-                       ['Tectonic regime', 'Permeability'],
-                       ['Tectonic regime', 'Porosity'],
-                       ['Tectonic regime', 'Depth'],
-                       ['Tectonic regime', 'Period'],
-                       ['Tectonic regime', 'Netpay'],
-                       ['Period', 'Structural setting'],
-                       ['Lithology', 'Structural setting'],
-                       ['Lithology', 'Gross'],
-                       ['Lithology', 'Permeability'],
-                       ['Lithology', 'Porosity'],
-                       ['Lithology', 'Depth'],
-                       ['Lithology', 'Tectonic regime'],
-                       ['Lithology', 'Period'],
-                       ['Lithology', 'Netpay'],
-                       ['Gross', 'Structural setting'],
-                       ['Gross', 'Period'],
-                       ['Netpay', 'Structural setting'],
-                       ['Netpay', 'Gross'],
-                       ['Netpay', 'Permeability'],
-                       ['Netpay', 'Porosity'],
-                       ['Netpay', 'Depth'],
-                       ['Netpay', 'Period'],
-                       ['Porosity', 'Structural setting'],
-                       ['Porosity', 'Gross'],
-                       ['Porosity', 'Depth'],
-                       ['Porosity', 'Period'],
-                       ['Permeability', 'Structural setting'],
-                       ['Permeability', 'Gross'],
-                       ['Permeability', 'Depth'],
-                       ['Permeability', 'Period'],
-                       ['Permeability', 'Porosity'],
-                       ['Depth', 'Structural setting'],
-                       ['Depth', 'Gross'],
-                       ['Depth', 'Period']]
+        right_edges = [
+            ["Tectonic regime", "Structural setting"],
+            ["Tectonic regime", "Gross"],
+            ["Tectonic regime", "Permeability"],
+            ["Tectonic regime", "Porosity"],
+            ["Tectonic regime", "Depth"],
+            ["Tectonic regime", "Period"],
+            ["Tectonic regime", "Netpay"],
+            ["Period", "Structural setting"],
+            ["Lithology", "Structural setting"],
+            ["Lithology", "Gross"],
+            ["Lithology", "Permeability"],
+            ["Lithology", "Porosity"],
+            ["Lithology", "Depth"],
+            ["Lithology", "Tectonic regime"],
+            ["Lithology", "Period"],
+            ["Lithology", "Netpay"],
+            ["Gross", "Structural setting"],
+            ["Gross", "Period"],
+            ["Netpay", "Structural setting"],
+            ["Netpay", "Gross"],
+            ["Netpay", "Permeability"],
+            ["Netpay", "Porosity"],
+            ["Netpay", "Depth"],
+            ["Netpay", "Period"],
+            ["Porosity", "Structural setting"],
+            ["Porosity", "Gross"],
+            ["Porosity", "Depth"],
+            ["Porosity", "Period"],
+            ["Permeability", "Structural setting"],
+            ["Permeability", "Gross"],
+            ["Permeability", "Depth"],
+            ["Permeability", "Period"],
+            ["Permeability", "Porosity"],
+            ["Depth", "Structural setting"],
+            ["Depth", "Gross"],
+            ["Depth", "Period"],
+        ]
 
         self.assertEqual(hcd.skeleton["E"], right_edges)
 
