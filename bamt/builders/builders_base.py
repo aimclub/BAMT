@@ -20,7 +20,7 @@ class ParamDict(TypedDict, total=False):
     remove_init_edges: bool
     white_list: Optional[Tuple[str, str]]
     bl_add: Optional[List[str]]
-
+    max_indegree: Optional[int]
 
 class StructureBuilder(object):
     """
@@ -217,6 +217,7 @@ class BaseDefiner(VerticesDefiner, EdgesDefiner):
             "remove_init_edges": True,
             "white_list": None,
             "bl_add": None,
+            "max_indegree": None
         }
         super().__init__(descriptor, regressor=regressor)
         self.optimizer = None  # will be defined in subclasses
