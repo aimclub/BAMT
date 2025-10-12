@@ -135,6 +135,7 @@ class BaseNetwork(object):
         init_edges: list of tuples, a graph to start learning with
         remove_init_edges: allows changes in a model defined by user
         white_list: list of allowed edges
+        max_indegree: number of maximum parent nodes for a node
         """
         if not self.has_logit and check_utils.is_model(classifier):
             logger_network.error("Classifiers dict with use_logit=False is forbidden.")
