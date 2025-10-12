@@ -17,22 +17,23 @@ class HillClimbDefiner(BaseDefiner):
     """
 
     def __init__(
-        self,
-        data: DataFrame,
-        descriptor: Dict[str, Dict[str, str]],
-        scoring_function: Union[Tuple[str, Callable], Tuple[str]],
-        regressor: Optional[object] = None,
+            self,
+            data: DataFrame,
+            descriptor: Dict[str, Dict[str, str]],
+            scoring_function: Union[Tuple[str, Callable], Tuple[str]],
+            regressor: Optional[object] = None,
     ):
         super().__init__(data, descriptor, scoring_function, regressor)
         self.optimizer = HillClimbSearch(data)
 
     def apply_K2(
-        self,
-        data: DataFrame,
-        init_edges: Optional[List[Tuple[str, str]]],
-        progress_bar: bool,
-        remove_init_edges: bool,
-        white_list: Optional[List[Tuple[str, str]]],
+            self,
+            data: DataFrame,
+            init_edges: Optional[List[Tuple[str, str]]],
+            progress_bar: bool,
+            remove_init_edges: bool,
+            white_list: Optional[List[Tuple[str, str]]],
+            max_indegree: Optional[int]
     ):
         """
         :param init_edges: list of tuples, a graph to start learning with
@@ -83,18 +84,20 @@ class HillClimbDefiner(BaseDefiner):
                 expert_knowledge=expert_knowledge,
                 start_dag=startdag,
                 show_progress=False,
+                max_indegree=max_indegree
             )
 
         structure = [list(x) for x in list(best_model.edges())]
         self.skeleton["E"] = structure
 
     def apply_group1(
-        self,
-        data: DataFrame,
-        progress_bar: bool,
-        init_edges: Optional[List[Tuple[str, str]]],
-        remove_init_edges: bool,
-        white_list: Optional[List[Tuple[str, str]]],
+            self,
+            data: DataFrame,
+            progress_bar: bool,
+            init_edges: Optional[List[Tuple[str, str]]],
+            remove_init_edges: bool,
+            white_list: Optional[List[Tuple[str, str]]],
+            max_indegree: Optional[int],  # Correctly added to signature
     ):
         """
         This method implements the group of scoring functions.
@@ -130,6 +133,7 @@ class HillClimbDefiner(BaseDefiner):
             init_edges=init_edges,
             remove_geo_edges=remove_init_edges,
             black_list=blacklist_new,
+            max_indegree=max_indegree,
             debug=progress_bar,
         )
         structure = []
@@ -155,13 +159,13 @@ class HCStructureBuilder(HillClimbDefiner):
     """
 
     def __init__(
-        self,
-        data: DataFrame,
-        descriptor: Dict[str, Dict[str, str]],
-        scoring_function: Tuple[str, Callable],
-        regressor: Optional[object],
-        has_logit: bool,
-        use_mixture: bool,
+            self,
+            data: DataFrame,
+            descriptor: Dict[str, Dict[str, str]],
+            scoring_function: Tuple[str, Callable],
+            regressor: Optional[object],
+            has_logit: bool,
+            use_mixture: bool,
     ):
         """
         :param data: train data
@@ -178,13 +182,13 @@ class HCStructureBuilder(HillClimbDefiner):
         self.has_logit = has_logit
 
     def build(
-        self,
-        data: DataFrame,
-        progress_bar: bool,
-        classifier: Optional[object],
-        regressor: Optional[object],
-        params: Optional[ParamDict] = None,
-        **kwargs,
+            self,
+            data: DataFrame,
+            progress_bar: bool,
+            classifier: Optional[object],
+            regressor: Optional[object],
+            params: Optional[ParamDict] = None,
+            **kwargs,
     ):
         if params:
             for param, value in params.items():

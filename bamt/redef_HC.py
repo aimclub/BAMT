@@ -42,6 +42,7 @@ def hc(
     init_edges=None,
     remove_geo_edges=True,
     black_list=None,
+    max_indegree=3,
 ):
     """
     Greedy Hill Climbing search proceeds by choosing the move
@@ -150,7 +151,7 @@ def hc(
                     v not in c_dict[u]
                     and u != v
                     and not would_cause_cycle(c_dict, u, v)
-                    and len(p_dict[v]) != 3
+                    and (max_indegree is None or len(p_dict[v]) < max_indegree)
                 ):
                     # FOR MMHC ALGORITHM -> Edge Restrictions
                     if (
@@ -224,7 +225,7 @@ def hc(
                 if (
                     v in c_dict[u]
                     and not would_cause_cycle(c_dict, v, u, reverse=True)
-                    and len(p_dict[u]) != 3
+                    and (max_indegree is None or len(p_dict[u]) < max_indegree)
                     and (init_nodes is None or not (u in init_nodes))
                     and (restriction is None or (v, u) in restriction)
                     and (black_list is None or not ((v, u) in black_list))
