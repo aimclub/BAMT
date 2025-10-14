@@ -33,6 +33,7 @@ class HillClimbDefiner(BaseDefiner):
         progress_bar: bool,
         remove_init_edges: bool,
         white_list: Optional[List[Tuple[str, str]]],
+        max_indegree: Optional[int] = None # backward-compatible
     ):
         """
         :param init_edges: list of tuples, a graph to start learning with
@@ -40,6 +41,7 @@ class HillClimbDefiner(BaseDefiner):
         :param data: user's data
         :param progress_bar: verbose regime
         :param white_list: list of allowed edges
+        :param max_indegree: maximum indegree of a node
         """
         if not all([i in ["disc", "disc_num"] for i in gru.nodes_types(data).values()]):
             logger_builder.error(
@@ -83,6 +85,7 @@ class HillClimbDefiner(BaseDefiner):
                 expert_knowledge=expert_knowledge,
                 start_dag=startdag,
                 show_progress=False,
+                max_indegree=max_indegree
             )
 
         structure = [list(x) for x in list(best_model.edges())]
@@ -95,6 +98,7 @@ class HillClimbDefiner(BaseDefiner):
         init_edges: Optional[List[Tuple[str, str]]],
         remove_init_edges: bool,
         white_list: Optional[List[Tuple[str, str]]],
+        max_indegree: Optional[int] = 3, # backward-compatible
     ):
         """
         This method implements the group of scoring functions.
@@ -130,6 +134,7 @@ class HillClimbDefiner(BaseDefiner):
             init_edges=init_edges,
             remove_geo_edges=remove_init_edges,
             black_list=blacklist_new,
+            max_indegree=max_indegree,
             debug=progress_bar,
         )
         structure = []

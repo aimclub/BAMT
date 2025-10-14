@@ -2,6 +2,7 @@ import json
 import os.path as path
 import random
 import re
+import itertools
 from copy import deepcopy
 from typing import Dict, Tuple, List, Callable, Optional, Type, Union, Any, Sequence, Literal
 
@@ -9,6 +10,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from pgmpy.estimators import K2
+from scipy.stats import norm
 from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 
@@ -133,6 +135,7 @@ class BaseNetwork(object):
         init_edges: list of tuples, a graph to start learning with
         remove_init_edges: allows changes in a model defined by user
         white_list: list of allowed edges
+        max_indegree: number of maximum parent nodes for a node
         """
         if not self.has_logit and check_utils.is_model(classifier):
             logger_network.error("Classifiers dict with use_logit=False is forbidden.")
@@ -1028,6 +1031,186 @@ class BaseNetwork(object):
             pvals = [pvals[parent] for parent in parents]
 
         return node.get_dist(node_info=self.distributions[node_name], pvals=pvals)
+
+    def log_likelihood_sum(
+            self,
+            df: pd.DataFrame,
+            n_jobs: int = 1,
+            nodes_to_score: Optional[List[str]] = None,
+            max_hidden_combinations: int = 5000,
+            continuous_mc_samples: int = 20,
+    ) -> float:
+        """
+        Calculates the marginal log-likelihood of the data given the network structure and parameters.
+        Properly marginalizes out hidden nodes (those not in nodes_to_score).
+        Supports both discrete and continuous hidden variables, automatically choosing between
+        full enumeration and random subsampling when the hidden state space is large.
+
+        Args:
+            df (pd.DataFrame): The data for which to calculate the log-likelihood.
+            n_jobs (int): The number of jobs to run in parallel.
+            nodes_to_score (Optional[List[str]]): Nodes considered 'visible'. Others are marginalized out.
+            max_hidden_combinations (int): Maximum number of discrete hidden combinations before sampling.
+            continuous_mc_samples (int): Number of Monte Carlo samples per row for continuous hidden variables.
+
+        Returns:
+            float: The total sum of log-likelihoods across all rows.
+        """
+        import networkx as nx
+
+        assert self.nodes and self.edges and self.distributions, \
+            "The network structure and parameters must be learned before calculating the log-likelihood."
+
+        data = df.copy()
+        network_nodes = self.nodes_names
+        data_columns = data.columns.tolist()
+
+        # Drop extra columns not in network
+        extra_cols = [col for col in data_columns if col not in network_nodes]
+        if extra_cols:
+            logger_network.warning(
+                f"The following columns in the dataframe are not in the network and will be ignored: {extra_cols}"
+            )
+            data.drop(columns=extra_cols, inplace=True)
+
+        nodes_to_process = [node for node in network_nodes if node in data.columns]
+        if nodes_to_score is None:
+            nodes_to_score = nodes_to_process
+
+        visible_nodes = [n for n in nodes_to_process if n in nodes_to_score]
+        hidden_nodes = [n for n in nodes_to_process if n not in nodes_to_score]
+
+        if not visible_nodes:
+            logger_network.warning("No visible nodes selected for scoring. Returning 0.")
+            return 0.0
+
+        # Build graph
+        di_graph = nx.DiGraph()
+        di_graph.add_nodes_from(network_nodes)
+        di_graph.add_edges_from(self.edges)
+        topo_nodes = list(nx.topological_sort(di_graph))
+
+        # Identify hidden nodes' domains
+        discrete_hidden_values = {}
+        continuous_hidden_nodes = []
+        for node in hidden_nodes:
+            dist = self.get_dist(node)
+            if dist is None:
+                continue
+            if dist.node_type == "discrete":
+                vals = list(dist.values)
+                # Limit to observed unique values if support is missing
+                if not vals and node in data.columns:
+                    vals = list(data[node].dropna().unique())
+                discrete_hidden_values[node] = vals
+            else:
+                continuous_hidden_nodes.append(node)
+
+        # Compute total number of combinations
+        combination_count = np.prod([len(v) for v in discrete_hidden_values.values()]) if discrete_hidden_values else 1
+
+        if combination_count <= max_hidden_combinations:
+            # Full enumeration
+            all_combinations = list(
+                itertools.product(*[discrete_hidden_values[n] for n in discrete_hidden_values])
+            ) if discrete_hidden_values else [()]
+        else:
+            # Random subsampling
+            logger_network.info(
+                f"Hidden space too large ({combination_count} combos). Sampling {max_hidden_combinations} discrete states."
+            )
+            rng = np.random.default_rng(42)
+            all_combinations = []
+            hidden_names = list(discrete_hidden_values.keys())
+            for _ in range(max_hidden_combinations):
+                combo = tuple(rng.choice(discrete_hidden_values[n]) for n in hidden_names)
+                all_combinations.append(combo)
+
+        hidden_names = list(discrete_hidden_values.keys())
+
+        def _calculate_row_log_likelihood(row: pd.Series):
+            eps = 1e-12
+            total_prob = 0.0
+
+            for comb in all_combinations:
+                hidden_assign = dict(zip(hidden_names, comb))
+
+                # Monte Carlo over continuous hidden
+                mc_sum = 0.0
+                for _ in range(max(1, continuous_mc_samples if continuous_hidden_nodes else 1)):
+                    current_hidden = dict(hidden_assign)
+                    for h_node in continuous_hidden_nodes:
+                        parents = self[h_node].disc_parents + self[h_node].cont_parents
+                        pvals = {p: row[p] if p in visible_nodes else current_hidden.get(p) for p in parents}
+                        dist = self.get_dist(h_node, pvals)
+                        if dist is None:
+                            current_hidden[h_node] = 0.0
+                            continue
+                        mean, std = dist.get()
+                        std = std if std > 0 else eps
+                        current_hidden[h_node] = np.random.normal(mean, std)
+
+                    # Joint probability computation
+                    p_joint = 1.0
+                    for node_name in topo_nodes:
+                        node = self[node_name]
+                        parents = node.disc_parents + node.cont_parents
+                        pvals = {}
+                        for p in parents:
+                            if p in visible_nodes:
+                                pvals[p] = row[p]
+                            elif p in current_hidden:
+                                pvals[p] = current_hidden[p]
+
+                        # Choose node value
+                        value = row[node_name] if node_name in visible_nodes else current_hidden.get(node_name, np.nan)
+                        if pd.isna(value):
+                            continue
+
+                        dist = self.get_dist(node_name, pvals)
+                        if dist is None:
+                            p_joint *= eps
+                            continue
+
+                        try:
+                            if dist.node_type == 'discrete':
+                                dist_map = dict(zip(dist.values, dist.probs))
+                                prob = dist_map.get(value, 0.0)
+                                p_joint *= max(prob, eps)
+                            elif dist.node_type == 'conditional_gaussian':
+                                mean, std = dist.get()
+                                if pd.isna(mean) or pd.isna(std):
+                                    p_joint *= eps
+                                    continue
+                                std = std if std > 0 else eps
+                                p_joint *= max(np.exp(norm.logpdf(value, loc=mean, scale=std)), eps)
+                            else:
+                                logger_network.warning(
+                                    f"Log-likelihood calculation for node type '{dist.node_type}' is not yet supported. "
+                                    f"Node: {node_name}. Assigning a small probability."
+                                )
+                                p_joint *= eps
+                        except Exception as e:
+                            logger_network.error(f"Error for node {node_name}: {e}")
+                            p_joint *= eps
+
+                    mc_sum += p_joint
+
+                total_prob += mc_sum / max(1, continuous_mc_samples)
+
+            if not np.isfinite(total_prob) or total_prob <= 0:
+                logger_network.warning(f"Non-finite probability encountered in row: {row}")
+                return np.log(eps)
+            return np.log(total_prob)
+
+        log_likelihoods_per_row = Parallel(n_jobs=n_jobs)(
+            delayed(_calculate_row_log_likelihood)(row) for _, row in data.iterrows()
+        )
+
+        total_log_likelihood = float(np.sum(log_likelihoods_per_row))
+        assert not np.isnan(total_log_likelihood), "Total log likelihood is NaN"
+
+        return total_log_likelihood
 
     def _encode_categorical_data(self, data):
         for column in data.select_dtypes(include=["object", "string"]).columns:
