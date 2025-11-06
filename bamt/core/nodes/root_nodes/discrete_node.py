@@ -7,10 +7,10 @@ from .root_node import RootNode
 class DiscreteNode(RootNode):
     def __init__(self, distribution: Optional[EmpiricalDistribution] = None):
         """
-        Initialize the DisscreteNode with an optional EmpiricalDistribution.
+        Initialize the DiscreteNode with an optional EmpiricalDistribution.
 
         Args:
-            distribution (Optional[ContinuousDistribution]): A ContinuousDistribution object.
+            distribution (Optional[EmpiricalDistribution]): An EmpiricalDistribution object.
         """
         super().__init__()
         self._distribution = (
