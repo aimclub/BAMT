@@ -2,7 +2,7 @@ from typing import Optional, Union, List
 
 import numpy as np
 
-from distribution import Distribution
+from .distribution import Distribution
 
 
 # noinspection PyPep8Naming
