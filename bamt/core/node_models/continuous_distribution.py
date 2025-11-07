@@ -1,19 +1,28 @@
 from enum import Enum
 from typing import Tuple, Optional, List, Type, Dict
 
-import numpy as np
-from scipy import stats
-from scipy.special import kl_div
-from scipy.stats import rv_continuous
+try:
+    import numpy as np
+    from scipy import stats
+    from scipy.special import kl_div
+    from scipy.stats import rv_continuous
+    SCIPY_AVAILABLE = True
+except ImportError:
+    SCIPY_AVAILABLE = False
+    np = None
+    stats = None
 
 from .distribution import Distribution
 
-# Get all continuous distributions from scipy.stats
-_CONTINUOUS_DISTRIBUTIONS = [
-    getattr(stats, name)
-    for name in dir(stats)
-    if isinstance(getattr(stats, name), stats.rv_continuous)
-]
+if SCIPY_AVAILABLE:
+    # Get all continuous distributions from scipy.stats
+    _CONTINUOUS_DISTRIBUTIONS = [
+        getattr(stats, name)
+        for name in dir(stats)
+        if isinstance(getattr(stats, name), type) and issubclass(getattr(stats, name), stats.rv_continuous)
+    ]
+else:
+    _CONTINUOUS_DISTRIBUTIONS = []
 
 
 class DistributionPool(Enum):
@@ -40,19 +49,23 @@ class ContinuousDistribution(Distribution):
     >>> samples = dist.sample(10)
     """
 
-    SMALL_POOL: Tuple[Type[stats.rv_continuous], ...] = (
-        stats.norm,
-        stats.laplace,
-        stats.t,
-        stats.uniform,
-        stats.rayleigh,
-    )
+    if SCIPY_AVAILABLE:
+        SMALL_POOL: Tuple[Type[stats.rv_continuous], ...] = (
+            stats.norm,
+            stats.laplace,
+            stats.t,
+            stats.uniform,
+            stats.rayleigh,
+        )
 
-    LARGE_POOL: List[Type[stats.rv_continuous]] = _CONTINUOUS_DISTRIBUTIONS
+        LARGE_POOL: List[Type[stats.rv_continuous]] = _CONTINUOUS_DISTRIBUTIONS
+    else:
+        SMALL_POOL = ()
+        LARGE_POOL = []
 
     def __init__(
         self,
-        distribution_model: Optional[Type[stats.rv_continuous]] = None,
+        distribution_model: Optional[Type] = None,
         **parameters,
     ) -> None:
         """
@@ -62,14 +75,16 @@ class ContinuousDistribution(Distribution):
             distribution_model (Optional[Type[stats.rv_continuous]]): A specific `scipy.stats` distribution.
             **parameters: Parameters for the specified distribution model.
         """
+        if not SCIPY_AVAILABLE:
+            raise ImportError("scipy is required for ContinuousDistribution")
         self._distribution_model = distribution_model
         self._parameters = parameters
 
     def fit(
         self,
-        X: np.ndarray,
+        X,
         distributions_pool: DistributionPool = DistributionPool.SMALL,
-        custom_pool: Optional[List[Type[stats.rv_continuous]]] = None,
+        custom_pool: Optional[List[Type]] = None,
     ) -> None:
         """
         Fit the data to the best distribution within the specified pool.
@@ -82,6 +97,9 @@ class ContinuousDistribution(Distribution):
         Raises:
             ValueError: If a custom pool is selected but not provided.
         """
+        if not SCIPY_AVAILABLE:
+            raise ImportError("scipy is required for fit method")
+            
         if self._distribution_model is None:
             pool = self._select_pool(distributions_pool, custom_pool)
             self._distribution_model, self._parameters = self._fit_best_distribution(
@@ -93,8 +111,8 @@ class ContinuousDistribution(Distribution):
     @staticmethod
     def _select_pool(
         pool_type: DistributionPool,
-        custom_pool: Optional[List[Type[stats.rv_continuous]]],
-    ) -> List[Type[stats.rv_continuous]]:
+        custom_pool: Optional[List[Type]],
+    ) -> List[Type]:
         """
         Select the appropriate pool of distributions.
 
@@ -122,8 +140,8 @@ class ContinuousDistribution(Distribution):
 
     @staticmethod
     def _fit_best_distribution(
-        X: np.ndarray, distribution_models_pool: List[Type[stats.rv_continuous]]
-    ) -> Tuple[Type[rv_continuous], Dict[str, float]]:
+        X, distribution_models_pool: List[Type]
+    ) -> Tuple[Type, Dict[str, float]]:
         """
         Fit the data to the best distribution in the pool by minimizing the KL divergence.
 
@@ -164,7 +182,7 @@ class ContinuousDistribution(Distribution):
 
         return best_distribution, best_params
 
-    def sample(self, num_samples: int) -> np.ndarray:
+    def sample(self, num_samples: int):
         """
         Generate samples from the fitted distribution.
 
@@ -177,6 +195,8 @@ class ContinuousDistribution(Distribution):
         Raises:
             ValueError: If no distribution is fitted yet.
         """
+        if not SCIPY_AVAILABLE:
+            raise ImportError("scipy is required for sample method")
         if self._distribution_model is None:
             raise ValueError("No distribution fitted yet.")
         return self._distribution_model.rvs(*self._parameters, size=num_samples)
