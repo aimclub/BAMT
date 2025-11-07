@@ -103,11 +103,12 @@ class DiscreteBayesianNetwork(BayesianNetwork):
                 dist = model['distribution']
                 # Sample and take mode as prediction
                 samples = dist.sample(len(evidence))
-                # Use most common value
-                if hasattr(samples, 'mode'):
-                    pred = [samples.mode()[0]] * len(evidence)
+                # For discrete, use most common value or first value
+                if hasattr(samples, '__iter__') and len(samples) > 0:
+                    # Use first value as default
+                    pred = [samples[0] if hasattr(samples, '__getitem__') else samples] * len(evidence)
                 else:
-                    pred = [samples[0]] * len(evidence)
+                    pred = [samples] * len(evidence)
                 predictions[node] = pred
                 
         return pd.DataFrame(predictions)

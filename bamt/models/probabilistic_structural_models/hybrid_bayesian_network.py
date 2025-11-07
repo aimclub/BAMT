@@ -15,6 +15,9 @@ class HybridBayesianNetwork(BayesianNetwork):
     Uses the 2.0.0 architecture with sklearn-like interface.
     """
     
+    # Heuristic threshold for discrete detection
+    DISCRETE_THRESHOLD = 20  # Variables with < 20 unique values treated as discrete
+    
     def __init__(self):
         super().__init__()
         self.nodes = []
@@ -42,7 +45,7 @@ class HybridBayesianNetwork(BayesianNetwork):
         col = data[node]
         if col.dtype in [np.float64, np.float32, np.int64, np.int32]:
             # Check if it's actually discrete (few unique values)
-            if col.nunique() < 20:  # Heuristic: < 20 unique values = discrete
+            if col.nunique() < self.DISCRETE_THRESHOLD:
                 return 'discrete'
             return 'continuous'
         return 'discrete'

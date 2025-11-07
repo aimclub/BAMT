@@ -60,7 +60,7 @@ class HillClimbingOptimizer(DAGOptimizer):
                         edge = (parent, child)
                         if edge not in current_edges:
                             # Check if adding this edge would create a cycle
-                            test_edges = current_edges + [edge]
+                            test_edges = list(current_edges) + [edge]
                             if not self._has_cycle(test_edges, nodes):
                                 score = self.score_function.compute(data, test_edges)
                                 if score > best_score:

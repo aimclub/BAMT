@@ -104,7 +104,11 @@ class ContinuousBayesianNetwork(BayesianNetwork):
                 dist = model['distribution']
                 # Sample from distribution as prediction
                 pred = dist.sample(len(evidence))
-                predictions[node] = pred
+                if hasattr(pred, '__iter__'):
+                    predictions[node] = pred
+                else:
+                    # Single value, replicate it
+                    predictions[node] = [pred] * len(evidence)
                 
         return pd.DataFrame(predictions)
 
@@ -152,8 +156,10 @@ class ContinuousBayesianNetwork(BayesianNetwork):
                 dist = model['distribution']
                 samples[node] = dist.sample(num_samples)
             else:
-                # Not fitted yet
-                samples[node] = np.random.normal(0, 1, num_samples)
+                # Not fitted yet - use default values
+                import warnings
+                warnings.warn(f"Node {node} not fitted, using default sampling")
+                samples[node] = np.zeros(num_samples)
                 
         return pd.DataFrame(samples)
 
