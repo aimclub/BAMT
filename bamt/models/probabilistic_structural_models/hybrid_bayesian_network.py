@@ -4,10 +4,9 @@ Hybrid Bayesian Network implementation.
 This module implements a Bayesian Network for mixed (discrete and continuous) data.
 """
 
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 import networkx as nx
-import numpy as np
 import pandas as pd
 
 from bamt.core.nodes.child_nodes.conditional_continuous_node import (

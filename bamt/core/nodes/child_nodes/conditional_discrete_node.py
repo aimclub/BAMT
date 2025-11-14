@@ -15,8 +15,6 @@ import pandas as pd
 from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
 
-from bamt.core.node_models.classifier import Classifier
-
 from .child_node import ChildNode
 
 
