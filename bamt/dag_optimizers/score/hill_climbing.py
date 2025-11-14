@@ -107,9 +107,6 @@ class HillClimbing(ScoreDAGOptimizer):
         # Convert data to numpy for faster access
         data_array = data.values
 
-        # Create column name to index mapping
-        col_to_idx = {name: idx for idx, name in enumerate(node_names)}
-
         # Main optimization loop
         _iter = 0
         improvement = True

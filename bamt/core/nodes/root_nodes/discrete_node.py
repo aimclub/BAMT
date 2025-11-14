@@ -5,14 +5,15 @@ from .root_node import RootNode
 
 
 class DiscreteNode(RootNode):
-    def __init__(self, distribution: Optional[EmpiricalDistribution] = None):
+    def __init__(self, name: Optional[str] = None, distribution: Optional[EmpiricalDistribution] = None):
         """
-        Initialize the DisscreteNode with an optional EmpiricalDistribution.
+        Initialize the DiscreteNode with an optional name and EmpiricalDistribution.
 
         Args:
-            distribution (Optional[ContinuousDistribution]): A ContinuousDistribution object.
+            name (Optional[str]): The name of the node.
+            distribution (Optional[EmpiricalDistribution]): An EmpiricalDistribution object.
         """
-        super().__init__()
+        super().__init__(name=name)
         self._distribution = (
             distribution if distribution is not None else EmpiricalDistribution()
         )

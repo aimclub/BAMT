@@ -5,7 +5,6 @@ The PC algorithm is a constraint-based structure learning algorithm that
 uses conditional independence tests to learn the DAG structure.
 """
 
-from typing import Optional, List, Tuple, Set
 import pandas as pd
 import networkx as nx
 from bamt.dag_optimizers.constraint.constraint_dag_optimizer import (

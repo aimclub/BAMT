@@ -10,15 +10,15 @@ class BayesianNetwork(ProbabilisticStructuralModel):
         super().__init__()
 
     @abstractmethod
-    def fit(self):
+    def fit(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def predict(self):
+    def predict(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def sample(self):
+    def sample(self, *args, **kwargs):
         pass
 
     def save(self, filepath: Union[str, Path]) -> None:
@@ -87,7 +87,7 @@ class BayesianNetwork(ProbabilisticStructuralModel):
             bn = bn_class(structure=data["structure"])
 
         # Restore nodes
-        bn.nodes_dict = data["nodes_dict"]
+        bn.nodes = data["nodes_dict"]
 
         return bn
 

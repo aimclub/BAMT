@@ -6,7 +6,6 @@ Example demonstrating new features in BAMT 2.0.0:
 """
 
 import numpy as np
-import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
 

@@ -24,14 +24,15 @@ class ContinuousNode(RootNode):
     >>> print(node.get_parents())
     """
 
-    def __init__(self, distribution: Optional[ContinuousDistribution] = None):
+    def __init__(self, name: Optional[str] = None, distribution: Optional[ContinuousDistribution] = None):
         """
-        Initialize the ContinuousNode with an optional ContinuousDistribution.
+        Initialize the ContinuousNode with an optional name and ContinuousDistribution.
 
         Args:
+            name (Optional[str]): The name of the node.
             distribution (Optional[ContinuousDistribution]): A ContinuousDistribution object.
         """
-        super().__init__()
+        super().__init__(name=name)
         self._distribution = (
             distribution if distribution is not None else ContinuousDistribution()
         )

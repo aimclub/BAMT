@@ -72,9 +72,6 @@ class DiscreteBayesianNetwork(BayesianNetwork):
         if self.structure.number_of_nodes() == 0:
             raise ValueError("Network structure is empty. Provide a DAG structure.")
 
-        if parameter_estimator is None:
-            parameter_estimator = MaximumLikelihoodEstimator()
-
         self._data_columns = list(data.columns)
 
         # Create nodes based on structure

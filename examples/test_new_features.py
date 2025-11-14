@@ -15,7 +15,6 @@ import os
 
 # Import new utilities
 from bamt.utils.preprocessing import DataPreprocessor
-from bamt.utils.serialization import save_bn, load_bn
 
 # Import optimizers
 from bamt.dag_optimizers.score.hill_climbing import HillClimbing

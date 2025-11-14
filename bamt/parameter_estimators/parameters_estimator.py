@@ -6,5 +6,5 @@ class ParametersEstimator(ABC):
         pass
 
     @abstractmethod
-    def estimate(self):
+    def estimate(self, *args, **kwargs):
         pass

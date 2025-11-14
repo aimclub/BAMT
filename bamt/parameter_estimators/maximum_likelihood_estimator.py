@@ -5,7 +5,7 @@ This module implements parameter estimation for Bayesian Networks using
 maximum likelihood estimation (MLE).
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 import networkx as nx
 import pandas as pd

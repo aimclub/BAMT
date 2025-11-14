@@ -15,8 +15,6 @@ from sklearn.base import clone
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error as rmse
 
-from bamt.core.node_models.regressor import Regressor
-
 from .child_node import ChildNode
 
 

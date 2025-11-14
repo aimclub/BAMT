@@ -6,7 +6,7 @@ and matplotlib for static images.
 """
 
 from pathlib import Path
-from typing import Union, Optional, Dict, Any
+from typing import Union, Optional, Any
 import networkx as nx
 
 
@@ -59,7 +59,7 @@ class BayesianNetworkVisualizer:
 
         # Add nodes with type information
         for node_name in bn.structure.nodes():
-            node_info = bn.nodes_dict.get(node_name)
+            node_info = bn.nodes.get(node_name)
             if node_info and show_node_info:
                 node_type = type(node_info).__name__
                 title = f"{node_name}\nType: {node_type}"
@@ -144,8 +144,8 @@ class BayesianNetworkVisualizer:
         # Try hierarchical layout if available
         try:
             pos = nx.nx_agraph.graphviz_layout(bn.structure, prog="dot")
-        except:
-            # Fall back to spring layout
+        except (ImportError, AttributeError, Exception):
+            # Fall back to spring layout if graphviz is not available
             pass
 
         # Draw the graph

@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Optional
 
 import numpy as np
 
@@ -11,8 +12,8 @@ class RootNode(Node, ABC):
     Bayesian network. Root nodes are represented by
     Distributions."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name: Optional[str] = None):
+        super().__init__(name=name)
         self._distribution = None
         self._children = []
 

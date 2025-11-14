@@ -52,7 +52,7 @@ class BayesianNetworkSerializer:
 
         # Save node models as pickle
         models_data = {
-            "nodes_dict": bn.nodes_dict,
+            "nodes_dict": bn.nodes,
         }
         pkl_path = filepath.with_suffix(".pkl")
         with open(pkl_path, "wb") as f:

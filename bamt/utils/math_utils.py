@@ -253,7 +253,6 @@ def precision_recall(pred_net: List[Tuple[str, str]],
         >>> metrics = precision_recall(pred, true)
         >>> print(metrics['SHD'])  # Structural Hamming Distance
     """
-    pred_dict = _child_dict(pred_net)
     true_dict = _child_dict(true_net)
     corr_undirected = 0
     corr_dir = 0

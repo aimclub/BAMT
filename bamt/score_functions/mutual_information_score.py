@@ -126,10 +126,6 @@ class MutualInformationScore(ScoreFunction):
             if columns_for_continuous:
                 prod *= len(columns_for_continuous)
 
-            # Handle overflow error
-            try:
-                return prod
-            except OverflowError:
-                return sys.float_info.max
+            return prod
 
         return 0
